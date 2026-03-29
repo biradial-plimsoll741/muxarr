@@ -8,6 +8,4 @@ riderModule.iml
 Muxarr.sln.DotSettings.user
 **/muxarr.db*
 **/wwwroot/lib
-**/Properties/launchSettings.json
-appsettings.Development.json
 .DS_Store
