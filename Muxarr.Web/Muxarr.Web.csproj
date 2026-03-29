@@ -34,4 +34,8 @@
       <PackageReference Include="Serilog.AspNetCore" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="appsettings.Development.json" DependentUpon="appsettings.json" />
+    </ItemGroup>
+
 </Project>
