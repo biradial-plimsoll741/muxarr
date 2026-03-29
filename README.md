@@ -118,7 +118,7 @@ Make sure you properly setup a profile and convert your first files manually, re
 
 ## Built With
 
-- [.NET 9](https://dotnet.microsoft.com/) / Blazor
+- [.NET 10](https://dotnet.microsoft.com/) / Blazor
 - [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge, mkvpropedit)
 - [FFmpeg](https://ffmpeg.org/)
 
