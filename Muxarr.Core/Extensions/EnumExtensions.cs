@@ -4,7 +4,7 @@ namespace Muxarr.Core.Extensions;
 
 public static class EnumExtensions {
     public static string GetDisplayName<TEnum>(this TEnum? value) where TEnum : struct, Enum {
-        return value == null ? "Onbekend" : GetDisplayName((TEnum)value);
+        return value == null ? "Unknown" : GetDisplayName((TEnum)value);
     }
 
     public static string GetDisplayName<TEnum>(this TEnum value) where TEnum : struct, Enum {

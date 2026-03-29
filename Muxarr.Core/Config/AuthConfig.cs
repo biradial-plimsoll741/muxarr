@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Muxarr.Core.Api;
+namespace Muxarr.Core.Config;
 
 public class AuthConfig
 {

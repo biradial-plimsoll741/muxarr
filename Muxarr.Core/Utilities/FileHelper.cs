@@ -2,7 +2,7 @@
 
 namespace Muxarr.Core.Utilities;
 
-public static class FileExt
+public static class FileHelper
 {
     private const int DefaultBufferSize = 1024 * 1024; // 1MB buffer by default
     private const int ProgressSize = 1024 * 1024 * 100; // Progress event every 100MB

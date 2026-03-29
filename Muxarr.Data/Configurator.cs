@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Data.Extensions;
 
 namespace Muxarr.Data;

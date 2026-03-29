@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Core.Language;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Core.Utilities;
@@ -414,7 +414,7 @@ public class MediaConverterService(
 
             conversion.Log("Moving new file..", logger);
             await context.SaveChangesAsync(token);
-            await FileExt.MoveFileAsync(tmp, conversion.MediaFile.Path,
+            await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
                 i =>
                 {
                     conversion.Progress = 50 + i / 2;

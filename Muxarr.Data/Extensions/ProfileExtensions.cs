@@ -1,4 +1,4 @@
-using Muxarr.Core.Utilities;
+using Muxarr.Core.Extensions;
 using Muxarr.Data.Entities;
 
 namespace Muxarr.Data.Extensions;

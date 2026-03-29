@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Core.Utilities;
 using Muxarr.Data;
 using Muxarr.Data.Extensions;

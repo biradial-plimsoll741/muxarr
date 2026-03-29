@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Muxarr.Core.Api.Models;
+using Muxarr.Core.Config;
 using Muxarr.Core.Utilities;
 
 namespace Muxarr.Core.Api;

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
-using Muxarr.Core.Api;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Data;
 using Muxarr.Data.Entities;

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Data;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;

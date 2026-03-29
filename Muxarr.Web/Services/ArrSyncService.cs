@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Data;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;
@@ -47,7 +48,7 @@ public class ArrSyncService(
 
         await SyncMedia(context, radarrResult.Select(x => new MediaInfo
         {
-            Id = x.Id,
+            ExternalId = x.Id,
             IsMovie = true,
             OriginalLanguage = x.OriginalLanguage?.Name ?? string.Empty,
             Path = x.MovieFile.Path,
@@ -63,7 +64,7 @@ public class ArrSyncService(
 
         await SyncMedia(context, sonarrResult.Select(x => new MediaInfo
         {
-            Id = x.Id,
+            ExternalId = x.Id,
             IsMovie = false,
             OriginalLanguage = x.OriginalLanguage?.Name ?? string.Empty,
             Path = x.Path,
@@ -74,20 +75,20 @@ public class ArrSyncService(
     private static async Task SyncMedia(AppDbContext context, IEnumerable<MediaInfo> newMedia, bool isMovie, CancellationToken token)
     {
         var currentMedia = await context.MediaInfos.Where(x => x.IsMovie == isMovie).ToListAsync(cancellationToken: token);
-        var newMediaDict = newMedia.ToDictionary(m => m.Id);
+        var newMediaDict = newMedia.ToDictionary(m => m.ExternalId);
 
         // Update or Add Records
         foreach (var media in currentMedia)
         {
-            if (newMediaDict.TryGetValue(media.Id, out var updatedMedia))
+            if (newMediaDict.TryGetValue(media.ExternalId, out var updatedMedia))
             {
-                if (media.OriginalLanguage != updatedMedia.OriginalLanguage || 
+                if (media.OriginalLanguage != updatedMedia.OriginalLanguage ||
                     media.Path != updatedMedia.Path)
                 {
                     media.OriginalLanguage = updatedMedia.OriginalLanguage;
                     media.Path = updatedMedia.Path;
                 }
-                newMediaDict.Remove(media.Id); // Remove from newMediaDict as it’s already processed
+                newMediaDict.Remove(media.ExternalId); // Remove from newMediaDict as it’s already processed
             }
             else
             {

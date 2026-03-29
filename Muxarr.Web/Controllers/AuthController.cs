@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Muxarr.Core.Api;
+using Muxarr.Core.Config;
 using Muxarr.Data;
 using Muxarr.Data.Extensions;
 

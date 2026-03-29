@@ -1,4 +1,4 @@
-namespace Muxarr.Core.Api;
+namespace Muxarr.Core.Config;
 
 public class LibraryStatsConfig
 {

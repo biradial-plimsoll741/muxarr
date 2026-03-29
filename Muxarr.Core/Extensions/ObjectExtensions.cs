@@ -1,6 +1,8 @@
-namespace Muxarr.Core.Utilities;
+using Muxarr.Core.Utilities;
 
-public static class ObjectExt
+namespace Muxarr.Core.Extensions;
+
+public static class ObjectExtensions
 {
     public static T LazyClone<T>(this T source)
     {

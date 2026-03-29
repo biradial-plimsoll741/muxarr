@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Muxarr.Core.Api;
 using Muxarr.Core.Api.Models;
+using Muxarr.Core.Config;
 using Muxarr.Data;
 using Muxarr.Data.Extensions;
 using Muxarr.Web.Services;

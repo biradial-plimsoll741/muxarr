@@ -6,8 +6,6 @@ namespace Muxarr.Web.Logging;
 
 public static class LoggingConfiguration
 {
-    public static DbLogSink DbSink { get; } = new();
-
     public static WebApplicationBuilder ConfigureLogging(this WebApplicationBuilder builder)
     {
         builder.Logging.ClearProviders();
@@ -15,6 +13,8 @@ public static class LoggingConfiguration
         var environment = builder.Environment.EnvironmentName;
         var configuration = builder.Configuration;
         var projectName = GetProjectName();
+
+        var dbSink = new DbLogSink();
 
         var logConfig = new LoggerConfiguration()
             .Enrich.FromLogContext()
@@ -25,13 +25,13 @@ public static class LoggingConfiguration
             .Enrich.WithProperty("Environment", environment)
             .Enrich.WithProperty("Project", projectName)
             .WriteTo.Console()
-            .WriteTo.Sink(DbSink);
+            .WriteTo.Sink(dbSink);
 
         Log.Logger = logConfig.CreateLogger();
         builder.Logging.AddSerilog(Log.Logger, dispose: true);
 
         // Register the sink instance so LogWriterService can drain it
-        builder.Services.AddSingleton(DbSink);
+        builder.Services.AddSingleton(dbSink);
 
         Log.Logger.Information("Initialized logger for {Project}", projectName);
 

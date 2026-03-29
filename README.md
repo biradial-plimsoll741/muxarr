@@ -34,8 +34,8 @@ Integrates with Sonarr and Radarr for original language detection and automatic 
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="800"/><br/>
-  <em>Dashboard</em>
+  <img src="docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
+  <em>Conversion details with before/after track comparison</em>
 </p>
 
 <p align="center">
@@ -43,10 +43,13 @@ Integrates with Sonarr and Radarr for original language detection and automatic 
   <em>File details with track preview</em>
 </p>
 
-<p align="center">
-  <img src="docs/screenshots/settings.png" alt="Profile Settings" width="800"/><br/>
-  <em>Profile settings</em>
-</p>
+<table align="center">
+  <tr>
+    <td align="center"><img src="docs/screenshots/dashboard.png" alt="Dashboard" width="270"/><br/><em>Dashboard</em></td>
+    <td align="center"><img src="docs/screenshots/settings.png" alt="Profile Settings" width="270"/><br/><em>Profile settings</em></td>
+    <td align="center"><img src="docs/screenshots/statistics.png" alt="Statistics" width="270"/><br/><em>Statistics</em></td>
+  </tr>
+</table>
 
 ## Installation
 
