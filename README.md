@@ -16,7 +16,7 @@ Integrates with Sonarr and Radarr for original language detection and automatic 
 ## Features
 
 - Strip redundant audio tracks (commentary, foreign dubs) and subtitles (SDH, foreign)
-- Clean up track names by removing scene group tags and codec dumps
+- Clean up track names by removing encoder tags and codec dumps
 - Detect original language from Sonarr/Radarr metadata
 - Per-directory profiles for language filtering and track handling
 - Webhook support to automatically process new Sonarr/Radarr imports
