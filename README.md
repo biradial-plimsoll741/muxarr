@@ -7,17 +7,44 @@
 
 # Muxarr
 
-Muxarr strips unwanted audio and subtitle tracks from your media files using MKVMerge. It integrates with Sonarr and Radarr to detect original languages and can automatically process new files via webhooks.
+Muxarr cleans up your media files by removing redundant audio and subtitle tracks and standardizing track metadata. It uses **mkvmerge** to remux files, so it only strips away what you don't need. Video, audio quality, and all remaining streams stay completely intact without quality loss since there is no re-encoding.
 
-> 🐉 Here be dragons. This project is still young, things may break. PRs and issues are welcome!
+Integrates with Sonarr and Radarr for original language detection and automatic processing via webhooks.
 
-## What it does
+> 🐉 Here be dragons. This project is still young, things may break.
 
-- Remove unwanted audio tracks (commentary, foreign languages) and subtitles (SDH, foreign)
-- Keep original language tracks using metadata from Sonarr/Radarr
-- Profiles with per-directory rules for language filtering
-- Webhook support for automatic processing of new Sonarr/Radarr imports
-- Conversion queue with pause/resume/cancel
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="800"/><br/>
+  <em>Dashboard</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/filedetails.png" alt="File Details" width="800"/><br/>
+  <em>File details with track preview</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Profile Settings" width="800"/><br/>
+  <em>Profile settings</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/stats.png" alt="Statistics" width="800"/><br/>
+  <em>Library statistics</em>
+</p>
+
+## Features
+
+- Strip redundant audio tracks (commentary, foreign dubs) and subtitles (SDH, foreign)
+- Clean up track names by removing scene group tags and codec dumps
+- Detect original language from Sonarr/Radarr metadata
+- Per-directory profiles for language filtering and track handling
+- Webhook support to automatically process new Sonarr/Radarr imports
+- Pause, resume, and cancel running conversions
+- Fixes metadata in-place when no tracks need removing
+- Library overview with codec, resolution and language breakdowns
 
 ## Installation
 
@@ -80,10 +107,12 @@ docker run -d \
 3. Optionally connect Sonarr/Radarr for original language detection
 4. Scan and queue files for conversion
 
+Make sure you properly setup a profile and convert your first files manually, remuxing can be quite fast on the right hardware. You don't want to clean too much. ;)
+
 ## Built With
 
 - [.NET 9](https://dotnet.microsoft.com/) / Blazor
-- [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge)
+- [MKVToolNix](https://mkvtoolnix.download/) (mkvmerge, mkvpropedit)
 - [FFmpeg](https://ffmpeg.org/)
 
 ## License

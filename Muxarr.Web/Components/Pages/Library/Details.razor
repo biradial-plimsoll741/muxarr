@@ -105,7 +105,7 @@
                     <i class="bi bi-collection text-primary me-2"></i>
                     <h5 class="mb-0">Media Tracks</h5>
                 </div>
-                <div class="table-responsive">
+                <div style="overflow: visible;">
                     @if (File.Tracks.Any())
                     {
                         <MediaTrackDetailTable Tracks="File.Tracks"
@@ -250,9 +250,15 @@
     {
         ToastService.ShowInfo($"Analyzing {File!.GetName()}...");
         await using var context = await ContextFactory.CreateDbContextAsync();
-        await MediaScanner.ScanMediaFile(File!, true, context, File!.Profile);
+        var dbFile = await context.MediaFiles.WithTracksAndProfile().FirstOrDefaultAsync(f => f.Id == File!.Id);
+        if (dbFile == null)
+        {
+            ToastService.ShowError("File not found.");
+            return;
+        }
+        await MediaScanner.ScanMediaFile(dbFile, true, context, dbFile.Profile);
         await LoadFile();
-        ToastService.ShowSuccess($"Analysis complete for {File!.GetName()}.");
+        ToastService.ShowSuccess($"Analysis complete for {dbFile.GetName()}.");
     }
 
     public override void Dispose()
