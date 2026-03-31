@@ -10,7 +10,7 @@
             <div class="list-group list-group-flush">
                 @foreach (var item in _displayItems)
                 {
-                    <div class="list-group-item px-3 py-2 @(_clickable ? "list-group-item-action" : "")"
+                    <div class="list-group-item bg-transparent px-3 py-2 @(_clickable ? "list-group-item-action" : "")"
                          style="@(_clickable ? "cursor: pointer;" : "")"
                          @onclick="() => HandleClick(item.Label)">
                         <div class="d-flex justify-content-between align-items-center mb-1">

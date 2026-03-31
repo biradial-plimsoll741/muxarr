@@ -43,39 +43,24 @@
                     <h5 class="mb-0">File Info</h5>
                 </div>
 
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item px-0">
+                <div class="list-group list-group-flush bg-transparent">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Filename</div>
                         <code class="small">@Path.GetFileName(File.Path)</code>
                     </div>
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Directory</div>
                         <span class="small">@Path.GetDirectoryName(File.Path)</span>
                     </div>
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Created</div>
                         <TimeAgo DateTime="File.FileCreationTime"/>
                     </div>
-                    @*<div class="list-group-item px-0">
-                        <div class="text-muted small mb-1">Format</div>
-                        @if (File.GetVideoTracks().FirstOrDefault() is { } video)
-                        {
-                            <code>@video.Codec</code>
-                            @if (!string.IsNullOrEmpty(video.TrackName))
-                            {
-                                <span class="text-muted small ms-2">@video.TrackName</span>
-                            }
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-                    </div>*@
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Original Language</div>
                         <span>@(string.IsNullOrEmpty(File.OriginalLanguage) ? "-" : File.OriginalLanguage)</span>
                     </div>
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Profile</div>
                         @if (File.Profile != null)
                         {
@@ -86,11 +71,11 @@
                             <span>-</span>
                         }
                     </div>
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Size</div>
                         <FileSize SizeInBytes="File.Size"/>
                     </div>
-                    <div class="list-group-item px-0">
+                    <div class="list-group-item bg-transparent px-0">
                         <div class="text-muted small mb-1">Added</div>
                         <TimeAgo DateTime="File.CreatedDate"/>
                     </div>
@@ -143,8 +128,8 @@
                         <h5 class="mb-0">MKVMerge Output</h5>
                     </div>
                     <div class="border rounded">
-                        <pre class="m-0 p-3 small bg-body-secondary"
-                             style="height: 500px;"><code>@File.MkvMergeOutput</code></pre>
+                        <pre class="m-0 p-3 small bg-body-tertiary text-body"
+                             style="max-height: 500px; overflow: auto;"><code class="text-body">@File.MkvMergeOutput</code></pre>
                     </div>
                 </div>
             </div>
