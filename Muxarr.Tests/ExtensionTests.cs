@@ -794,6 +794,46 @@ public class ExtensionTests
         Assert.IsTrue(track.IsVisualImpaired);
     }
 
+    [TestMethod]
+    public void CorrectFlagsFromTrackName_DetectsHI()
+    {
+        var track = new TrackSnapshot { TrackName = "English HI" };
+        track.CorrectFlagsFromTrackName();
+        Assert.IsTrue(track.IsHearingImpaired);
+    }
+
+    [TestMethod]
+    public void CorrectFlagsFromTrackName_HI_WordBoundary_NoFalsePositive()
+    {
+        var track = new TrackSnapshot { TrackName = "Subs for Chinese Audio" };
+        track.CorrectFlagsFromTrackName();
+        Assert.IsFalse(track.IsHearingImpaired, "HI inside 'Chinese' should not trigger hearing impaired");
+    }
+
+    [TestMethod]
+    public void CorrectFlagsFromTrackName_DetectsForeign()
+    {
+        var track = new TrackSnapshot { TrackName = "English Foreign" };
+        track.CorrectFlagsFromTrackName();
+        Assert.IsTrue(track.IsForced);
+    }
+
+    [TestMethod]
+    public void CorrectFlagsFromTrackName_DetectsSigns()
+    {
+        var track = new TrackSnapshot { TrackName = "Signs & Songs" };
+        track.CorrectFlagsFromTrackName();
+        Assert.IsTrue(track.IsForced);
+    }
+
+    [TestMethod]
+    public void CorrectFlagsFromTrackName_Signs_WordBoundary_NoFalsePositive()
+    {
+        var track = new TrackSnapshot { TrackName = "Design Notes" };
+        track.CorrectFlagsFromTrackName();
+        Assert.IsFalse(track.IsForced, "Signs inside 'Design' should not trigger forced");
+    }
+
     // --- ToMkvMergeType / ToMediaTrackType round-trip ---
 
     [TestMethod]

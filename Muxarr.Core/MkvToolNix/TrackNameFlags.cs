@@ -7,8 +7,8 @@ namespace Muxarr.Core.MkvToolNix;
 public static class TrackNameFlags
 {
     // Short abbreviations — need word-boundary checks to avoid false positives
-    // (e.g. "CC" inside "Accessibility", "HOH" inside hypothetical words).
-    private static readonly string[] HearingImpairedAbbreviations = ["CC", "HOH"];
+    // (e.g. "CC" inside "Accessibility", "HI" inside "Chinese").
+    private static readonly string[] HearingImpairedAbbreviations = ["CC", "HI", "HOH"];
 
     // Longer keywords — safe as substring matches due to length/specificity.
     private static readonly string[] HearingImpairedKeywords =
@@ -50,9 +50,32 @@ public static class TrackNameFlags
         return false;
     }
 
+    // Short keywords for forced — need word-boundary checks
+    // ("Signs" would match "Design" or "Signals" without boundary check).
+    private static readonly string[] ForcedAbbreviations = ["Signs"];
+
     public static bool ContainsForced(string? name)
     {
-        return name?.Contains("Forced", StringComparison.InvariantCultureIgnoreCase) ?? false;
+        if (string.IsNullOrEmpty(name))
+        {
+            return false;
+        }
+
+        if (name.Contains("Forced", StringComparison.InvariantCultureIgnoreCase)
+            || name.Contains("Foreign", StringComparison.InvariantCultureIgnoreCase))
+        {
+            return true;
+        }
+
+        foreach (var abbr in ForcedAbbreviations)
+        {
+            if (ContainsWord(name, abbr))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static bool ContainsCommentary(string? name)
