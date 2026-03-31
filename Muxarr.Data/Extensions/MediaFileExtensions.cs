@@ -492,13 +492,11 @@ public static class MediaFileExtensions
 
                 output.LanguageCode = track.ResolveLanguageCode();
 
-                if (isCustomConversion)
-                {
-                    output.IsDefault = track.IsDefault;
-                    output.IsForced = track.IsForced;
-                    output.IsHearingImpaired = track.IsHearingImpaired;
-                    output.IsCommentary = track.IsCommentary;
-                }
+                // Set flags explicitly so they survive name standardization and remuxing.
+                output.IsDefault = track.IsDefault;
+                output.IsForced = track.IsForced;
+                output.IsHearingImpaired = track.IsHearingImpaired;
+                output.IsCommentary = track.IsCommentary;
             }
 
             trackOutputs.Add(output);

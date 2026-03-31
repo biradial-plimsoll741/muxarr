@@ -371,6 +371,77 @@ public class ConversionPipelineTests
         // CorrectFlagsFromTrackName should detect "SDH" and set IsHearingImpaired
         var sub = outputs.First(o => o.Type == MkvMerge.SubtitlesTrack);
         Assert.AreEqual("English SDH", sub.Name, "Template should reflect corrected HI flag");
+        Assert.AreEqual(true, sub.IsHearingImpaired, "HI flag must be explicitly set on output so mkvmerge preserves it");
+    }
+
+    [TestMethod]
+    public void Pipeline_ForcedFlagPreservedAfterNameStandardization()
+    {
+        // Regression: forced flag was lost when track name "(Forced)" was standardized away
+        // and BuildTrackOutputs didn't set --forced-display-flag for non-custom conversions.
+        var file = MakeFile("English",
+            Video(0),
+            Audio(1, "English", "AAC", 6),
+            Sub(2, "English", forced: true, trackName: "English (Forced)"),
+            Sub(3, "English"));
+
+        var profile = MakeProfile(
+            audio: new TrackSettings
+            {
+                Enabled = true,
+                AllowedLanguages = [IsoLanguage.Find("English")]
+            },
+            subtitle: new TrackSettings
+            {
+                Enabled = true,
+                AllowedLanguages = [IsoLanguage.Find("English")],
+                StandardizeTrackNames = true,
+                TrackNameTemplate = "{language} {forced}"
+            });
+
+        var (_, outputs) = RunPipeline(file, profile);
+
+        var forcedSub = outputs.First(o => o.Type == MkvMerge.SubtitlesTrack && o.IsForced == true);
+        Assert.IsNotNull(forcedSub, "Forced flag must be explicitly set on output");
+        Assert.AreEqual("English Forced", forcedSub.Name);
+
+        var regularSub = outputs.First(o => o.Type == MkvMerge.SubtitlesTrack && o.TrackNumber == 3);
+        Assert.AreEqual(false, regularSub.IsForced, "Non-forced sub should have IsForced=false");
+    }
+
+    [TestMethod]
+    public void Pipeline_AllFlagsExplicitlySetOnOutput()
+    {
+        // Ensures all detected flags are always passed to TrackOutput
+        // so mkvmerge/mkvpropedit explicitly sets them on the output file.
+        var file = MakeFile("English",
+            Video(0),
+            Audio(1, "English", "AAC", 2, commentary: true),
+            Sub(2, "English", hi: true),
+            Sub(3, "English", forced: true));
+
+        var profile = MakeProfile(
+            audio: new TrackSettings
+            {
+                Enabled = true,
+                AllowedLanguages = [IsoLanguage.Find("English")]
+            },
+            subtitle: new TrackSettings
+            {
+                Enabled = true,
+                AllowedLanguages = [IsoLanguage.Find("English")]
+            });
+
+        var (_, outputs) = RunPipeline(file, profile);
+
+        var audio = outputs.First(o => o.Type == MkvMerge.AudioTrack);
+        Assert.AreEqual(true, audio.IsCommentary, "Commentary flag must be explicit on output");
+
+        var hiSub = outputs.First(o => o.TrackNumber == 2);
+        Assert.AreEqual(true, hiSub.IsHearingImpaired, "HI flag must be explicit on output");
+
+        var forcedSub = outputs.First(o => o.TrackNumber == 3);
+        Assert.AreEqual(true, forcedSub.IsForced, "Forced flag must be explicit on output");
     }
 
     // --- Real-world scenarios ---
