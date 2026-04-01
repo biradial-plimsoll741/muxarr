@@ -59,6 +59,7 @@ jobs:
         run: dotnet test --configuration Release
 
   build:
+    name: build (${{ matrix.arch }})
     needs: test
     if: github.event_name == 'push' || github.event_name == 'release'
     strategy:
@@ -76,6 +77,9 @@ jobs:
       packages: write
 
     steps:
+      - name: Lowercase image name
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> "$GITHUB_ENV"
+
       - name: Checkout code
         uses: actions/checkout@v5
 
@@ -137,6 +141,9 @@ jobs:
       packages: write
 
     steps:
+      - name: Lowercase image name
+        run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> "$GITHUB_ENV"
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
