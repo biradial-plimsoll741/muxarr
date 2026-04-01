@@ -27,27 +27,27 @@ Integrates with your existing services for original language detection and autom
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/before.png" alt="Before" width="600"/><br/>
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/before.png" alt="Before" width="600"/><br/>
   ⬇️<br/>
-  <img src="docs/screenshots/after.png" alt="After" width="600"/><br/>
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/after.png" alt="After" width="600"/><br/>
   <em>Before and after metadata cleanup</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
   <em>Conversion details with before/after track comparison</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/filedetails.png" alt="File Details" width="800"/><br/>
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/filedetails.png" alt="File Details" width="800"/><br/>
   <em>File details with track preview</em>
 </p>
 
 <table align="center">
   <tr>
-    <td align="center"><img src="docs/screenshots/dashboard.png" alt="Dashboard" width="270"/><br/><em>Dashboard</em></td>
-    <td align="center"><img src="docs/screenshots/settings.png" alt="Profile Settings" width="270"/><br/><em>Profile settings</em></td>
-    <td align="center"><img src="docs/screenshots/statistics.png" alt="Statistics" width="270"/><br/><em>Statistics</em></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/dashboard.png" alt="Dashboard" width="270"/><br/><em>Dashboard</em></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/settings.png" alt="Profile Settings" width="270"/><br/><em>Profile settings</em></td>
+    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/statistics.png" alt="Statistics" width="270"/><br/><em>Statistics</em></td>
   </tr>
 </table>
 
