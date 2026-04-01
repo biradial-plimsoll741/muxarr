@@ -1,59 +1,74 @@
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+
 namespace Muxarr.Core.Extensions;
 
 public static class CodecExtensions
 {
     /// <summary>
-    /// All known subtitle codecs (formatted names). Used to pre-populate the codec
-    /// exclusion selector so users can exclude codecs not yet present in their library.
+    /// Parses a raw mkvmerge codec string and returns the enum ToString() value for DB storage.
+    /// Tries video, audio, then subtitle parsers. Falls through to the raw string for unknown codecs.
     /// </summary>
-    public static readonly string[] KnownSubtitleCodecs =
-    [
-        "SRT",
-        "ASS/SSA",
-        "PGS",
-        "VobSub",
-        "Timed Text",
-        "WebVTT",
-        "DVB Subtitle",
-    ];
+    public static string ParseCodec(string rawCodec)
+    {
+        var video = VideoCodecExtensions.ParseVideoCodec(rawCodec);
+        if (video != VideoCodec.Unknown)
+        {
+            return video.ToString();
+        }
 
+        var audio = AudioCodecExtensions.ParseAudioCodec(rawCodec);
+        if (audio != AudioCodec.Unknown)
+        {
+            return audio.ToString();
+        }
+
+        var subtitle = SubtitleCodecExtensions.ParseSubtitleCodec(rawCodec);
+        if (subtitle != SubtitleCodec.Unknown)
+        {
+            return subtitle.ToString();
+        }
+
+        return rawCodec;
+    }
+
+    /// <summary>
+    /// Converts a stored codec enum string (e.g. "Hevc", "Pgs") to its display name (e.g. "H.265 / HEVC", "PGS").
+    /// Also handles legacy display-name values and raw tool strings as a fallback.
+    /// Falls through to the raw value for unknown codecs.
+    /// </summary>
     public static string FormatCodec(this string codec)
     {
-        var upper = codec.ToUpperInvariant();
-
-        // Match known codecs — check both exact and contains for multi-part mkvmerge strings
-        // (e.g., "HEVC/H.265/MPEG-H", "AVC/H.264/MPEG-4p10")
-        if (upper.Contains("HEVC") || upper.Contains("H.265") || upper.Contains("H265"))
+        // Try parsing as enum name (the expected DB format after migration)
+        if (Enum.TryParse<VideoCodec>(codec, out var video) && video != VideoCodec.Unknown)
         {
-            return "H.265 / HEVC";
+            return video.DisplayName();
         }
 
-        if (upper.Contains("AVC") || upper.Contains("H.264") || upper.Contains("H264"))
+        if (Enum.TryParse<AudioCodec>(codec, out var audio) && audio != AudioCodec.Unknown)
         {
-            return "H.264 / AVC";
+            return audio.DisplayName();
         }
 
-        return upper switch
+        if (Enum.TryParse<SubtitleCodec>(codec, out var subtitle) && subtitle != SubtitleCodec.Unknown)
         {
-            "AV1" => "AV1",
-            "VP9" => "VP9",
-            "VP8" => "VP8",
-            "AAC" => "AAC",
-            "AC3" or "AC-3" => "AC-3",
-            "EAC3" or "E-AC-3" or "EAC-3" => "E-AC-3",
-            "DTS" => "DTS",
-            "DTS-HD MASTER AUDIO" or "DTSHD" or "DTS-HD" => "DTS-HD Master Audio",
-            "TRUEHD" => "TrueHD",
-            "FLAC" => "FLAC",
-            "OPUS" => "Opus",
-            "VORBIS" => "Vorbis",
-            "MP3" or "MPEG AUDIO" => "MP3",
-            "SUBRIP" or "SRT" or "SUBRIP/SRT" => "SRT",
-            "ASS" or "SSA" or "SUBSTATIONALPHA" or "SUBSTATIONALPHAASS" => "ASS/SSA",
-            "HDMV PGS" or "HDMV_PGS_SUBTITLE" or "PGS" or "HDMVPGS" => "PGS",
-            "VOBSUB" => "VobSub",
-            "TIMED TEXT" or "TIMEDTEXT" => "Timed Text",
-            _ => codec
-        };
+            return subtitle.DisplayName();
+        }
+
+        // Fallback: try parsing as a raw tool string or legacy display name
+        var parsed = ParseCodec(codec);
+        if (parsed != codec)
+        {
+            return parsed.FormatCodec();
+        }
+
+        return codec;
+    }
+
+    public static string DisplayName<T>(this T value) where T : struct, Enum
+    {
+        var member = typeof(T).GetMember(value.ToString()!).FirstOrDefault();
+        var attr = member?.GetCustomAttribute<DisplayAttribute>();
+        return attr?.Name ?? value.ToString()!;
     }
 }

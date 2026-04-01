@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Config;
+using Muxarr.Core.Extensions;
 using Muxarr.Data;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;
@@ -32,6 +33,7 @@ public class LibraryStatsService(IDbContextFactory<AppDbContext> contextFactory,
         // Track distributions — pure SQL GROUP BY on normalized table
         stats.VideoCodecs = await GroupByCodec(context, MediaTrackType.Video);
         stats.AudioCodecs = await GroupByCodec(context, MediaTrackType.Audio);
+        stats.SubtitleCodecs = await GroupByCodec(context, MediaTrackType.Subtitles);
         stats.AudioLanguages = await GroupByLanguage(context, MediaTrackType.Audio);
         stats.SubtitleLanguages = await GroupByLanguage(context, MediaTrackType.Subtitles);
         stats.ChannelLayouts = await GroupByChannelLayout(context);
@@ -66,12 +68,19 @@ public class LibraryStatsService(IDbContextFactory<AppDbContext> contextFactory,
 
     private static async Task<List<DistributionEntry>> GroupByCodec(AppDbContext context, MediaTrackType type)
     {
-        return await context.MediaTracks
+        var entries = await context.MediaTracks
             .Where(t => t.Type == type && t.Codec != "")
             .GroupBy(t => t.Codec)
-            .Select(g => new DistributionEntry { Label = g.Key, Count = g.Count() })
+            .Select(g => new DistributionEntry { Value = g.Key, Label = g.Key, Count = g.Count() })
             .OrderByDescending(e => e.Count)
             .ToListAsync();
+
+        foreach (var entry in entries)
+        {
+            entry.Label = entry.Label.FormatCodec();
+        }
+
+        return entries;
     }
 
     private static async Task<List<DistributionEntry>> GroupByLanguage(AppDbContext context, MediaTrackType type)

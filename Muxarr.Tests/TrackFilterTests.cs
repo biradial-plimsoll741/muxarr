@@ -1,3 +1,4 @@
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;
@@ -196,11 +197,11 @@ public class TrackFilterTests
             },
             Tracks =
             [
-                new() { Type = MediaTrackType.Video, LanguageCode = "und", LanguageName = "Undetermined", Codec = "H.264 / AVC", TrackNumber = 0 },
-                new() { Type = MediaTrackType.Audio, LanguageCode = "fre", LanguageName = "French", Codec = "E-AC-3", AudioChannels = 6, TrackNumber = 1 },
-                new() { Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English", Codec = "E-AC-3", AudioChannels = 6, TrackNumber = 2 },
-                new() { Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", IsForced = true, Codec = "SRT", TrackNumber = 3, TrackName = "French Forced" },
-                new() { Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", Codec = "SRT", TrackNumber = 4, TrackName = "French" }
+                new() { Type = MediaTrackType.Video, LanguageCode = "und", LanguageName = "Undetermined", Codec = nameof(VideoCodec.Avc), TrackNumber = 0 },
+                new() { Type = MediaTrackType.Audio, LanguageCode = "fre", LanguageName = "French", Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, TrackNumber = 1 },
+                new() { Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English", Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, TrackNumber = 2 },
+                new() { Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", IsForced = true, Codec = nameof(SubtitleCodec.Srt), TrackNumber = 3, TrackName = "French Forced" },
+                new() { Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", Codec = nameof(SubtitleCodec.Srt), TrackNumber = 4, TrackName = "French" }
             ]
         };
 
@@ -453,7 +454,7 @@ public class TrackFilterTests
         TrackNumber = trackNumber,
         IsCommentary = commentary,
         IsHearingImpaired = hi,
-        Codec = "AAC",
+        Codec = nameof(AudioCodec.Aac),
         AudioChannels = 2
     };
 
@@ -467,6 +468,6 @@ public class TrackFilterTests
         IsForced = forced,
         IsCommentary = commentary,
         IsHearingImpaired = hi,
-        Codec = "SRT"
+        Codec = nameof(SubtitleCodec.Srt)
     };
 }

@@ -10,14 +10,52 @@ namespace Muxarr.Tests;
 public class ExtensionTests
 {
     [TestMethod]
-    public void FormatCodec_MapsKnownCodecs()
+    public void ParseCodec_MapsKnownCodecs()
     {
-        Assert.AreEqual("H.265 / HEVC", "HEVC".FormatCodec());
-        Assert.AreEqual("H.264 / AVC", "H264".FormatCodec());
+        Assert.AreEqual(nameof(VideoCodec.Hevc), CodecExtensions.ParseCodec("HEVC"));
+        Assert.AreEqual(nameof(VideoCodec.Avc), CodecExtensions.ParseCodec("H264"));
+        Assert.AreEqual(nameof(AudioCodec.Aac), CodecExtensions.ParseCodec("AAC"));
+        Assert.AreEqual(nameof(AudioCodec.Eac3), CodecExtensions.ParseCodec("EAC3"));
+        Assert.AreEqual(nameof(AudioCodec.TrueHd), CodecExtensions.ParseCodec("TRUEHD"));
+        Assert.AreEqual(nameof(SubtitleCodec.Srt), CodecExtensions.ParseCodec("SubRip"));
+    }
+
+    [TestMethod]
+    public void FormatCodec_DisplaysEnumValues()
+    {
+        Assert.AreEqual("H.265 / HEVC", nameof(VideoCodec.Hevc).FormatCodec());
+        Assert.AreEqual("H.264 / AVC", nameof(VideoCodec.Avc).FormatCodec());
+        Assert.AreEqual("AAC", nameof(AudioCodec.Aac).FormatCodec());
+        Assert.AreEqual("E-AC-3", nameof(AudioCodec.Eac3).FormatCodec());
+        Assert.AreEqual("TrueHD", nameof(AudioCodec.TrueHd).FormatCodec());
+        Assert.AreEqual("SRT", nameof(SubtitleCodec.Srt).FormatCodec());
+    }
+
+    [TestMethod]
+    public void ParseCodec_PassesThroughUnknown()
+    {
+        Assert.AreEqual("SomeNewCodec", CodecExtensions.ParseCodec("SomeNewCodec"));
+    }
+
+    [TestMethod]
+    public void FormatCodec_HandlesLegacyDisplayNames()
+    {
+        // Old DB values (pre-migration display names) should still resolve correctly
+        Assert.AreEqual("H.265 / HEVC", "H.265 / HEVC".FormatCodec());
         Assert.AreEqual("AAC", "AAC".FormatCodec());
-        Assert.AreEqual("E-AC-3", "EAC3".FormatCodec());
-        Assert.AreEqual("TrueHD", "TRUEHD".FormatCodec());
-        Assert.AreEqual("SRT", "SubRip".FormatCodec());
+        Assert.AreEqual("E-AC-3", "E-AC-3".FormatCodec());
+        Assert.AreEqual("SRT", "SRT".FormatCodec());
+        Assert.AreEqual("PGS", "PGS".FormatCodec());
+        Assert.AreEqual("DTS-HD Master Audio", "DTS-HD Master Audio".FormatCodec());
+    }
+
+    [TestMethod]
+    public void FormatCodec_HandlesRawMkvmergeStrings()
+    {
+        // Raw mkvmerge strings that might end up in DB should still display correctly
+        Assert.AreEqual("SRT", "SubRip/SRT".FormatCodec());
+        Assert.AreEqual("PGS", "HDMV PGS".FormatCodec());
+        Assert.AreEqual("H.265 / HEVC", "HEVC/H.265/MPEG-H".FormatCodec());
     }
 
     [TestMethod]
@@ -260,13 +298,13 @@ public class ExtensionTests
     // --- ApplyTrackNameTemplate ---
 
     [TestMethod]
-    [DataRow("{language} {channels}", "English", "AAC", 6, null, "English 5.1")]
-    [DataRow("{language} {channels}", "Undetermined", "AAC", 6, null, "Undetermined 5.1")]
-    [DataRow("{trackname} ({language})", "English", "AAC", 6, "Surround", "Surround (English)")]
-    [DataRow("{trackname} {language}", "English", "AAC", 6, null, "English")]
-    [DataRow("{nativelanguage} {channels}", "Dutch", "AAC", 2, null, "Nederlands 2.0")]
-    [DataRow("{language} {codec}", "English", "SRT", 0, null, "English SRT")]
-    [DataRow("{language} {channels}", "English", "SRT", 0, null, "English")]
+    [DataRow("{language} {channels}", "English", "Aac", 6, null, "English 5.1")]
+    [DataRow("{language} {channels}", "Undetermined", "Aac", 6, null, "Undetermined 5.1")]
+    [DataRow("{trackname} ({language})", "English", "Aac", 6, "Surround", "Surround (English)")]
+    [DataRow("{trackname} {language}", "English", "Aac", 6, null, "English")]
+    [DataRow("{nativelanguage} {channels}", "Dutch", "Aac", 2, null, "Nederlands 2.0")]
+    [DataRow("{language} {codec}", "English", "Srt", 0, null, "English SRT")]
+    [DataRow("{language} {channels}", "English", "Srt", 0, null, "English")]
     public void ApplyTrackNameTemplate_ProducesExpectedOutput(
         string template, string language, string codec, int channels, string? trackName, string expected)
     {
@@ -286,14 +324,14 @@ public class ExtensionTests
     [TestMethod]
     public void ApplyTrackNameTemplate_EmptyTemplate_ReturnsNull()
     {
-        var track = new TrackSnapshot { LanguageName = "English", Codec = "AAC", AudioChannels = 6 };
+        var track = new TrackSnapshot { LanguageName = "English", Codec = nameof(AudioCodec.Aac), AudioChannels = 6 };
         Assert.IsNull(track.ApplyTrackNameTemplate(""));
     }
 
     [TestMethod]
     public void ApplyTrackNameTemplate_AllPlaceholdersEmpty_ReturnsNull()
     {
-        var track = new TrackSnapshot { Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = "SRT" };
+        var track = new TrackSnapshot { Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = nameof(SubtitleCodec.Srt) };
         Assert.IsNull(track.ApplyTrackNameTemplate("{channels} {trackname}"));
     }
 
@@ -312,7 +350,7 @@ public class ExtensionTests
     {
         var track = new TrackSnapshot
         {
-            Type = MediaTrackType.Audio, LanguageName = "English", Codec = "AAC",
+            Type = MediaTrackType.Audio, LanguageName = "English", Codec = nameof(AudioCodec.Aac),
             AudioChannels = original ? 6 : 2,
             IsHearingImpaired = hi, IsForced = forced, IsCommentary = commentary,
             IsVisualImpaired = vi, IsOriginal = original
@@ -330,7 +368,7 @@ public class ExtensionTests
     {
         var track = new TrackSnapshot
         {
-            Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = "SRT",
+            Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = nameof(SubtitleCodec.Srt),
             IsHearingImpaired = hi, IsForced = forced, IsCommentary = commentary,
             IsVisualImpaired = vi, IsOriginal = original
         };
@@ -343,7 +381,7 @@ public class ExtensionTests
     {
         var track = new TrackSnapshot
         {
-            Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = "SRT",
+            Type = MediaTrackType.Subtitles, LanguageName = "English", Codec = nameof(SubtitleCodec.Srt),
             IsHearingImpaired = true
         };
 
@@ -362,7 +400,7 @@ public class ExtensionTests
             {
                 new() { Type = MediaTrackType.Video, TrackNumber = 0 },
                 new() { Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English",
-                    TrackNumber = 1, TrackName = "Surround 5.1", AudioChannels = 6, Codec = "AAC" }
+                    TrackNumber = 1, TrackName = "Surround 5.1", AudioChannels = 6, Codec = nameof(AudioCodec.Aac) }
             }
         };
         file.TrackCount = file.Tracks.Count;
@@ -446,7 +484,7 @@ public class ExtensionTests
             Tracks = new List<MediaTrack>
             {
                 new() { Type = MediaTrackType.Video, LanguageCode = "und", LanguageName = "Undetermined", TrackNumber = 0 },
-                new() { Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English", TrackNumber = 1, TrackName = "English 5.1", AudioChannels = 6, Codec = "AAC" }
+                new() { Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English", TrackNumber = 1, TrackName = "English 5.1", AudioChannels = 6, Codec = nameof(AudioCodec.Aac) }
             }
         };
         file.TrackCount = file.Tracks.Count;
@@ -617,7 +655,7 @@ public class ExtensionTests
         var track = new MediaTrack
         {
             Type = MediaTrackType.Audio, LanguageName = "English", LanguageCode = "eng",
-            Codec = "AAC", TrackNumber = 1,
+            Codec = nameof(AudioCodec.Aac), TrackNumber = 1,
             IsDefault = true, IsForced = true, IsCommentary = true,
             IsHearingImpaired = true, IsVisualImpaired = true, IsOriginal = true
         };

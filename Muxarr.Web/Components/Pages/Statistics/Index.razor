@@ -103,6 +103,9 @@
                 <DistributionCard Title="Audio Codecs" Icon="bi-volume-up" Items="_stats.AudioCodecs" OnItemClick="@(v => NavigateToFilter("audioCodec", v))" />
             </div>
             <div class="col-xl-4 col-md-6">
+                <DistributionCard Title="Subtitle Codecs" Icon="bi-badge-cc" Items="_stats.SubtitleCodecs" OnItemClick="@(v => NavigateToFilter("subtitleCodec", v))" />
+            </div>
+            <div class="col-xl-4 col-md-6">
                 <DistributionCard Title="Channel Layouts" Icon="bi-speaker" Items="_stats.ChannelLayouts" OnItemClick="@(v => NavigateToFilter("channelLayout", v))" />
             </div>
             <div class="col-xl-4 col-md-6">

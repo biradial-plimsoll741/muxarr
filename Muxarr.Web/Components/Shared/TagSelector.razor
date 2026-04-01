@@ -1,5 +1,5 @@
 @using Muxarr.Core.Language
-@typeparam TItem where TItem : class
+@typeparam TItem
 
 <div class="form-control tagselector-control">
     @foreach (var item in SelectedItems)
@@ -10,7 +10,7 @@
         </span>
     }
 
-    <AutoComplete SearchInput="@SearchInput" TItem="TItem" OnSearchInput="OnSearchInput" OnSelectItem="OnSelect">
+    <AutoComplete SearchInput="@SearchInput" TItem="TItem" OnSearchInput="OnSearchInput" OnSelectItem="OnSelect" ShowListOnFocus="ShowListOnFocus">
         <ListTemplate>@ListTemplate(context)</ListTemplate>
     </AutoComplete>
 
@@ -26,12 +26,14 @@
 
     [Parameter, EditorRequired] public required Func<string, Task<List<TItem>>> OnSearchInput { get; set; }
 
+    [Parameter] public bool ShowListOnFocus { get; set; }
+
     public required string SearchInput { get; set; }
 
     private void OnSelect(TItem item)
     {
         SearchInput = string.Empty;
-        if (!SelectedItems.Exists(x => x == item))
+        if (!SelectedItems.Contains(item))
         {
             SelectedItems.Add(item);
         }

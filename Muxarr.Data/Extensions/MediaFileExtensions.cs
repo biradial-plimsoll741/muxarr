@@ -79,7 +79,7 @@ public static class MediaFileExtensions
                 LanguageCode = x.Properties.Language ?? string.Empty,
                 LanguageName = IsoLanguage.Find(x.Properties.Language).Name,
                 AudioChannels = x.Properties.AudioChannels,
-                Codec = x.Codec.FormatCodec(),
+                Codec = CodecExtensions.ParseCodec(x.Codec),
                 TrackName = x.Properties.TrackName,
                 TrackNumber = x.Id
             };
@@ -172,7 +172,12 @@ public static class MediaFileExtensions
             if (s.ExcludeCodecs && s.ExcludedCodecs.Count > 0)
             {
                 filteredTracks = filteredTracks.Where(t =>
-                    !s.ExcludedCodecs.Contains(t.Codec, StringComparer.OrdinalIgnoreCase));
+                {
+                    var parsed = Enum.TryParse<SubtitleCodec>(t.Codec, out var e)
+                        ? e
+                        : SubtitleCodecExtensions.ParseSubtitleCodec(t.Codec);
+                    return parsed == SubtitleCodec.Unknown || !s.ExcludedCodecs.Contains(parsed);
+                });
             }
 
             allowedTracks.AddRange(filteredTracks);
@@ -394,7 +399,7 @@ public static class MediaFileExtensions
         var result = template
             .Replace("{language}", track.LanguageName, StringComparison.OrdinalIgnoreCase)
             .Replace("{nativelanguage}", nativeName, StringComparison.OrdinalIgnoreCase)
-            .Replace("{codec}", track.Codec, StringComparison.OrdinalIgnoreCase)
+            .Replace("{codec}", track.Codec.FormatCodec(), StringComparison.OrdinalIgnoreCase)
             .Replace("{channels}", track.GetChannelLayout() ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{trackname}", track.TrackName ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{hi}", track.IsHearingImpaired ? "SDH" : "", StringComparison.OrdinalIgnoreCase)

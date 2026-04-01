@@ -1,3 +1,4 @@
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Data.Entities;
@@ -19,9 +20,9 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "French", "AAC", 6),
-            Audio(3, "Dutch", "AAC", 2),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "French", nameof(AudioCodec.Aac), 6),
+            Audio(3, "Dutch", nameof(AudioCodec.Aac), 2),
             Sub(4, "English"),
             Sub(5, "French"),
             Sub(6, "Dutch"));
@@ -55,8 +56,8 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("Japanese",
             Video(0),
-            Audio(1, "Japanese", "AAC", 6),
-            Audio(2, "English", "AAC", 6),
+            Audio(1, "Japanese", nameof(AudioCodec.Aac), 6),
+            Audio(2, "English", nameof(AudioCodec.Aac), 6),
             Sub(3, "Japanese"),
             Sub(4, "English"));
 
@@ -88,8 +89,8 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("Japanese",
             Video(0),
-            Audio(1, "Japanese", "AAC", 6),
-            Audio(2, "English", "AAC", 6),
+            Audio(1, "Japanese", nameof(AudioCodec.Aac), 6),
+            Audio(2, "English", nameof(AudioCodec.Aac), 6),
             Sub(3, "Japanese"),
             Sub(4, "English"));
 
@@ -122,8 +123,8 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "TrueHD", 8),
-            Audio(2, "English", "AAC", 2, commentary: true),
+            Audio(1, "English", nameof(AudioCodec.TrueHd), 8),
+            Audio(2, "English", nameof(AudioCodec.Aac), 2, commentary: true),
             Sub(3, "English"),
             Sub(4, "English", commentary: true));
 
@@ -153,7 +154,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"),
             Sub(3, "English", hi: true),
             Sub(4, "English", forced: true));
@@ -208,7 +209,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0, trackName: "x264 Encoder Output"),
-            Audio(1, "English", "TrueHD", 8, trackName: "Surround 7.1"),
+            Audio(1, "English", nameof(AudioCodec.TrueHd), 8, trackName: "Surround 7.1"),
             Sub(2, "English", trackName: "Full Subtitles", hi: true));
 
         var profile = MakeProfile(
@@ -244,7 +245,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6, trackName: "Original Name"));
+            Audio(1, "English", nameof(AudioCodec.Aac), 6, trackName: "Original Name"));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -352,7 +353,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "Undetermined", "AAC", 6));
+            Audio(1, "Undetermined", nameof(AudioCodec.Aac), 6));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -378,16 +379,16 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "French", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "French", nameof(AudioCodec.Aac), 6),
             Sub(3, "English"));
 
         var customAllowed = new List<TrackSnapshot>
         {
             new() { Type = MediaTrackType.Video, TrackNumber = 0 },
-            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng", Codec = "AAC", AudioChannels = 6, IsDefault = true, TrackName = "Main Audio" },
-            new() { Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre", Codec = "AAC", AudioChannels = 6, IsDefault = false, TrackName = "French Dub" },
-            new() { Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng", Codec = "SRT", IsForced = true, TrackName = "Forced" }
+            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = true, TrackName = "Main Audio" },
+            new() { Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre", Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = false, TrackName = "French Dub" },
+            new() { Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng", Codec = nameof(SubtitleCodec.Srt), IsForced = true, TrackName = "Forced" }
         };
 
         var outputs = file.BuildTrackOutputs(null, customAllowed, file.Tracks.ToSnapshots(), isCustomConversion: true);
@@ -408,7 +409,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "French", "AAC", 6));
+            Audio(1, "French", nameof(AudioCodec.Aac), 6));
 
         file.Profile = MakeProfile(
             audio: new TrackSettings
@@ -422,7 +423,7 @@ public class ConversionPipelineTests
         var customAllowed = new List<TrackSnapshot>
         {
             new() { Type = MediaTrackType.Video, TrackNumber = 0 },
-            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "French", LanguageCode = "fre", Codec = "AAC", AudioChannels = 6, TrackName = "Keep This" }
+            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "French", LanguageCode = "fre", Codec = nameof(AudioCodec.Aac), AudioChannels = 6, TrackName = "Keep This" }
         };
 
         var outputs = file.BuildTrackOutputs(file.Profile, customAllowed, file.Tracks.ToSnapshots(), isCustomConversion: true);
@@ -439,8 +440,8 @@ public class ConversionPipelineTests
         // the output with tracks in the user's chosen sequence.
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "French", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "French", nameof(AudioCodec.Aac), 6),
             Sub(3, "English"),
             Sub(4, "French"));
 
@@ -448,10 +449,10 @@ public class ConversionPipelineTests
         var customAllowed = new List<TrackSnapshot>
         {
             new() { Type = MediaTrackType.Video, TrackNumber = 0 },
-            new() { Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre", Codec = "AAC", AudioChannels = 6 },
-            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng", Codec = "AAC", AudioChannels = 6 },
-            new() { Type = MediaTrackType.Subtitles, TrackNumber = 4, LanguageName = "French", LanguageCode = "fre", Codec = "SRT" },
-            new() { Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng", Codec = "SRT" },
+            new() { Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre", Codec = nameof(AudioCodec.Aac), AudioChannels = 6 },
+            new() { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 6 },
+            new() { Type = MediaTrackType.Subtitles, TrackNumber = 4, LanguageName = "French", LanguageCode = "fre", Codec = nameof(SubtitleCodec.Srt) },
+            new() { Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng", Codec = nameof(SubtitleCodec.Srt) },
         };
 
         var outputs = file.BuildTrackOutputs(null, customAllowed, file.Tracks.ToSnapshots(), isCustomConversion: true);
@@ -499,7 +500,7 @@ public class ConversionPipelineTests
         // and BuildTrackOutputs didn't set --forced-display-flag for non-custom conversions.
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English", forced: true, trackName: "English (Forced)"),
             Sub(3, "English"));
 
@@ -534,7 +535,7 @@ public class ConversionPipelineTests
         // so mkvmerge/mkvpropedit explicitly sets them on the output file.
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 2, commentary: true),
+            Audio(1, "English", nameof(AudioCodec.Aac), 2, commentary: true),
             Sub(2, "English", hi: true),
             Sub(3, "English", forced: true));
 
@@ -615,8 +616,8 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0, trackName: "h265 10bit HDR"),
-            Audio(1, "English", "TrueHD", 8),
-            Audio(2, "English", "AAC", 2, commentary: true),
+            Audio(1, "English", nameof(AudioCodec.TrueHd), 8),
+            Audio(2, "English", nameof(AudioCodec.Aac), 2, commentary: true),
             Audio(3, "Dutch", "E-AC-3", 6),
             Sub(4, "English"),
             Sub(5, "English", hi: true),
@@ -668,12 +669,12 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"),
             Sub(3, "English", trackName: "English PGS"));
 
         // Override the codec on track 3 since the Sub helper defaults to SRT
-        file.Tracks.First(t => t.TrackNumber == 3).Codec = "PGS";
+        file.Tracks.First(t => t.TrackNumber == 3).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -681,14 +682,14 @@ public class ConversionPipelineTests
                 Enabled = true,
                 AllowedLanguages = [IsoLanguage.Find("English")],
                 ExcludeCodecs = true,
-                ExcludedCodecs = ["PGS"]
+                ExcludedCodecs = [SubtitleCodec.Pgs]
             });
 
         var (allowed, outputs) = RunPipeline(file, profile);
 
         var subs = allowed.Where(t => t.Type == MediaTrackType.Subtitles).ToList();
         Assert.AreEqual(1, subs.Count, "PGS subtitle should be removed");
-        Assert.AreEqual("SRT", subs[0].Codec, "Only SRT subtitle should remain");
+        Assert.AreEqual(nameof(SubtitleCodec.Srt), subs[0].Codec, "Only SRT subtitle should remain");
     }
 
     [TestMethod]
@@ -696,10 +697,10 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"));
 
-        file.Tracks.First(t => t.TrackNumber == 2).Codec = "PGS";
+        file.Tracks.First(t => t.TrackNumber == 2).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -707,7 +708,7 @@ public class ConversionPipelineTests
                 Enabled = true,
                 AllowedLanguages = [IsoLanguage.Find("English")],
                 ExcludeCodecs = true,
-                ExcludedCodecs = ["PGS"]
+                ExcludedCodecs = [SubtitleCodec.Pgs]
             });
 
         var (allowed, _) = RunPipeline(file, profile);
@@ -721,10 +722,10 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"));
 
-        file.Tracks.First(t => t.TrackNumber == 2).Codec = "PGS";
+        file.Tracks.First(t => t.TrackNumber == 2).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -749,7 +750,7 @@ public class ConversionPipelineTests
         // Audio must NEVER be empty - fallback must kick in.
         var file = MakeFile("French",
             Video(0),
-            Audio(1, "French", "AAC", 6));
+            Audio(1, "French", nameof(AudioCodec.Aac), 6));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -771,7 +772,7 @@ public class ConversionPipelineTests
         // All English audio is commentary. RemoveCommentary is on, but safety prevents removing all.
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 2, commentary: true));
+            Audio(1, "English", nameof(AudioCodec.Aac), 2, commentary: true));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -792,7 +793,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6));
+            Audio(1, "English", nameof(AudioCodec.Aac), 6));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -838,8 +839,8 @@ public class ConversionPipelineTests
         // Sonarr/Radarr not synced - no original language known
         var file = MakeFile(null!,
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "French", "AAC", 6));
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "French", nameof(AudioCodec.Aac), 6));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -862,9 +863,9 @@ public class ConversionPipelineTests
         // Both audio and subtitle settings disabled - everything should pass through
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "French", "AAC", 6),
-            Audio(3, "German", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "French", nameof(AudioCodec.Aac), 6),
+            Audio(3, "German", nameof(AudioCodec.Aac), 6),
             Sub(4, "Spanish"));
 
         var profile = MakeProfile(
@@ -885,8 +886,8 @@ public class ConversionPipelineTests
         // Common: TrueHD + compatibility AAC, or DTS-HD + AC3 core
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "TrueHD", 8),
-            Audio(2, "English", "AAC", 2),
+            Audio(1, "English", nameof(AudioCodec.TrueHd), 8),
+            Audio(2, "English", nameof(AudioCodec.Aac), 2),
             Audio(3, "English", "E-AC-3", 6));
 
         var profile = MakeProfile(
@@ -908,8 +909,8 @@ public class ConversionPipelineTests
         // Poorly tagged files can have empty language codes
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "Unknown", "AAC", 6),
-            Audio(2, "English", "AAC", 6));
+            Audio(1, "Unknown", nameof(AudioCodec.Aac), 6),
+            Audio(2, "English", nameof(AudioCodec.Aac), 6));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -931,7 +932,7 @@ public class ConversionPipelineTests
         // Forced flag doesn't override language filter
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "French", forced: true),
             Sub(3, "English"));
 
@@ -955,7 +956,7 @@ public class ConversionPipelineTests
         // Unlike audio, having zero subtitles is perfectly valid
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "French"),
             Sub(3, "German"));
 
@@ -984,7 +985,7 @@ public class ConversionPipelineTests
     {
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6, trackName: "Director's \"Special\" Cut (5.1\\Surround)"));
+            Audio(1, "English", nameof(AudioCodec.Aac), 6, trackName: "Director's \"Special\" Cut (5.1\\Surround)"));
 
         var profile = MakeProfile(
             audio: new TrackSettings
@@ -1008,8 +1009,8 @@ public class ConversionPipelineTests
         // Track that is BOTH commentary AND HI - should be caught by either filter
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", "AAC", 6),
-            Audio(2, "English", "AAC", 2, commentary: true),
+            Audio(1, "English", nameof(AudioCodec.Aac), 6),
+            Audio(2, "English", nameof(AudioCodec.Aac), 2, commentary: true),
             Sub(3, "English"),
             Sub(4, "English", hi: true, commentary: true));
 
@@ -1241,7 +1242,7 @@ public class ConversionPipelineTests
     private static MediaTrack Video(int trackNumber, string? trackName = null) => new()
     {
         Type = MediaTrackType.Video, TrackNumber = trackNumber, TrackName = trackName,
-        LanguageCode = "und", LanguageName = "Undetermined", Codec = "H.265 / HEVC"
+        LanguageCode = "und", LanguageName = "Undetermined", Codec = nameof(VideoCodec.Hevc)
     };
 
     private static MediaTrack Audio(int trackNumber, string language, string codec, int channels,
@@ -1264,7 +1265,7 @@ public class ConversionPipelineTests
         {
             Type = MediaTrackType.Subtitles, TrackNumber = trackNumber,
             LanguageCode = iso.ThreeLetterCode ?? "", LanguageName = iso.Name,
-            Codec = "SRT", IsForced = forced, IsHearingImpaired = hi, IsCommentary = commentary, TrackName = trackName
+            Codec = nameof(SubtitleCodec.Srt), IsForced = forced, IsHearingImpaired = hi, IsCommentary = commentary, TrackName = trackName
         };
     }
 }

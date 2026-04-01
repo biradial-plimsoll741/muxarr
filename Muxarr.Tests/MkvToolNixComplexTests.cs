@@ -1,3 +1,4 @@
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Data.Entities;
@@ -796,19 +797,19 @@ public class MkvToolNixComplexTests
             new()
             {
                 Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English",
-                LanguageCode = "eng", Codec = "AAC", AudioChannels = 2,
+                LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
                 IsDefault = true, IsCommentary = false, TrackName = "Main"
             },
             new()
             {
                 Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "English",
-                LanguageCode = "eng", Codec = "AAC", AudioChannels = 2,
+                LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
                 IsDefault = false, IsCommentary = true, TrackName = "Director Commentary"
             },
             new()
             {
                 Type = MediaTrackType.Subtitles, TrackNumber = 4, LanguageName = "English",
-                LanguageCode = "eng", Codec = "SRT",
+                LanguageCode = "eng", Codec = nameof(SubtitleCodec.Srt),
                 IsHearingImpaired = true, IsForced = false, TrackName = "English SDH"
             }
         };

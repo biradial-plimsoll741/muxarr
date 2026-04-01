@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
 using Muxarr.Data.Extensions;
 
@@ -59,7 +60,7 @@ namespace Muxarr.Data.Entities
         public string TrackNameTemplate { get; set; } = string.Empty;
         public Dictionary<TrackFlag, string> TrackNameOverrides { get; set; } = new();
         public bool ExcludeCodecs { get; set; }
-        public List<string> ExcludedCodecs { get; set; } = [];
+        public List<SubtitleCodec> ExcludedCodecs { get; set; } = [];
 
         /// <summary>
         /// Returns the first matching flag-specific override, or the default template.

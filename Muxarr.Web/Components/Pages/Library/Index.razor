@@ -87,6 +87,9 @@
                 <FilterDropdown Placeholder="Audio Codec" @bind-Value="AudioCodecFilter" Items="_filterOptions?.AudioCodecs ?? []" />
             </div>
             <div class="col-auto">
+                <FilterDropdown Placeholder="Subtitle Codec" @bind-Value="SubtitleCodecFilter" Items="_filterOptions?.SubtitleCodecs ?? []" />
+            </div>
+            <div class="col-auto">
                 <FilterDropdown Placeholder="Resolution" @bind-Value="ResolutionFilter" Items="_filterOptions?.Resolutions ?? []" />
             </div>
             <div class="col-auto">
@@ -197,6 +200,13 @@
         set { _audioCodecFilter = value; _ = UpdateList(); }
     }
 
+    [Filter] private string _subtitleCodecFilter = "";
+    private string SubtitleCodecFilter
+    {
+        get => _subtitleCodecFilter;
+        set { _subtitleCodecFilter = value; _ = UpdateList(); }
+    }
+
     [Filter] private string _resolutionFilter = "";
     private string ResolutionFilter
     {
@@ -246,15 +256,17 @@
 
     private bool HasAdvancedFilters =>
         !string.IsNullOrEmpty(_videoCodecFilter) || !string.IsNullOrEmpty(_audioCodecFilter) ||
-        !string.IsNullOrEmpty(_resolutionFilter) || !string.IsNullOrEmpty(_channelLayoutFilter) ||
-        !string.IsNullOrEmpty(_audioLanguageFilter) || !string.IsNullOrEmpty(_subtitleLanguageFilter) ||
-        !string.IsNullOrEmpty(_containerFilter) || !string.IsNullOrEmpty(_bitDepthFilter);
+        !string.IsNullOrEmpty(_subtitleCodecFilter) || !string.IsNullOrEmpty(_resolutionFilter) ||
+        !string.IsNullOrEmpty(_channelLayoutFilter) || !string.IsNullOrEmpty(_audioLanguageFilter) ||
+        !string.IsNullOrEmpty(_subtitleLanguageFilter) || !string.IsNullOrEmpty(_containerFilter) ||
+        !string.IsNullOrEmpty(_bitDepthFilter);
 
     private static readonly (string Key, string Field)[] QueryParamMap =
     [
         ("filter", nameof(_fileFilter)),
         ("videoCodec", nameof(_videoCodecFilter)),
         ("audioCodec", nameof(_audioCodecFilter)),
+        ("subtitleCodec", nameof(_subtitleCodecFilter)),
         ("resolution", nameof(_resolutionFilter)),
         ("channelLayout", nameof(_channelLayoutFilter)),
         ("audioLanguage", nameof(_audioLanguageFilter)),
@@ -285,19 +297,24 @@
             return false;
         }
 
-        var applied = false;
+        // Clear all filters first so cached values don't mix with the query params
         var type = GetType();
+        foreach (var (_, fieldName) in QueryParamMap)
+        {
+            type.GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(this, "");
+        }
+
         foreach (var (key, fieldName) in QueryParamMap)
         {
             if (query.TryGetValue(key, out var val) && !string.IsNullOrEmpty(val))
             {
                 type.GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                     ?.SetValue(this, (string)val!);
-                applied = true;
             }
         }
 
-        return applied;
+        return true;
     }
 
     protected override async Task UpdateListCore()
@@ -349,13 +366,19 @@
         if (!string.IsNullOrEmpty(_videoCodecFilter))
         {
             query = query.Where(f => f.Tracks.Any(t => t.Type == MediaTrackType.Video &&
-                EF.Functions.Collate(t.Codec, "NOCASE") == _videoCodecFilter));
+                t.Codec == _videoCodecFilter));
         }
 
         if (!string.IsNullOrEmpty(_audioCodecFilter))
         {
             query = query.Where(f => f.Tracks.Any(t => t.Type == MediaTrackType.Audio &&
-                EF.Functions.Collate(t.Codec, "NOCASE") == _audioCodecFilter));
+                t.Codec == _audioCodecFilter));
+        }
+
+        if (!string.IsNullOrEmpty(_subtitleCodecFilter))
+        {
+            query = query.Where(f => f.Tracks.Any(t => t.Type == MediaTrackType.Subtitles &&
+                t.Codec == _subtitleCodecFilter));
         }
 
         if (!string.IsNullOrEmpty(_audioLanguageFilter))

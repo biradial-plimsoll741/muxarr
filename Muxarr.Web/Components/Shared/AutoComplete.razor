@@ -7,6 +7,7 @@
     <input @bind="@SearchInput"
            @oninput="HandleInput"
            @onkeydown="HandleKeyDown"
+           @onfocus="HandleFocus"
            @onclick:preventDefault
            class="form-control"
            type="text" />
@@ -47,8 +48,19 @@
     [Parameter, EditorRequired] public required Func<string, Task<List<TItem>>> OnSearchInput { get; set; }
     
     [Parameter, EditorRequired] public required string SearchInput { get; set; }
-    
+
+    [Parameter] public bool ShowListOnFocus { get; set; }
+
     private int _selectedIndex = -1;
+
+    private async Task HandleFocus()
+    {
+        if (ShowListOnFocus && ItemList is null)
+        {
+            ItemList = await OnSearchInput.Invoke(SearchInput ?? string.Empty);
+            _selectedIndex = -1;
+        }
+    }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
@@ -83,6 +95,11 @@
         {
             ItemList = await OnSearchInput.Invoke(filter);
             _selectedIndex = -1; // Reset selection when input changes
+        }
+        else if (ShowListOnFocus)
+        {
+            ItemList = await OnSearchInput.Invoke(string.Empty);
+            _selectedIndex = -1;
         }
         else
         {
