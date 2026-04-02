@@ -50,25 +50,32 @@
     </div>
 
     <div class="mux-sidebar-footer">
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-link text-light p-0 mux-footer-btn" @onclick="() => Layout.ToggleTheme()"
-                    title="@(Layout.IsDarkMode ? "Light mode" : "Dark mode")">
-                <i class="bi @(Layout.IsDarkMode ? "bi-sun" : "bi-moon")"></i>
-            </button>
+        <ul class="nav flex-column w-100">
+            <li class="nav-item">
+                <button class="nav-link w-100" @onclick="() => Layout.ToggleTheme()">
+                    <i class="bi @(Layout.IsDarkMode ? "bi-moon-fill" : "bi-sun-fill") mux-theme-icon @(Layout.IsDarkMode ? "" : "light")"></i>
+                    <span>@(Layout.IsDarkMode ? "Dark" : "Light")</span>
+                </button>
+            </li>
             @if (_isAuthenticated)
             {
-                <form method="post" action="/api/auth/logout">
-                    <button type="submit" class="btn btn-link text-light p-0 mux-footer-btn" title="Sign out">
-                        <i class="bi bi-box-arrow-right"></i>
-                    </button>
-                </form>
+                <li class="nav-item">
+                    <form method="post" action="/api/auth/logout">
+                        <button type="submit" class="nav-link w-100">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>Sign Out</span>
+                        </button>
+                    </form>
+                </li>
             }
+        </ul>
+        <div class="d-flex align-items-center justify-content-between mux-footer-meta">
             <a href="https://github.com/KirovAir/muxarr" target="_blank" class="mux-version text-decoration-none">v@(AppInfo.Version)</a>
+            <button class="btn btn-link text-light p-0 mux-footer-btn d-none d-md-inline-flex" @onclick="ToggleDesktopCollapse"
+                    title="@(_isDesktopCollapsed ? "Expand" : "Collapse")">
+                <i class="bi @(_isDesktopCollapsed ? "bi-chevron-right" : "bi-chevron-left")"></i>
+            </button>
         </div>
-        <button class="btn btn-link text-light p-0 mux-footer-btn d-none d-md-inline-flex" @onclick="ToggleDesktopCollapse"
-                title="@(_isDesktopCollapsed ? "Expand" : "Collapse")">
-            <i class="bi @(_isDesktopCollapsed ? "bi-chevron-right" : "bi-chevron-left")"></i>
-        </button>
     </div>
 </nav>
 

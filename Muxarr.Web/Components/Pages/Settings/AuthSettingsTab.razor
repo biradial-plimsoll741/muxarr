@@ -144,6 +144,15 @@
 
     private async Task HandleDisable()
     {
+        var confirmed = await ModalService.ShowConfirm(
+            "This will remove login protection. Anyone with access to the URL will be able to use Muxarr, " +
+            "including modifying settings and processing files.",
+            "Disable authentication?");
+        if (!confirmed)
+        {
+            return;
+        }
+
         try
         {
             await using var context = await ContextFactory.CreateDbContextAsync();
@@ -152,7 +161,7 @@
 
             Model = new AuthFormModel();
             await LoadState();
-            ToastService.ShowSuccess("Authentication disabled. The application is now open access.");
+            ToastService.ShowSuccess("Authentication disabled.");
         }
         catch (Exception ex)
         {

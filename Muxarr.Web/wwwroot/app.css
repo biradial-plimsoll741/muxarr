@@ -77,17 +77,23 @@
 /* ---- Sidebar Footer ---- */
 
 .mux-sidebar-footer {
-    padding: 0.625rem 1rem;
+    padding: 0.5rem;
     border-top: 1px solid var(--mux-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     flex-shrink: 0;
+}
+
+.mux-footer-meta {
+    padding: 0.375rem 0.875rem 0;
+}
+
+.mux-sidebar.collapsed .mux-footer-meta {
+    justify-content: center;
+    padding: 0.375rem 0.875rem 0;
 }
 
 .mux-footer-btn {
     opacity: 0.5;
-    font-size: 0.9375rem;
+    font-size: 1.125rem;
     transition: opacity 0.15s ease;
 }
 
@@ -105,12 +111,21 @@
 }
 
 .mux-sidebar.collapsed .mux-sidebar-footer {
-    justify-content: center;
-    padding: 0.625rem;
+    padding: 0.5rem;
 }
 
-.mux-sidebar.collapsed .mux-sidebar-footer > .d-flex {
-    display: none !important;
+/* ---- Theme Icon ---- */
+
+.mux-theme-icon {
+    transition: transform 0.4s ease, color 0.3s ease;
+}
+
+.mux-theme-icon.light {
+    color: #f5c542 !important;
+}
+
+.mux-sidebar .nav-link:hover .mux-theme-icon {
+    transform: rotate(25deg);
 }
 
 /* ---- Nav Links ---- */
