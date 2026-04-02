@@ -11,6 +11,8 @@ Muxarr cleans up your media files by removing redundant audio and subtitle track
 
 Integrates with your existing media management services for original language detection and automatic processing via webhooks.
 
+> **Why remux instead of re-encode?** Re-encoding (like H.264 to H.265) is lossy, CPU-intensive, and takes hours per file. Remuxing just repackages the container - it strips unwanted tracks and fixes metadata without touching the video or audio data. A 4GB file takes about a minute, not hours.
+
 ### Quick Start
 
 ```yaml
