@@ -67,15 +67,19 @@
                 </small>
             </div>
 
-            <div class="d-flex flex-column gap-4 mb-4">
-                <ArrServiceCard Name="Sonarr" Config="_sonarrConfig"
-                                ConfigKey="@ArrConfig.SonarrKey"
-                                GetWebhookUrl="@GetWebhookUrl"
-                                AutoSave="@PersistConnections" />
-                <ArrServiceCard Name="Radarr" Config="_radarrConfig"
-                                ConfigKey="@ArrConfig.RadarrKey"
-                                GetWebhookUrl="@GetWebhookUrl"
-                                AutoSave="@PersistConnections" />
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <ArrServiceCard Name="Sonarr" Config="_sonarrConfig"
+                                    ConfigKey="@ArrConfig.SonarrKey"
+                                    GetWebhookUrl="@GetWebhookUrl"
+                                    AutoSave="@PersistConnections" />
+                </div>
+                <div class="col-md-6">
+                    <ArrServiceCard Name="Radarr" Config="_radarrConfig"
+                                    ConfigKey="@ArrConfig.RadarrKey"
+                                    GetWebhookUrl="@GetWebhookUrl"
+                                    AutoSave="@PersistConnections" />
+                </div>
             </div>
 
             <div class="d-flex justify-content-between">

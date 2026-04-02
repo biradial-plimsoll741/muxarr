@@ -27,6 +27,7 @@ public static class Configurator
     public static async Task Initialize(this AppDbContext context)
     {
         await context.Database.MigrateAsync();
+        await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
 
         // Auto-mark setup as complete for existing installs (has profiles or auth configured)
         var setupConfig = await context.Configs.GetAsync<SetupConfig>();
