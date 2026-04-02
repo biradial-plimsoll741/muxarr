@@ -7,24 +7,45 @@
 
 # Muxarr
 
-Muxarr cleans up your media files by removing redundant audio and subtitle tracks and standardizing track metadata. It uses **mkvmerge** to remux files, not re-encode them. Remuxing is essentially a copy operation, so it's very fast (even on low-end hardware like a NAS or Raspberry Pi) and there is zero quality loss. Video, audio quality, and all remaining streams stay completely intact.
+Muxarr cleans up your media files by removing redundant audio and subtitle tracks and standardizing track metadata. It uses **mkvmerge** to remux files - not re-encode them. Remuxing copies streams into a new container without decoding, so there is **zero quality loss** and it runs fast even on low-end hardware like a NAS or Raspberry Pi.
 
-Integrates with your existing services for original language detection and automatic processing via webhooks.
+Integrates with your existing media management services for original language detection and automatic processing via webhooks.
 
-> 🐉 Here be dragons. This project is still young, things may break.
+### Quick Start
+
+```yaml
+services:
+  muxarr:
+    image: ghcr.io/kirovair/muxarr:latest
+    container_name: muxarr
+    environment:
+      - TZ=Europe/Amsterdam
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - /path/to/data:/data
+      - /path/to/media:/media
+    ports:
+      - 8183:8183
+    restart: unless-stopped
+```
 
 ## Features
 
-- Strip redundant audio tracks (commentary, foreign dubs) and subtitles (SDH, foreign)
-- Clean up track names by removing encoder tags and codec dumps
-- Detect original language via external service integration
-- Per-directory profiles for language filtering and track handling
-- Webhook support to automatically process new imports
-- Pause, resume, and cancel running conversions
-- Fixes metadata in-place when no tracks need removing
-- Library overview with codec, resolution and language breakdowns
+- **Lossless track removal** - strip redundant audio tracks (commentary, foreign dubs) and subtitles (SDH, foreign). A typical 4GB file processes in about a minute depending on disk speed, saving up to 10% in file size.
+- **Original language detection** - integrates with your media manager so foreign films and shows always keep the correct audio track
+- **Automatic processing** - webhook support to process new imports as they arrive
+- **Per-directory profiles** - different language and track rules for different collections (e.g. anime vs western media)
+- **Smart metadata fixes** - cleans up encoder tags and codec dumps from track names. Uses mkvpropedit for metadata-only changes (instant, no remux needed)
+- **Safe by default** - validates the output file before replacing the original. If anything fails, the original is untouched.
+- **Library overview** - browse your library with codec, resolution, and language breakdowns
 
 ## Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
+  <em>Conversion detail: 4.48 GB to 4.02 GB (10.3% saved) by removing redundant audio and subtitle tracks</em>
+</p>
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/before.png" alt="Before" width="600"/><br/>
@@ -33,23 +54,29 @@ Integrates with your existing services for original language detection and autom
   <em>Before and after metadata cleanup</em>
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
-  <em>Conversion details with before/after track comparison</em>
-</p>
-
+<details>
+<summary>More screenshots</summary>
+<br/>
 <p align="center">
   <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/filedetails.png" alt="File Details" width="800"/><br/>
   <em>File details with track preview</em>
 </p>
 
-<table align="center">
-  <tr>
-    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/dashboard.png" alt="Dashboard" width="270"/><br/><em>Dashboard</em></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/settings.png" alt="Profile Settings" width="270"/><br/><em>Profile settings</em></td>
-    <td align="center"><img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/statistics.png" alt="Statistics" width="270"/><br/><em>Statistics</em></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/dashboard.png" alt="Dashboard" width="800"/><br/>
+  <em>Dashboard</em>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/settings.png" alt="Profile Settings" width="800"/><br/>
+  <em>Profile settings</em>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/statistics.png" alt="Statistics" width="800"/><br/>
+  <em>Statistics</em>
+</p>
+</details>
 
 ## Installation
 
@@ -111,10 +138,8 @@ docker run -d \
 
 1. Open `http://your-ip:8183`
 2. Create a profile with your media directories and language rules
-3. Optionally connect your existing services for original language detection
-4. Scan and queue files for conversion
-
-Make sure you properly setup a profile and convert your first files manually, remuxing can be quite fast on the right hardware. You don't want to clean too much. ;)
+3. Optionally connect your media manager for original language detection and webhook automation
+4. Scan your library, preview the changes, and queue files for processing
 
 ## Built With
 
