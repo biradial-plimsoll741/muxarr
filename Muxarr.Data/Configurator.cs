@@ -21,13 +21,14 @@ public static class Configurator
         var connectionString = configuration.GetConnectionString("DefaultConnection")
                                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-        options.UseSqlite(connectionString, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        options.UseSqlite(connectionString, o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+               .AddInterceptors(new SqlitePerformanceInterceptor());
     }
 
     public static async Task Initialize(this AppDbContext context)
     {
         await context.Database.MigrateAsync();
-        await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+        await context.Database.ExecuteSqlRawAsync(SqlitePerformanceInterceptor.InitializationPragma);
 
         // Auto-mark setup as complete for existing installs (has profiles or auth configured)
         var setupConfig = await context.Configs.GetAsync<SetupConfig>();
