@@ -82,7 +82,8 @@ public class MediaConversionConfiguration : AuditEntityConfiguration<MediaConver
             .IsRequired()
             .HasDefaultValue(false);
         
-        // Relationship configuration
+        builder.HasIndex(e => new { e.State, e.CreatedDate });
+
         builder.HasOne(m => m.MediaFile)
             .WithMany(f => f.Conversions)
             .HasForeignKey(m => m.MediaFileId)

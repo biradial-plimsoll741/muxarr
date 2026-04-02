@@ -32,6 +32,7 @@ public class StatsController(IDbContextFactory<AppDbContext> contextFactory) : C
         var stats = await context.Configs.GetAsync<LibraryStatsConfig>();
         var activeConversions = await context.MediaConversions.CountAsync(c => c.State == ConversionState.Processing);
         var queuedConversions = await context.MediaConversions.CountAsync(c => c.State == ConversionState.New);
+        var completedConversions = await context.MediaConversions.CountAsync(c => c.State == ConversionState.Completed);
         var failedConversions = await context.MediaConversions.CountAsync(c => c.State == ConversionState.Failed);
 
         var lastConversionAt = await context.MediaConversions
@@ -56,7 +57,7 @@ public class StatsController(IDbContextFactory<AppDbContext> contextFactory) : C
             // Conversions
             ActiveConversions = activeConversions,
             QueuedConversions = queuedConversions,
-            CompletedConversions = stats?.TotalConversions ?? 0,
+            CompletedConversions = completedConversions,
             FailedConversions = failedConversions,
             SpaceSavedBytes = stats?.SpaceSavedBytes ?? 0,
 

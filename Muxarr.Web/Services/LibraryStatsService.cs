@@ -66,6 +66,25 @@ public class LibraryStatsService(IDbContextFactory<AppDbContext> contextFactory,
         logger.LogInformation("Library statistics computed: {Files} files, {Tracks} tracks", stats.TotalFiles, stats.TotalTracks);
     }
 
+    /// <summary>
+    /// Lightweight update after a conversion completes. Bumps the conversion count and
+    /// space saved without recomputing the full stats (distributions, track counts, etc.).
+    /// </summary>
+    public async Task UpdateConversionStats(long spaceSaved)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var stats = context.Configs.Get<LibraryStatsConfig>();
+        if (stats == null)
+        {
+            return;
+        }
+
+        stats.TotalConversions++;
+        stats.SpaceSavedBytes += spaceSaved;
+        context.Configs.Set(stats);
+        await context.SaveChangesAsync();
+    }
+
     private static async Task<List<DistributionEntry>> GroupByCodec(AppDbContext context, MediaTrackType type)
     {
         var entries = await context.MediaTracks

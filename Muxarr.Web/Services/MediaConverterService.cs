@@ -122,7 +122,7 @@ public class MediaConverterService(
         _currentConversionCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         try
         {
-            await HandleConversion(conversion, context, _currentConversionCts.Token);
+            await HandleConversion(conversion, context, scope, _currentConversionCts.Token);
         }
         finally
         {
@@ -213,7 +213,7 @@ public class MediaConverterService(
         return true;
     }
 
-    private async Task HandleConversion(MediaConversion conversion, AppDbContext context, CancellationToken token)
+    private async Task HandleConversion(MediaConversion conversion, AppDbContext context, IServiceScope scope, CancellationToken token)
     {
         if (conversion.MediaFile == null)
         {
@@ -419,6 +419,16 @@ public class MediaConverterService(
             conversion.Progress = 100;
             conversion.Log("Done!", logger);
             await context.SaveChangesAsync(token);
+
+            try
+            {
+                var statsService = scope.ServiceProvider.GetRequiredService<LibraryStatsService>();
+                await statsService.UpdateConversionStats(conversion.SizeDifference);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to update conversion stats");
+            }
         }
         catch (OperationCanceledException)
         {
