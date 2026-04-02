@@ -7,11 +7,11 @@
 
 # Muxarr
 
-Muxarr cleans up your media files by removing redundant audio and subtitle tracks and standardizing track metadata. It uses **mkvmerge** to remux files - not re-encode them. Remuxing copies streams into a new container without decoding, so there is **zero quality loss** and it runs fast even on low-end hardware like a NAS or Raspberry Pi.
+*Ever had your player pick the wrong audio language, or show 20 subtitle options you'll never use? Most media files ship with far more tracks than you need.*
 
-Integrates with your *arr stack for original language detection and automatic processing via webhooks.
+Muxarr cleans them up by removing redundant audio and subtitle tracks and standardizing track metadata. It uses **mkvmerge** to remux - not re-encode - so there is zero quality loss. A 4GB file takes about a minute instead of hours, even on low-end hardware like a NAS or Raspberry Pi.
 
-> **Why remux instead of re-encode?** Re-encoding (like H.264 to H.265) is lossy, CPU-intensive, and takes hours per file. Remuxing just repackages the container - it strips unwanted tracks and fixes metadata without touching the video or audio data. A 4GB file takes about a minute instead of possibly hours.
+**Hooks into Sonarr & Radarr** for original language detection and automatic processing - new imports get cleaned up as they arrive.
 
 ### Quick Start
 
@@ -82,27 +82,6 @@ services:
 
 ## Installation
 
-### Docker Compose
-
-```yaml
-services:
-  muxarr:
-    image: ghcr.io/kirovair/muxarr:latest
-    container_name: muxarr
-    environment:
-      - TZ=Europe/Amsterdam
-      - PUID=1000
-      - PGID=1000
-    volumes:
-      - /path/to/data:/data
-      # Media paths should match those used by your existing services
-      # so Muxarr can find files by the same paths they report.
-      - /path/to/media:/media
-    ports:
-      - 8183:8183
-    restart: unless-stopped
-```
-
 ### Docker Run
 
 ```bash
@@ -127,7 +106,6 @@ docker run -d \
 | `TZ` | Timezone | `UTC` |
 | `PUID` | User ID for file permissions | `1000` |
 | `PGID` | Group ID for file permissions | `1000` |
-| `ConnectionStrings__DefaultConnection` | SQLite connection string | `Data Source=/data/muxarr.db` |
 
 ### Volumes
 
@@ -138,10 +116,15 @@ docker run -d \
 
 ### Setup
 
-1. Open `http://your-ip:8183`
-2. Create a profile with your media directories and language rules
-3. Optionally connect to your *arr stack for original language detection and webhook automation
-4. Scan your library, preview the changes, and queue files for processing
+1. Open `http://your-ip:8183` - the setup wizard will guide you through
+2. Set a username and password (optional)
+3. Connect Sonarr/Radarr for original language detection and webhook automation (optional)
+4. Create a profile with your media directories and language rules
+5. Scan your library, preview the changes, and queue files for processing
+
+### API
+
+Muxarr exposes a stats API at `/api/stats` (authenticated via `X-Api-Key` header). Works with [Homepage](https://gethomepage.dev/widgets/services/customapi/) and other dashboards. See Settings > API for examples.
 
 ## Built With
 
