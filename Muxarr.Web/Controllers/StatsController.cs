@@ -20,7 +20,9 @@ public class StatsController(IDbContextFactory<AppDbContext> contextFactory) : C
             return new();
         }
 
-        return entries.ToDictionary(e => e.Label, e => e.Count);
+        return entries
+            .GroupBy(e => e.Label)
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Count));
     }
 
     [HttpGet]
