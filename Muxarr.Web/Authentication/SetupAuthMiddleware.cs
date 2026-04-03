@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Config;
 using Muxarr.Data;
@@ -12,6 +13,14 @@ public class SetupAuthMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext httpContext)
     {
         var path = httpContext.Request.Path.Value ?? "";
+
+        // Redirect authenticated cookie users away from login page
+        if (path.StartsWith("/login", StringComparison.OrdinalIgnoreCase) &&
+            httpContext.User.Identity is { IsAuthenticated: true, AuthenticationType: CookieAuthenticationDefaults.AuthenticationScheme })
+        {
+            httpContext.Response.Redirect("/");
+            return;
+        }
 
         // Skip middleware for static files, framework paths, and API endpoints
         if (path.StartsWith("/login", StringComparison.OrdinalIgnoreCase) ||
