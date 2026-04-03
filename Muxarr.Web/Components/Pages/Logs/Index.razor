@@ -69,12 +69,24 @@
                             <span class="small">@entry.Message</span>
                             @if (!string.IsNullOrEmpty(entry.Exception))
                             {
-                                <button class="btn btn-link btn-sm p-0 ms-1" @onclick="() => ToggleException(entry.Id)">
-                                    <i class="bi bi-exclamation-triangle text-danger"></i>
-                                </button>
+                                <div class="mux-exception-banner mt-1" @onclick="() => ToggleException(entry.Id)">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <span>Exception details</span>
+                                    <i class="bi @(_expandedExceptions.Contains(entry.Id) ? "bi-chevron-up" : "bi-chevron-down") ms-auto"></i>
+                                </div>
                                 @if (_expandedExceptions.Contains(entry.Id))
                                 {
-                                    <pre class="mt-1 mb-0 small text-danger">@entry.Exception</pre>
+                                    <div class="mux-exception-body mt-1">
+                                        <div class="d-flex justify-content-end mb-1">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Copy exception to clipboard"
+                                                    @onclick="() => Browser.CopyToClipboard(entry.Exception!)">
+                                                <i class="bi bi-clipboard me-1"></i>Copy
+                                            </button>
+                                        </div>
+                                        <pre class="mux-exception-pre mb-0">@entry.Exception</pre>
+                                    </div>
                                 }
                             }
                         </td>
@@ -88,6 +100,7 @@
 </div>
 
 @code {
+    [Inject] public required BrowserService Browser { get; set; }
     [Inject] public required IDbContextFactory<AppDbContext> ContextFactory { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
     [Inject] public required IModalService ModalService { get; set; }

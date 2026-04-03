@@ -1,13 +1,17 @@
-<div class="position-relative">
-    <pre class="bg-dark text-light rounded p-3 mb-0" style="white-space: pre-wrap; word-break: break-all;"><code>@Value</code></pre>
-    <button type="button"
-            class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2"
-            title="Copy to clipboard"
-            onclick="navigator.clipboard.writeText(this.parentElement.querySelector('code').textContent)">
-        <i class="bi bi-clipboard"></i>
-    </button>
+<div class="card border-0">
+    <div class="card-header bg-dark d-flex justify-content-end py-1 px-3">
+        <button type="button"
+                class="btn btn-sm btn-link text-light p-0"
+                title="Copy to clipboard"
+                @onclick="() => Browser.CopyToClipboard(Value)">
+            <i class="bi bi-clipboard"></i>
+        </button>
+    </div>
+    <pre class="bg-dark text-light rounded-0 rounded-bottom p-3 mb-0" style="white-space: pre-wrap; word-break: break-all;"><code>@Value</code></pre>
 </div>
 
 @code {
+    [Inject] public required BrowserService Browser { get; set; }
+
     [Parameter, EditorRequired] public required string Value { get; set; }
 }

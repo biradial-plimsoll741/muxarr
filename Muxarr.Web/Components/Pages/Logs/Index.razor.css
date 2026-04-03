@@ -1,0 +1,39 @@
+/* ---- Exception banner ---- */
+
+.mux-exception-banner {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--bs-danger);
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    background: rgba(220, 53, 69, 0.08);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.mux-exception-banner:hover {
+    background: rgba(220, 53, 69, 0.15);
+    border-color: rgba(220, 53, 69, 0.5);
+}
+
+/* ---- Expanded exception body ---- */
+
+.mux-exception-body {
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.mux-exception-pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.75rem;
+    color: var(--bs-danger);
+    max-height: 300px;
+    overflow-y: auto;
+}
