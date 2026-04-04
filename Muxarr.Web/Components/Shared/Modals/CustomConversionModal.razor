@@ -234,30 +234,12 @@
             }
         }
 
-        // Apply mutations per track.
-        foreach (var track in _editableTracks)
-        {
-            if (track.Type == MediaTrackType.Video)
-            {
-                if (profile.ClearVideoTrackNames)
-                {
-                    track.TrackName = null;
-                }
-                continue;
-            }
-
-            var settings = track.Type == MediaTrackType.Audio
-                ? profile.AudioSettings
-                : profile.SubtitleSettings;
-
-            var totalTracksOfType = _editableTracks.Count(t => t.Type == track.Type);
-            track.ApplyTrackMutations(settings, totalTracksOfType, tempFile.OriginalLanguage);
-        }
-
-        // Reassign default flags for selected tracks to match what the profile preview shows.
+        // Apply mutations to selected tracks using the shared pipeline.
         var selectedTracks = _editableTracks.Where(t => _selectedTrackIds.Contains(t.TrackNumber)).ToList();
-        MediaFileExtensions.ReassignPreviewDefaultFlags(selectedTracks, profile.AudioSettings, MediaTrackType.Audio);
-        MediaFileExtensions.ReassignPreviewDefaultFlags(selectedTracks, profile.SubtitleSettings, MediaTrackType.Subtitles);
+        selectedTracks.ApplyProfileMutations(profile,
+            _editableTracks.Count(t => t.Type == MediaTrackType.Audio),
+            _editableTracks.Count(t => t.Type == MediaTrackType.Subtitles),
+            OriginalLanguage);
 
         _validationError = false;
     }

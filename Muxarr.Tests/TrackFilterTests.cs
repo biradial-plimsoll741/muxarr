@@ -2,6 +2,7 @@ using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;
+using static Muxarr.Tests.TestData;
 
 namespace Muxarr.Tests;
 
@@ -32,8 +33,8 @@ public class TrackFilterTests
         // "The Deepest Breath" scenario: French subs on an English movie, allowed = English/Dutch
         var tracks = new List<MediaTrack>
         {
-            Sub("fre", "French", 1, forced: true),
-            Sub("fre", "French", 2)
+            Sub(1, "French", forced: true),
+            Sub(2, "French")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "English");
@@ -46,9 +47,9 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("fre", "French", 1),
-            Sub("eng", "English", 2),
-            Sub("ger", "German", 3)
+            Sub(1, "French"),
+            Sub(2, "English"),
+            Sub(3, "German")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "English");
@@ -62,8 +63,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("jpn", "Japanese", 1),
-            Sub("eng", "English", 2)
+            Sub(1, "Japanese"),
+            Sub(2, "English")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "Japanese");
@@ -76,9 +77,9 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("spa", "Spanish", 1),
-            Sub("por", "Portuguese", 2),
-            Sub("ita", "Italian", 3)
+            Sub(1, "Spanish"),
+            Sub(2, "Portuguese"),
+            Sub(3, "Italian")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "English");
@@ -93,8 +94,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("fre", "French", 1),
-            Audio("ger", "German", 2)
+            Audio(1, "French"),
+            Audio(2, "German")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
@@ -107,7 +108,7 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("fre", "French", 1)
+            Audio(1, "French")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
@@ -122,8 +123,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("und", IsoLanguage.UnknownName, 1),
-            Audio("dut", "Dutch", 2)
+            Audio(1, IsoLanguage.UnknownName, languageCode: "und"),
+            Audio(2, "Dutch")
         };
         var settings = new TrackSettings
         {
@@ -143,8 +144,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("und", IsoLanguage.UnknownName, 1),
-            Sub("eng", "English", 2)
+            Sub(1, IsoLanguage.UnknownName, languageCode: "und"),
+            Sub(2, "English")
         };
         var settings = new TrackSettings
         {
@@ -163,7 +164,7 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("und", IsoLanguage.UnknownName, 1)
+            Audio(1, IsoLanguage.UnknownName, languageCode: "und")
         };
         var settings = new TrackSettings
         {
@@ -217,8 +218,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("fre", "French", 1, commentary: true),
-            Sub("fre", "French", 2, commentary: true)
+            Sub(1, "French", commentary: true),
+            Sub(2, "French", commentary: true)
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "English");
@@ -231,7 +232,7 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("eng", "English", 1, hi: true)
+            Sub(1, "English", hi: true)
         };
         var settings = new TrackSettings
         {
@@ -253,9 +254,9 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("fre", "French", 1),
-            Audio("ger", "German", 2),
-            Audio("jpn", "Japanese", 3)
+            Audio(1, "French"),
+            Audio(2, "German"),
+            Audio(3, "Japanese")
         };
         var settings = new TrackSettings
         {
@@ -275,10 +276,10 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("eng", "English", 1),
-            Sub("dut", "Dutch", 2),
-            Sub("fre", "French", 3),
-            Sub("ger", "German", 4)
+            Sub(1, "English"),
+            Sub(2, "Dutch"),
+            Sub(3, "French"),
+            Sub(4, "German")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchSubtitles, "English");
@@ -295,9 +296,9 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("eng", "English", 1),
-            Audio("eng", "English", 2, commentary: true),
-            Audio("eng", "English", 3, hi: true)
+            Audio(1, "English"),
+            Audio(2, "English", commentary: true),
+            Audio(3, "English", hi: true)
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
@@ -311,8 +312,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("eng", "English", 1, commentary: true),
-            Audio("eng", "English", 2, commentary: true)
+            Audio(1, "English", commentary: true),
+            Audio(2, "English", commentary: true)
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
@@ -325,8 +326,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("eng", "English", 1, hi: true),
-            Audio("eng", "English", 2, hi: true)
+            Audio(1, "English", hi: true),
+            Audio(2, "English", hi: true)
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
@@ -341,8 +342,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("jpn", "Japanese", 1),
-            Sub("eng", "English", 2)
+            Sub(1, "Japanese"),
+            Sub(2, "English")
         };
         var settings = new TrackSettings
         {
@@ -363,7 +364,7 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("jpn", "Japanese", 1)
+            Audio(1, "Japanese")
         };
         var settings = new TrackSettings
         {
@@ -383,15 +384,143 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Audio("fre", "French", 1, commentary: true),
-            Audio("fre", "French", 2, hi: true),
-            Audio("fre", "French", 3)
+            Audio(1, "French", commentary: true),
+            Audio(2, "French", hi: true),
+            Audio(3, "French")
         };
 
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
 
         Assert.AreEqual(1, result.Count);
         Assert.AreEqual(3, result[0].TrackNumber, "Fallback should prefer non-commentary, non-HI track");
+    }
+
+    // --- Undetermined language handling ---
+
+    [TestMethod]
+    public void Audio_UndeterminedRemapped_WhenSingleTrackAndSettingEnabled()
+    {
+        var tracks = new List<MediaTrack> { Audio(1, "Undetermined") };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = true
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "English");
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public void Audio_UndeterminedDropped_WhenSettingDisabled()
+    {
+        var tracks = new List<MediaTrack>
+        {
+            Audio(1, "Undetermined"),
+            Audio(2, "English")
+        };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = false
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "English");
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("English", result[0].LanguageName);
+    }
+
+    [TestMethod]
+    public void Audio_UndeterminedNotRemapped_WhenMultipleTracks()
+    {
+        var tracks = new List<MediaTrack>
+        {
+            Audio(1, "Undetermined"),
+            Audio(2, "English")
+        };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = true
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "English");
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual("English", result[0].LanguageName);
+    }
+
+    [TestMethod]
+    public void Audio_UndeterminedFallback_KeepsTrackWhenOnlyOne()
+    {
+        var tracks = new List<MediaTrack> { Audio(1, "Undetermined") };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = false
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "English");
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public void Subtitles_UndeterminedRemapped_WhenSettingEnabled()
+    {
+        var tracks = new List<MediaTrack>
+        {
+            Sub(1, "Undetermined", languageCode: "und")
+        };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = true
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "English");
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public void Audio_UndeterminedKeptViaKeepOriginalLanguage()
+    {
+        var tracks = new List<MediaTrack> { Audio(1, "Undetermined") };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English"), IsoLanguage.OriginalLanguage],
+            AssumeUndeterminedIsOriginal = true
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "Japanese");
+
+        Assert.AreEqual(1, result.Count);
+    }
+
+    [TestMethod]
+    public void Audio_UndeterminedNotKeptWithoutKeepOriginal_WhenNotInAllowed()
+    {
+        var tracks = new List<MediaTrack> { Audio(1, "Undetermined") };
+        var settings = new TrackSettings
+        {
+            Enabled = true,
+            AllowedLanguages = [IsoLanguage.Find("English")],
+            AssumeUndeterminedIsOriginal = true
+        };
+
+        var result = tracks.GetAllowedTracks(settings, "Japanese");
+
+        // Fallback still keeps the only track
+        Assert.AreEqual(1, result.Count);
     }
 
     // --- Empty allowed languages ---
@@ -401,8 +530,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("eng", "English", 1),
-            Sub("fre", "French", 2)
+            Sub(1, "English"),
+            Sub(2, "French")
         };
         var settings = new TrackSettings
         {
@@ -421,8 +550,8 @@ public class TrackFilterTests
     {
         var tracks = new List<MediaTrack>
         {
-            Sub("eng", "English", 1),
-            Sub("fre", "French", 2)
+            Sub(1, "English"),
+            Sub(2, "French")
         };
         var settings = new TrackSettings
         {
@@ -435,31 +564,4 @@ public class TrackFilterTests
         Assert.AreEqual(0, result.Count, "No allowed languages and no keep original should result in empty");
     }
 
-    // --- Helpers ---
-
-    private static MediaTrack Audio(string code, string name, int trackNumber,
-        bool commentary = false, bool hi = false) => new()
-    {
-        Type = MediaTrackType.Audio,
-        LanguageCode = code,
-        LanguageName = name,
-        TrackNumber = trackNumber,
-        IsCommentary = commentary,
-        IsHearingImpaired = hi,
-        Codec = nameof(AudioCodec.Aac),
-        AudioChannels = 2
-    };
-
-    private static MediaTrack Sub(string code, string name, int trackNumber,
-        bool forced = false, bool commentary = false, bool hi = false) => new()
-    {
-        Type = MediaTrackType.Subtitles,
-        LanguageCode = code,
-        LanguageName = name,
-        TrackNumber = trackNumber,
-        IsForced = forced,
-        IsCommentary = commentary,
-        IsHearingImpaired = hi,
-        Codec = nameof(SubtitleCodec.Srt)
-    };
 }

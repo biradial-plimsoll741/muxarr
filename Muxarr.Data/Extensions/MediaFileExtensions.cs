@@ -314,75 +314,41 @@ public static class MediaFileExtensions
             return false;
         }
 
-        var allowedTracks = file.GetAllowedTracks(profile);
+        // Compare the fully-mutated preview against the originals.
+        // This uses the same pipeline as actual conversion, so drift is impossible.
+        var previewTracks = file.GetPreviewTracks(profile);
+        var originals = file.Tracks.ToDictionary(t => t.TrackNumber);
 
-        foreach (var track in allowedTracks)
+        foreach (var preview in previewTracks)
         {
-            if (track.Type == MediaTrackType.Video)
-            {
-                if (profile.ClearVideoTrackNames && !string.IsNullOrEmpty(track.TrackName))
-                {
-                    return true;
-                }
-
-                continue;
-            }
-
-            var settings = track.Type == MediaTrackType.Audio
-                ? profile.AudioSettings
-                : profile.SubtitleSettings;
-
-            if (track.ShouldResolveUndetermined(settings, file.Tracks.Count(t => t.Type == track.Type), file.OriginalLanguage))
-            {
-                return true;
-            }
-
-            if (settings.StandardizeTrackNames)
-            {
-                // Create a snapshot with corrected flags to match what conversion actually produces.
-                // Without this, flag-specific template overrides (e.g. SDH) would not be selected
-                // when the flag is only detectable from the track name.
-                var snapshot = track.ToSnapshot();
-                snapshot.CorrectFlagsFromTrackName();
-                var template = settings.ResolveTemplate(snapshot);
-                var expected = snapshot.ApplyTrackNameTemplate(template);
-                if (!string.Equals(track.TrackName, expected, StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
-
-        }
-
-        // Check if language priority would change track order or default flags.
-        // allowedTracks is already reordered by GetAllowedTracks when priority is enabled.
-        if (profile.AudioSettings is { ApplyLanguagePriority: true })
-        {
-            var audioTracks = allowedTracks.Where(t => t.Type == MediaTrackType.Audio).ToList();
-            if (audioTracks.Count > 0 && !audioTracks[0].IsDefault)
-            {
-                return true;
-            }
-            if (IsReordered(audioTracks))
+            if (originals.TryGetValue(preview.TrackNumber, out var original) && HasMetadataChanges(original, preview))
             {
                 return true;
             }
         }
 
-        if (profile.SubtitleSettings is { ApplyLanguagePriority: true })
+        // Check if tracks were reordered per type (reordering requires remux, not just metadata edit).
+        if (IsReordered(previewTracks.Where(t => t.Type == MediaTrackType.Audio).ToList()))
         {
-            var subTracks = allowedTracks.Where(t => t.Type == MediaTrackType.Subtitles).ToList();
-            if (subTracks.Count > 0 && !subTracks[0].IsDefault)
-            {
-                return true;
-            }
-            if (IsReordered(subTracks))
-            {
-                return true;
-            }
+            return true;
+        }
+
+        if (IsReordered(previewTracks.Where(t => t.Type == MediaTrackType.Subtitles).ToList()))
+        {
+            return true;
         }
 
         return false;
+    }
+
+    private static bool HasMetadataChanges(IMediaTrack original, IMediaTrack preview)
+    {
+        return !string.Equals(preview.TrackName ?? "", original.TrackName ?? "", StringComparison.Ordinal)
+               || !string.Equals(preview.LanguageName, original.LanguageName, StringComparison.Ordinal)
+               || preview.IsDefault != original.IsDefault
+               || preview.IsForced != original.IsForced
+               || preview.IsHearingImpaired != original.IsHearingImpaired
+               || preview.IsCommentary != original.IsCommentary;
     }
 
     /// <summary>
@@ -412,39 +378,44 @@ public static class MediaFileExtensions
             return file.Tracks.Select(t => t.ToSnapshot()).ToList();
         }
 
-        var allowedTracks = file.GetAllowedTracks(profile);
-        var previews = new List<TrackSnapshot>();
+        var previews = file.GetAllowedTracks(profile).ToSnapshots();
+        previews.ApplyProfileMutations(profile,
+            file.Tracks.Count(t => t.Type == MediaTrackType.Audio),
+            file.Tracks.Count(t => t.Type == MediaTrackType.Subtitles),
+            file.OriginalLanguage);
+        return previews;
+    }
 
-        foreach (var track in allowedTracks)
+    /// <summary>
+    /// Applies all profile-driven mutations to track snapshots: video name clearing,
+    /// flag correction, undetermined language resolution, name standardization, and default flag reassignment.
+    /// Shared by preview generation, conversion output building, and the custom conversion modal.
+    /// </summary>
+    public static void ApplyProfileMutations(this List<TrackSnapshot> snapshots, Profile profile,
+        int totalAudioTracks, int totalSubtitleTracks, string? originalLanguage, bool standardizeNames = true)
+    {
+        foreach (var snapshot in snapshots)
         {
-            var preview = track.ToSnapshot();
-
-            if (preview.Type == MediaTrackType.Video)
+            if (snapshot.Type == MediaTrackType.Video)
             {
                 if (profile.ClearVideoTrackNames)
                 {
-                    preview.TrackName = null;
+                    snapshot.TrackName = null;
                 }
 
-                previews.Add(preview);
                 continue;
             }
 
-            var settings = preview.Type == MediaTrackType.Audio
+            var settings = snapshot.Type == MediaTrackType.Audio
                 ? profile.AudioSettings
                 : profile.SubtitleSettings;
 
-            var totalTracksOfType = file.Tracks.Count(t => t.Type == preview.Type);
-            preview.ApplyTrackMutations(settings, totalTracksOfType, file.OriginalLanguage);
-
-            previews.Add(preview);
+            var totalTracksOfType = snapshot.Type == MediaTrackType.Audio ? totalAudioTracks : totalSubtitleTracks;
+            snapshot.ApplyTrackMutations(settings, totalTracksOfType, originalLanguage, standardizeNames);
         }
 
-        // Reassign default flags based on language priority for accurate preview.
-        ReassignPreviewDefaultFlags(previews, profile.AudioSettings, MediaTrackType.Audio);
-        ReassignPreviewDefaultFlags(previews, profile.SubtitleSettings, MediaTrackType.Subtitles);
-
-        return previews;
+        ReassignPreviewDefaultFlags(snapshots, profile.AudioSettings, MediaTrackType.Audio);
+        ReassignPreviewDefaultFlags(snapshots, profile.SubtitleSettings, MediaTrackType.Subtitles);
     }
 
     // Mutation methods — TrackSnapshot only (used at conversion time on snapshot copies)
@@ -580,17 +551,28 @@ public static class MediaFileExtensions
     public static List<TrackOutput> BuildTrackOutputs(this MediaFile file, Profile? profile,
         List<TrackSnapshot> allowedTracks, List<TrackSnapshot> tracksBefore, bool isCustomConversion)
     {
+        var totalAudio = tracksBefore.Count(t => t.Type == MediaTrackType.Audio);
+        var totalSubs = tracksBefore.Count(t => t.Type == MediaTrackType.Subtitles);
+
+        if (!isCustomConversion && profile != null)
+        {
+            allowedTracks.ApplyProfileMutations(profile, totalAudio, totalSubs, file.OriginalLanguage);
+        }
+        else
+        {
+            // Custom conversion: apply flag correction and language resolution only
+            // (no name standardization or default reassignment).
+            foreach (var track in allowedTracks.Where(t => t.Type != MediaTrackType.Video))
+            {
+                var settings = track.Type == MediaTrackType.Audio ? profile?.AudioSettings : profile?.SubtitleSettings;
+                var count = track.Type == MediaTrackType.Audio ? totalAudio : totalSubs;
+                track.ApplyTrackMutations(settings, count, file.OriginalLanguage, standardizeNames: false);
+            }
+        }
+
         var trackOutputs = new List<TrackOutput>();
         foreach (var track in allowedTracks)
         {
-            var trackSettings = track.Type == MediaTrackType.Audio ? profile?.AudioSettings
-                : track.Type == MediaTrackType.Subtitles ? profile?.SubtitleSettings
-                : null;
-
-            var totalTracksOfType = tracksBefore.Count(t => t.Type == track.Type);
-            track.ApplyTrackMutations(trackSettings, totalTracksOfType, file.OriginalLanguage,
-                standardizeNames: !isCustomConversion);
-
             var output = new TrackOutput
             {
                 TrackNumber = track.TrackNumber,
@@ -610,6 +592,7 @@ public static class MediaFileExtensions
             }
             else
             {
+                var trackSettings = track.Type == MediaTrackType.Audio ? profile?.AudioSettings : profile?.SubtitleSettings;
                 if (isCustomConversion || trackSettings is { StandardizeTrackNames: true })
                 {
                     output.Name = track.TrackName;
@@ -627,41 +610,13 @@ public static class MediaFileExtensions
             trackOutputs.Add(output);
         }
 
-        // Reassign default flags based on language priority.
-        // First track of each type becomes the new default. Skipped for custom conversions
-        // (user manually controls flags) and when priority is not enabled.
-        if (!isCustomConversion)
-        {
-            ReassignDefaultFlags(trackOutputs, profile?.AudioSettings, MkvMerge.AudioTrack);
-            ReassignDefaultFlags(trackOutputs, profile?.SubtitleSettings, MkvMerge.SubtitlesTrack);
-        }
-
         return trackOutputs;
     }
 
     /// <summary>
     /// Sets the first track of the given type as default when language priority is enabled.
-    /// Mirrors <see cref="ReassignPreviewDefaultFlags"/> for TrackSnapshot (preview).
     /// </summary>
-    private static void ReassignDefaultFlags(List<TrackOutput> outputs, TrackSettings? settings,
-        string trackType)
-    {
-        if (settings is not { ApplyLanguagePriority: true })
-        {
-            return;
-        }
-
-        var tracksOfType = outputs.Where(t => t.Type == trackType).ToList();
-        for (var i = 0; i < tracksOfType.Count; i++)
-        {
-            tracksOfType[i].IsDefault = i == 0;
-        }
-    }
-
-    /// <summary>
-    /// Preview variant of <see cref="ReassignDefaultFlags"/> for TrackSnapshot objects.
-    /// </summary>
-    public static void ReassignPreviewDefaultFlags(List<TrackSnapshot> previews, TrackSettings? settings,
+    private static void ReassignPreviewDefaultFlags(List<TrackSnapshot> previews, TrackSettings? settings,
         MediaTrackType trackType)
     {
         if (settings is not { ApplyLanguagePriority: true })

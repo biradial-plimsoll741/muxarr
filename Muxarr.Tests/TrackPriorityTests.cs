@@ -3,6 +3,7 @@ using Muxarr.Core.Language;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Data.Entities;
 using Muxarr.Data.Extensions;
+using static Muxarr.Tests.TestData;
 
 namespace Muxarr.Tests;
 
@@ -14,8 +15,8 @@ public class TrackPriorityTests
     [TestMethod]
     public void QualityScore_LosslessSpatial_HigherThanLossless()
     {
-        var truhdAtmos = Audio("TrueHd", 8, trackName: "TrueHD Atmos 7.1");
-        var truhd = Audio("TrueHd", 8);
+        var truhdAtmos = Audio(codec: "TrueHd", channels: 8, trackName: "TrueHD Atmos 7.1");
+        var truhd = Audio(codec: "TrueHd", channels: 8);
 
         Assert.IsTrue(
             TrackQualityScorer.ScoreTrack(truhdAtmos) > TrackQualityScorer.ScoreTrack(truhd));
@@ -24,8 +25,8 @@ public class TrackPriorityTests
     [TestMethod]
     public void QualityScore_Lossless_HigherThanLossy()
     {
-        var flac = Audio("Flac", 2);
-        var aac = Audio("Aac", 2);
+        var flac = Audio(codec: "Flac", channels: 2);
+        var aac = Audio(codec: "Aac", channels: 2);
 
         Assert.IsTrue(TrackQualityScorer.ScoreTrack(flac) > TrackQualityScorer.ScoreTrack(aac));
     }
@@ -33,8 +34,8 @@ public class TrackPriorityTests
     [TestMethod]
     public void QualityScore_MoreChannels_HigherWithinSameTier()
     {
-        var ac3_51 = Audio("Ac3", 6);
-        var ac3_20 = Audio("Ac3", 2);
+        var ac3_51 = Audio(codec: "Ac3", channels: 6);
+        var ac3_20 = Audio(codec: "Ac3", channels: 2);
 
         Assert.IsTrue(TrackQualityScorer.ScoreTrack(ac3_51) > TrackQualityScorer.ScoreTrack(ac3_20));
     }
@@ -42,8 +43,8 @@ public class TrackPriorityTests
     [TestMethod]
     public void QualityScore_SmallestSize_InvertsRanking()
     {
-        var truhd = Audio("TrueHd", 8);
-        var aac = Audio("Aac", 2);
+        var truhd = Audio(codec: "TrueHd", channels: 8);
+        var aac = Audio(codec: "Aac", channels: 2);
 
         Assert.IsTrue(
             TrackQualityScorer.ScoreTrack(aac, AudioQualityStrategy.SmallestSize) >
@@ -53,8 +54,8 @@ public class TrackPriorityTests
     [TestMethod]
     public void QualityScore_Subtitles_TextPreferredOverBitmap()
     {
-        var srt = Sub("Srt");
-        var pgs = Sub("Pgs");
+        var srt = Sub();
+        var pgs = Sub(codec: "Pgs");
 
         Assert.IsTrue(TrackQualityScorer.ScoreTrack(srt) > TrackQualityScorer.ScoreTrack(pgs));
     }
@@ -75,9 +76,9 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("TrueHd", 8, "eng", "English", 2),
-            Audio("Ac3", 6, "eng", "English", 3),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "English", "TrueHd", 8),
+            Audio(3, "English", "Ac3", 6),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -104,8 +105,8 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("TrueHd", 8, "eng", "English", 1),
-            Audio("Aac", 2, "eng", "English", 2),
+            Audio(1, "English", "TrueHd", 8),
+            Audio(2, "English", "Aac", 2),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -128,9 +129,9 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("TrueHd", 8, "eng", "English", 2),
-            Audio("Ac3", 6, "eng", "English", 3),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "English", "TrueHd", 8),
+            Audio(3, "English", "Ac3", 6),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -152,9 +153,9 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("TrueHd", 8, "eng", "English", 2),
-            Audio("Ac3", 6, "eng", "English", 3),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "English", "TrueHd", 8),
+            Audio(3, "English", "Ac3", 6),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -177,11 +178,11 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("TrueHd", 8, "eng", "English", 1),
-            Audio("Aac", 2, "eng", "English", 2),
-            Audio("Flac", 2, "jpn", "Japanese", 3),
-            Audio("Aac", 2, "jpn", "Japanese", 4),
-            Audio("Ac3", 6, "jpn", "Japanese", 5),
+            Audio(1, "English", "TrueHd", 8),
+            Audio(2, "English", "Aac", 2),
+            Audio(3, "Japanese", "Flac", 2),
+            Audio(4, "Japanese", "Aac", 2),
+            Audio(5, "Japanese", "Ac3", 6),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -205,8 +206,8 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("Aac", 2, "jpn", "Japanese", 2),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "Japanese", "Aac", 2),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -228,9 +229,9 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("TrueHd", 8, "eng", "English", 1),
-            Audio("Aac", 2, "eng", "English", 2),
-            Audio("Ac3", 6, "eng", "English", 3),
+            Audio(1, "English", "TrueHd", 8),
+            Audio(2, "English", "Aac", 2),
+            Audio(3, "English", "Ac3", 6),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -254,8 +255,8 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("Aac", 2, "jpn", "Japanese", 2),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "Japanese", "Aac", 2),
         };
 
         var result = tracks.GetAllowedTracks(settings, null);
@@ -280,8 +281,8 @@ public class TrackPriorityTests
 
         var tracks = new List<MediaTrack>
         {
-            Audio("Aac", 2, "eng", "English", 1),
-            Audio("Aac", 2, "jpn", "Japanese", 2),
+            Audio(1, "English", "Aac", 2),
+            Audio(2, "Japanese", "Aac", 2),
         };
 
         // Japanese is the original language, should sort to position 0
@@ -308,11 +309,10 @@ public class TrackPriorityTests
             SubtitleSettings = new TrackSettings { Enabled = false }
         };
 
-        var file = CreateFile("English", new List<MediaTrack>
-        {
-            Audio("Aac", 2, "eng", "English", 1, isDefault: false),
-            Audio("Aac", 2, "spa", "Spanish", 2, isDefault: true), // Spanish was default
-        });
+        var file = MakeFile("English",
+            Audio(1, "English", "Aac", 2, isDefault: false),
+            Audio(2, "Spanish", "Aac", 2, isDefault: true) // Spanish was default
+        );
 
         var allowed = file.GetAllowedTracks(profile);
         var outputs = file.BuildTrackOutputs(profile, allowed.ToSnapshots(), file.Tracks.ToSnapshots(), false);
@@ -336,11 +336,10 @@ public class TrackPriorityTests
             SubtitleSettings = new TrackSettings { Enabled = false }
         };
 
-        var file = CreateFile("English", new List<MediaTrack>
-        {
-            Audio("Aac", 2, "eng", "English", 1, isDefault: false),
-            Audio("Aac", 2, "spa", "Spanish", 2, isDefault: true),
-        });
+        var file = MakeFile("English",
+            Audio(1, "English", "Aac", 2, isDefault: false),
+            Audio(2, "Spanish", "Aac", 2, isDefault: true)
+        );
 
         var allowed = file.GetAllowedTracks(profile);
         var outputs = file.BuildTrackOutputs(profile, allowed.ToSnapshots(), file.Tracks.ToSnapshots(), false);
@@ -364,11 +363,10 @@ public class TrackPriorityTests
             SubtitleSettings = new TrackSettings { Enabled = false }
         };
 
-        var file = CreateFile("English", new List<MediaTrack>
-        {
-            Audio("Aac", 2, "eng", "English", 1, isDefault: false),
-            Audio("Aac", 2, "spa", "Spanish", 2, isDefault: true),
-        });
+        var file = MakeFile("English",
+            Audio(1, "English", "Aac", 2, isDefault: false),
+            Audio(2, "Spanish", "Aac", 2, isDefault: true)
+        );
 
         var allowed = file.GetAllowedTracks(profile);
         var outputs = file.BuildTrackOutputs(profile, allowed.ToSnapshots(), file.Tracks.ToSnapshots(),
@@ -395,11 +393,10 @@ public class TrackPriorityTests
             SubtitleSettings = new TrackSettings { Enabled = false }
         };
 
-        var file = CreateFile("Japanese", new List<MediaTrack>
-        {
-            Audio("Aac", 2, "eng", "English", 1, isDefault: true),
-            Audio("Aac", 2, "jpn", "Japanese", 2, isDefault: false),
-        });
+        var file = MakeFile("Japanese",
+            Audio(1, "English", "Aac", 2, isDefault: true),
+            Audio(2, "Japanese", "Aac", 2, isDefault: false)
+        );
 
         var previews = file.GetPreviewTracks(profile);
         var audioPreviews = previews.Where(p => p.Type == MediaTrackType.Audio).ToList();
@@ -430,12 +427,11 @@ public class TrackPriorityTests
             SubtitleSettings = new TrackSettings { Enabled = false }
         };
 
-        var file = CreateFile("English", new List<MediaTrack>
-        {
-            Audio("Ac3", 6, "spa", "Spanish", 1, isDefault: true),
-            Audio("TrueHd", 8, "eng", "English", 2),
-            Audio("Aac", 2, "eng", "English", 3),
-        });
+        var file = MakeFile("English",
+            Audio(1, "Spanish", "Ac3", 6, isDefault: true),
+            Audio(2, "English", "TrueHd", 8),
+            Audio(3, "English", "Aac", 2)
+        );
 
         var allowed = file.GetAllowedTracks(profile);
 
@@ -452,45 +448,4 @@ public class TrackPriorityTests
         Assert.IsTrue(audioOutputs[1].IsDefault == false);   // Spanish = not default
     }
 
-    // --- Helpers ---
-
-    private static MediaTrack Audio(string codec, int channels, string langCode = "eng",
-        string langName = "English", int trackNumber = 0, bool isDefault = false,
-        string? trackName = null)
-    {
-        return new MediaTrack
-        {
-            Type = MediaTrackType.Audio,
-            Codec = codec,
-            AudioChannels = channels,
-            LanguageCode = langCode,
-            LanguageName = langName,
-            TrackNumber = trackNumber,
-            IsDefault = isDefault,
-            TrackName = trackName,
-        };
-    }
-
-    private static MediaTrack Sub(string codec, string langCode = "eng", string langName = "English",
-        int trackNumber = 0)
-    {
-        return new MediaTrack
-        {
-            Type = MediaTrackType.Subtitles,
-            Codec = codec,
-            LanguageCode = langCode,
-            LanguageName = langName,
-            TrackNumber = trackNumber,
-        };
-    }
-
-    private static MediaFile CreateFile(string? originalLanguage, List<MediaTrack> tracks)
-    {
-        return new MediaFile
-        {
-            OriginalLanguage = originalLanguage,
-            Tracks = tracks,
-            TrackCount = tracks.Count,
-        };
-    }
 }
