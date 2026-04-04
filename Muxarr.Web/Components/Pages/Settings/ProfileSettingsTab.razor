@@ -54,24 +54,18 @@ else
                 </td>
                 <td class="text-center text-nowrap">
                     <div class="d-flex gap-1">
-                        <ToolTip Tip="Edit">
-                            <a class="btn btn-sm btn-outline-primary"
-                               href="/settings/profile/@profile.Id">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </ToolTip>
-                        <ToolTip Tip="Clone">
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    @onclick="() => CloneProfile(profile)">
-                                <i class="bi bi-copy"></i>
-                            </button>
-                        </ToolTip>
-                        <ToolTip Tip="Delete">
-                            <button class="btn btn-sm btn-outline-danger"
-                                    @onclick="() => DeleteProfile(profile)">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </ToolTip>
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="/settings/profile/@profile.Id">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-secondary"
+                                @onclick="() => CloneProfile(profile)">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick="() => DeleteProfile(profile)">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -119,7 +113,7 @@ else
 
     private async Task DeleteProfile(Profile profile)
     {
-        if (!await Modal.ShowConfirm($"Delete profile '{profile.Name}'? All associated media files will also be removed."))
+        if (!await Modal.ShowConfirm($"Delete profile '{profile.Name}'? All scanned media files linked to this profile will be removed from Muxarr. Your actual media files on disk are never touched."))
         {
             return;
         }

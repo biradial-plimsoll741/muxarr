@@ -84,9 +84,15 @@ public static class MediaFileExtensions
                 TrackNumber = x.Id
             };
 
-            if (track.Type != MediaTrackType.Video && track.LanguageName == IsoLanguage.Unknown.Name)
+            if (track.Type != MediaTrackType.Video
+                && (track.LanguageName == IsoLanguage.UnknownName || track.LanguageName == IsoLanguage.UndeterminedName))
             {
-                track.LanguageName = IsoLanguage.Find(x.Properties.TrackName, true).Name;
+                var parsed = IsoLanguage.Find(x.Properties.TrackName, true);
+                if (parsed != IsoLanguage.Unknown)
+                {
+                    track.LanguageName = parsed.Name;
+                    track.LanguageCode = parsed.ThreeLetterCode ?? track.LanguageCode;
+                }
             }
 
             file.Tracks.Add(track);
