@@ -342,7 +342,8 @@ public class MediaConverterService(
                 trackOutputs,
                 (line, progress) =>
                 {
-                    var newProgress = progress / 2;
+                    // mkvmerge is ~95% of total work; validation + file swap are near-instant.
+                    var newProgress = (int)(progress * 0.95);
                     if (!line.StartsWith("Progress"))
                     {
                         conversion.Log(line, logger);
@@ -401,7 +402,9 @@ public class MediaConverterService(
             await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
                 i =>
                 {
-                    conversion.Progress = 50 + i / 2;
+                    // File move is typically instant (atomic rename on same filesystem).
+                    // Only uses meaningful progress for cross-filesystem copies.
+                    conversion.Progress = 95 + (int)(i * 0.05);
                     ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
                 }, token);
 
@@ -447,12 +450,13 @@ public class MediaConverterService(
             {
                 if (File.Exists(tmp))
                 {
+                    conversion.Log($"Cleaning up temp file: {Path.GetFileName(tmp)}", logger);
                     File.Delete(tmp);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogDebug(ex, "Failed to clean up temp file {TempFile}", tmp);
+                conversion.LogError($"Failed to clean up temp file: {ex.Message}", logger);
             }
 
             ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
@@ -475,13 +479,12 @@ public class MediaConverterService(
             {
                 try
                 {
-                    logger.LogInformation("Cleaning {TempFilePath}..", stuckConversion.TempFilePath);
-                    // Delete any leftover files.
+                    stuckConversion.Log($"Cleaning up temp file: {Path.GetFileName(stuckConversion.TempFilePath)}", logger);
                     File.Delete(stuckConversion.TempFilePath);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogDebug(ex, "Failed to clean up temp file {TempFilePath}", stuckConversion.TempFilePath);
+                    stuckConversion.LogError($"Failed to clean up temp file: {ex.Message}", logger);
                 }
             }
             stuckConversion.LogError($"Conversion state for {stuckConversion.MediaFile?.GetName()} is in progress on startup. " +

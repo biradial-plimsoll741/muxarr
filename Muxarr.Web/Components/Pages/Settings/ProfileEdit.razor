@@ -183,23 +183,21 @@
 
             await context.SaveChangesAsync();
             ToastService.ShowSuccess($"Profile '{_profile.Name}' saved successfully.");
-
-            if (IsNew)
-            {
-                // Navigate to the edit URL so subsequent saves are updates, not creates.
-                NavigationManager.NavigateTo($"/settings/profile/{_profile.Id}", replace: true);
-            }
-
-            if (scan)
-            {
-                _ = MediaScanner.ScanAll(false);
-                ToastService.ShowInfo("Library scan started.");
-                NavigationManager.NavigateTo("/settings");
-            }
         }
         finally
         {
             _saving = false;
+        }
+
+        if (scan)
+        {
+            _ = MediaScanner.ScanAll(false);
+            ToastService.ShowInfo("Library scan started.");
+            NavigationManager.NavigateTo("/settings");
+        }
+        else if (IsNew)
+        {
+            NavigationManager.NavigateTo($"/settings/profile/{_profile.Id}", replace: true);
         }
     }
 }
