@@ -84,7 +84,8 @@ namespace Muxarr.Data.Entities
         public bool ApplyLanguagePriority { get; set; }
 
         /// <summary>
-        /// Controls how the default track flag is assigned when ApplyLanguagePriority is enabled.
+        /// Controls how the default track flag is assigned. Works independently of track removal.
+        /// ForceFirstLanguage additionally requires ApplyLanguagePriority for a meaningful priority order.
         /// </summary>
         public DefaultTrackStrategy DefaultStrategy { get; set; }
 

@@ -60,8 +60,8 @@
         @if (!IsAudio)
         {
             <div class="mb-3 form-check form-switch">
-                <InputCheckbox id="excludeCodecs" class="form-check-input" @bind-Value="Settings.ExcludeCodecs" />
-                <label class="form-check-label" for="excludeCodecs">Exclude Subtitle Codecs</label>
+                <InputCheckbox id="@($"excludeCodecs{TrackTypeLabel}")" class="form-check-input" @bind-Value="Settings.ExcludeCodecs" />
+                <label class="form-check-label" for="@($"excludeCodecs{TrackTypeLabel}")">Exclude Subtitle Codecs</label>
                 <small class="form-text text-muted d-block">Remove subtitle tracks that match specific codecs during conversion. Useful for dropping image-based formats like PGS or VobSub.</small>
             </div>
 
@@ -82,10 +82,10 @@
                 @onchange="e => Settings.DefaultStrategy = Enum.Parse<DefaultTrackStrategy>(e.Value?.ToString() ?? nameof(DefaultTrackStrategy.DontChange))">
             <option value="@nameof(DefaultTrackStrategy.DontChange)">Don't change (preserve original)</option>
             <option value="@nameof(DefaultTrackStrategy.SpecCompliant)">Let my player decide (recommended)</option>
-            @if (Settings is { Enabled: true, ApplyLanguagePriority: true })
-            {
-                <option value="@nameof(DefaultTrackStrategy.ForceFirstLanguage)">Always prefer first language</option>
-            }
+            <option value="@nameof(DefaultTrackStrategy.ForceFirstLanguage)"
+                    disabled="@(Settings is not { Enabled: true, ApplyLanguagePriority: true })">
+                Always prefer first language@(Settings is not { Enabled: true, ApplyLanguagePriority: true } ? " (requires Customize)" : "")
+            </option>
         </select>
         <small class="form-text text-muted d-block">
             @switch (Settings.DefaultStrategy)
