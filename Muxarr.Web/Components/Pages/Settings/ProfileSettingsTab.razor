@@ -11,49 +11,20 @@
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>Name</th>
-            <th>Directories</th>
-            <th>Video</th>
-            <th>Allowed Audio</th>
-            <th>Allowed Subtitles</th>
-            <th class="text-center text-nowrap" style="width: 140px">Actions</th>
-        </tr>
-        </thead>
-        <tbody>
+    <div class="d-flex flex-column gap-3">
         @foreach (var profile in Profiles)
         {
-            <tr>
-                <td>@profile.Name</td>
-                <td>
-                    <DirectoryDisplay Directories="profile.Directories"/>
-                </td>
-                <td>
-                    @if (profile.ClearVideoTrackNames)
-                    {
-                        <ToolTip Tip="Video track names will be cleared">
-                            <span class="badge text-bg-warning me-1">
-                                <i class="bi bi-x-lg me-1"></i>
-                                <i class="bi bi-fonts"></i>
-                            </span>
-                        </ToolTip>
-                    }
-                    else
-                    {
-                        <ToolTip Tip="Video tracks are unmodified">
-                            <span class="badge text-bg-success me-1">Unmodified</span>
-                        </ToolTip>
-                    }
-                </td>
-                <td>
-                    <TrackSettingsDisplay Settings="@profile.AudioSettings"/>
-                </td>
-                <td>
-                    <TrackSettingsDisplay Settings="@profile.SubtitleSettings"/>
-                </td>
-                <td class="text-center text-nowrap">
+            <div class="border rounded p-3">
+                <div class="d-flex align-items-start gap-3 mb-2 flex-wrap">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-sliders text-primary"></i>
+                            <h5 class="mb-0">@profile.Name</h5>
+                        </div>
+                        <div class="small">
+                            <DirectoryDisplay Directories="profile.Directories"/>
+                        </div>
+                    </div>
                     <div class="d-flex gap-1">
                         <a class="btn btn-sm btn-outline-primary"
                            href="/settings/profile/@profile.Id">
@@ -68,11 +39,46 @@ else
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
-                </td>
-            </tr>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <ToolTip Tip="Audio rules">
+                        <i class="bi bi-volume-up text-muted" style="width: 18px;"></i>
+                    </ToolTip>
+                    <TrackSettingsDisplay Settings="@profile.AudioSettings"/>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <ToolTip Tip="Subtitle rules">
+                        <i class="bi bi-badge-cc text-muted" style="width: 18px;"></i>
+                    </ToolTip>
+                    <TrackSettingsDisplay Settings="@profile.SubtitleSettings"/>
+                </div>
+
+                @if (profile.ClearVideoTrackNames || profile.SkipHardlinkedFiles)
+                {
+                    <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top">
+                        @if (profile.ClearVideoTrackNames)
+                        {
+                            <ToolTip Tip="Video track names will be cleared during conversion">
+                                <span class="badge text-bg-light border">
+                                    <i class="bi bi-film me-1"></i>Clear video names
+                                </span>
+                            </ToolTip>
+                        }
+                        @if (profile.SkipHardlinkedFiles)
+                        {
+                            <ToolTip Tip="Files with hard links are skipped during scanning and conversion">
+                                <span class="badge text-bg-light border">
+                                    <i class="bi bi-link-45deg me-1"></i>Skip hardlinked
+                                </span>
+                            </ToolTip>
+                        }
+                    </div>
+                }
+            </div>
         }
-        </tbody>
-    </table>
+    </div>
 }
 <StickyBar>
     <a class="btn btn-primary" href="/settings/profile/new">

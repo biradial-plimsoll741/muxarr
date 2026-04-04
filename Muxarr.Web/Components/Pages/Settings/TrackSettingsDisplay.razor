@@ -1,94 +1,135 @@
-@if (!Settings.Enabled)
+@if (IsUnmodified)
 {
-    <ToolTip Tip="Track settings are disabled - no modifications will be made">
+    <ToolTip Tip="No modifications will be made to tracks">
         <span class="badge text-bg-success me-1">Unmodified</span>
     </ToolTip>
 }
 else
 {
-    @foreach (var lang in Settings.AllowedLanguages)
+    @if (Settings.Enabled)
     {
-        @if (lang.IsOriginalLanguagePlaceholder)
+        @foreach (var lang in Settings.AllowedLanguages)
         {
-            <ToolTip Tip="Original language track will be preserved">
-                <span class="badge text-bg-success me-1"><i class="bi bi-film me-1"></i>Original</span>
+            @if (lang.IsOriginalLanguagePlaceholder)
+            {
+                <ToolTip Tip="Original language track will be preserved">
+                    <span class="badge text-bg-success me-1"><i class="bi bi-film me-1"></i>Original</span>
+                </ToolTip>
+            }
+            else
+            {
+                <ToolTip Tip="@($"Tracks in {lang.DisplayName} will be kept")">
+                    <span class="badge text-bg-success me-1">@lang.DisplayName</span>
+                </ToolTip>
+            }
+        }
+
+        if (Settings.AllowedLanguages.Count == 0)
+        {
+            <ToolTip Tip="WARNING: All tracks will be removed with this configuration!">
+                <span class="badge text-bg-danger me-1">None</span>
             </ToolTip>
         }
         else
         {
-            <ToolTip Tip="@($"Tracks in {lang.DisplayName} will be kept")">
-                <span class="badge text-bg-success me-1">@lang.DisplayName</span>
-            </ToolTip>
+            @if (!Settings.RemoveCommentary)
+            {
+                <ToolTip Tip="Commentary tracks will be kept. (When in a allowed language)">
+                    <span class="badge text-bg-success me-1">
+                        <i class="bi bi-check-lg me-1"></i>
+                        <i class="bi bi-chat-quote"></i>
+                    </span>
+                </ToolTip>
+            }
+            else
+            {
+                <ToolTip Tip="All Commentary tracks will be removed">
+                    <span class="badge text-bg-warning me-1">
+                        <i class="bi bi-x-lg me-1"></i>
+                        <i class="bi bi-chat-quote"></i>
+                    </span>
+                </ToolTip>
+            }
+
+            @if (!Settings.RemoveImpaired)
+            {
+                <ToolTip Tip="Hearing/Visual impaired tracks will be kept (When in an allowed language)">
+                    <span class="badge text-bg-success me-1">
+                        <i class="bi bi-check-lg me-1"></i>
+                        <i class="bi bi-ear"></i>
+                    </span>
+                </ToolTip>
+            }
+            else
+            {
+                <ToolTip Tip="All hearing/visual impaired tracks will be removed">
+                    <span class="badge text-bg-warning me-1">
+                        <i class="bi bi-x-lg me-1"></i>
+                        <i class="bi bi-ear"></i>
+                    </span>
+                </ToolTip>
+            }
+
+            @if (Settings.ExcludeCodecs && Settings.ExcludedCodecs.Count > 0)
+            {
+                <ToolTip Tip="@($"Excluding codecs: {string.Join(", ", Settings.ExcludedCodecs.Select(c => c.DisplayName()))}")">
+                    <span class="badge text-bg-warning me-1">
+                        <i class="bi bi-x-lg me-1"></i>@string.Join(", ", Settings.ExcludedCodecs.Select(c => c.DisplayName()))
+                    </span>
+                </ToolTip>
+            }
+
+            @if (Settings.StandardizeTrackNames)
+            {
+                <ToolTip Tip="@($"Track names will be standardized using: {Settings.TrackNameTemplate}")">
+                    <span class="badge text-bg-info me-1">
+                        <i class="bi bi-magic me-1"></i>Rename
+                    </span>
+                </ToolTip>
+            }
         }
     }
 
-    if (Settings.AllowedLanguages.Count == 0)
+    @if (Settings.DefaultStrategy == DefaultTrackStrategy.SpecCompliant)
     {
-        <ToolTip Tip="WARNING: All tracks will be removed with this configuration!">
-            <span class="badge text-bg-danger me-1">None</span>
+        <ToolTip Tip="Default track: commentary and accessibility tracks marked as non-default. Player picks from the rest.">
+            <span class="badge text-bg-info me-1">
+                <i class="bi bi-shield-check me-1"></i>Spec defaults
+            </span>
         </ToolTip>
     }
-    else
+    else if (Settings.DefaultStrategy == DefaultTrackStrategy.ForceFirstLanguage)
     {
-        @if (!Settings.RemoveCommentary)
-        {
-            <ToolTip Tip="Commentary tracks will be kept. (When in a allowed language)">
-                <span class="badge text-bg-success me-1">
-                    <i class="bi bi-check-lg me-1"></i>
-                    <i class="bi bi-chat-quote"></i>
-                </span>
-            </ToolTip>
-        }
-        else
-        {
-            <ToolTip Tip="All Commentary tracks will be removed">
-                <span class="badge text-bg-warning me-1">
-                    <i class="bi bi-x-lg me-1"></i>
-                    <i class="bi bi-chat-quote"></i>
-                </span>
-            </ToolTip>
-        }
+        <ToolTip Tip="Default track: the first language in the priority list is forced as default.">
+            <span class="badge text-bg-info me-1">
+                <i class="bi bi-pin-fill me-1"></i>Force default
+            </span>
+        </ToolTip>
+    }
 
-        @if (!Settings.RemoveImpaired)
-        {
-            <ToolTip Tip="Hearing/Visual impaired tracks will be kept (When in an allowed language)">
-                <span class="badge text-bg-success me-1">
-                    <i class="bi bi-check-lg me-1"></i>
-                    <i class="bi bi-ear"></i>
-                </span>
-            </ToolTip>
-        }
-        else
-        {
-            <ToolTip Tip="All hearing/visual impaired tracks will be removed">
-                <span class="badge text-bg-warning me-1">
-                    <i class="bi bi-x-lg me-1"></i>
-                    <i class="bi bi-ear"></i>
-                </span>
-            </ToolTip>
-        }
-
-        @if (Settings.ExcludeCodecs && Settings.ExcludedCodecs.Count > 0)
-        {
-            <ToolTip
-                Tip="@($"Excluding codecs: {string.Join(", ", Settings.ExcludedCodecs.Select(c => c.DisplayName()))}")">
-                <span class="badge text-bg-warning me-1">
-                    <i class="bi bi-x-lg me-1"></i>@string.Join(", ", Settings.ExcludedCodecs.Select(c => c.DisplayName()))
-                </span>
-            </ToolTip>
-        }
-
-        @if (Settings.StandardizeTrackNames)
-        {
-            <ToolTip Tip="@($"Track names will be standardized using: {Settings.TrackNameTemplate}")">
-                <span class="badge text-bg-info me-1">
-                    <i class="bi bi-magic me-1"></i>Rename
-                </span>
-            </ToolTip>
-        }
+    @if (Settings.ReorderStrategy == TrackReorderStrategy.Alphabetical)
+    {
+        <ToolTip Tip="Tracks will be physically reordered alphabetically by language. Requires remux.">
+            <span class="badge text-bg-info me-1">
+                <i class="bi bi-sort-alpha-down me-1"></i>A-Z order
+            </span>
+        </ToolTip>
+    }
+    else if (Settings.ReorderStrategy == TrackReorderStrategy.MatchLanguagePriority)
+    {
+        <ToolTip Tip="Tracks will be physically reordered to match the priority list. Requires remux.">
+            <span class="badge text-bg-info me-1">
+                <i class="bi bi-sort-down-alt me-1"></i>Priority order
+            </span>
+        </ToolTip>
     }
 }
 
 @code {
     [Parameter] [EditorRequired] public TrackSettings Settings { get; set; } = null!;
+
+    private bool IsUnmodified =>
+        !Settings.Enabled
+        && Settings.DefaultStrategy == DefaultTrackStrategy.DontChange
+        && Settings.ReorderStrategy == TrackReorderStrategy.DontReorder;
 }
