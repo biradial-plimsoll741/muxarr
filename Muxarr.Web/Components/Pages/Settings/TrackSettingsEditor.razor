@@ -1,12 +1,13 @@
 <div>
     @* --- Track Removal --- *@
     <div class="mb-3 form-check form-switch">
-        <InputCheckbox id="@($"strip{TrackTypeLabel}Tracks")" class="form-check-input" @bind-Value="Settings.Enabled" />
+        <InputCheckbox id="@($"strip{TrackTypeLabel}Tracks")" class="form-check-input" @bind-Value="Settings.Enabled" @bind-Value:after="OnEnabledToggled" />
         <label class="form-check-label" for="@($"strip{TrackTypeLabel}Tracks")">Remove unwanted @TrackTypeLabel.ToLower() tracks</label>
     </div>
 
     @if (Settings.Enabled)
     {
+        <div class="ms-3 ps-3 border-start mb-3">
         <div class="mb-3">
             <div class="d-flex align-items-center gap-2 mb-1">
                 <label class="form-label mb-0">Allowed @TrackType Languages</label>
@@ -29,14 +30,6 @@
                 }
             </small>
 
-            @if (Settings.ApplyLanguagePriority)
-            {
-                <div class="mt-2 form-check form-switch">
-                    <InputCheckbox id="@($"reorderTracks{TrackTypeLabel}")" class="form-check-input" @bind-Value="Settings.ReorderTracks" />
-                    <label class="form-check-label" for="@($"reorderTracks{TrackTypeLabel}")">Reorder tracks to match priority</label>
-                    <small class="form-text text-muted d-block">Physically reorders tracks in the file. Useful for Plex and players that ignore the default flag. Requires remux.</small>
-                </div>
-            }
         </div>
 
         <div class="mb-3 form-check form-switch">
@@ -54,7 +47,7 @@
         <div class="mb-3 form-check form-switch">
             <InputCheckbox id="@($"assumeUnd{TrackTypeLabel}")" class="form-check-input" @bind-Value="Settings.AssumeUndeterminedIsOriginal" />
             <label class="form-check-label" for="@($"assumeUnd{TrackTypeLabel}")">Assume undetermined language is original language</label>
-            <small class="form-text text-muted d-block">Some files have a single @(TrackTypeLabel.ToLower()) with no language set. When enabled, this treats it as the original language detected by Sonarr/Radarr instead of filtering it out. Alternatively, add "Undetermined" to the allowed languages above to always keep unlabeled tracks.</small>
+            <small class="form-text text-muted d-block">When a file has exactly one @(TrackTypeLabel.ToLower()) track with no language set, this treats it as the original language detected by Sonarr/Radarr. Does not apply when there are multiple tracks. Alternatively, add "Undetermined" to the allowed languages above to always keep unlabeled tracks.</small>
         </div>
 
         @if (!IsAudio)
@@ -72,6 +65,7 @@
                 </div>
             }
         }
+        </div>
     }
 
     @* --- Default Track --- *@
@@ -83,8 +77,8 @@
             <option value="@nameof(DefaultTrackStrategy.DontChange)">Don't change (preserve original)</option>
             <option value="@nameof(DefaultTrackStrategy.SpecCompliant)">Let my player decide (recommended)</option>
             <option value="@nameof(DefaultTrackStrategy.ForceFirstLanguage)"
-                    disabled="@(Settings is not { Enabled: true, ApplyLanguagePriority: true })">
-                Always prefer first language@(Settings is not { Enabled: true, ApplyLanguagePriority: true } ? " (requires Customize)" : "")
+                    disabled="@(!HasLanguagePriority)">
+                Always prefer first language@(!HasLanguagePriority ? " (set up allowed languages first)" : "")
             </option>
         </select>
         <small class="form-text text-muted d-block">
@@ -94,18 +88,39 @@
                     <text>Commentary and accessibility tracks are marked as non-default. Your player picks from the rest.</text>
                     break;
                 case DefaultTrackStrategy.ForceFirstLanguage:
-                    var firstLang = Settings.AllowedLanguages.FirstOrDefault()?.DisplayName;
-                    if (firstLang != null)
-                    {
-                        <text>Only <strong>@firstLang</strong> tracks are marked as default, based on your priority list. For players without language settings.</text>
-                    }
-                    else
-                    {
-                        <text>Only tracks matching the first language in your priority list are marked as default. For players without language settings.</text>
-                    }
+                    <text>Finds the best matching language based on your priority list and marks it as default. For players without language settings.</text>
                     break;
                 default:
                     <text>Original default flags from the source file are preserved.</text>
+                    break;
+            }
+        </small>
+    </div>
+
+    @* --- Track Order --- *@
+    <div class="mb-3">
+        <label class="form-label mb-1">Track order</label>
+        <select class="form-select form-select-sm" style="max-width: 320px;"
+                value="@Settings.ReorderStrategy"
+                @onchange="e => Settings.ReorderStrategy = Enum.Parse<TrackReorderStrategy>(e.Value?.ToString() ?? nameof(TrackReorderStrategy.DontReorder))">
+            <option value="@nameof(TrackReorderStrategy.DontReorder)">Don't reorder (preserve original)</option>
+            <option value="@nameof(TrackReorderStrategy.Alphabetical)">Alphabetical by language</option>
+            <option value="@nameof(TrackReorderStrategy.MatchLanguagePriority)"
+                    disabled="@(!HasLanguagePriority)">
+                Match language priority@(!HasLanguagePriority ? " (set up allowed languages first)" : "")
+            </option>
+        </select>
+        <small class="form-text text-muted d-block">
+            @switch (Settings.ReorderStrategy)
+            {
+                case TrackReorderStrategy.Alphabetical:
+                    <text>Tracks are sorted A-Z by language. Best quality first within each language. Requires remux.</text>
+                    break;
+                case TrackReorderStrategy.MatchLanguagePriority:
+                    <text>Tracks are sorted to match your priority list. Best quality first within each language. Requires remux.</text>
+                    break;
+                default:
+                    <text>Original track order from the source file is preserved.</text>
                     break;
             }
         </small>
@@ -195,6 +210,7 @@
 
     private string TrackTypeLabel => TrackType == MediaTrackType.Audio ? "Audio" : "Subtitle";
     private bool IsAudio => TrackType == MediaTrackType.Audio;
+    private bool HasLanguagePriority => Settings is { Enabled: true, ApplyLanguagePriority: true };
     private string DefaultTemplate => IsAudio ? "{language} {channels}" : "{language}";
 
     private string PreviewLanguage =>
@@ -260,6 +276,14 @@
         else
         {
             Settings.TrackNameOverrides[flag] = value;
+        }
+    }
+
+    private void OnEnabledToggled()
+    {
+        if (Settings.Enabled && Settings.AllowedLanguages.Count == 0 && IsAudio)
+        {
+            Settings.AllowedLanguages.Add(new LanguagePreference(IsoLanguage.OriginalLanguage));
         }
     }
 

@@ -201,7 +201,7 @@ public class TrackPriorityTests
         {
             Enabled = true,
             ApplyLanguagePriority = true,
-            ReorderTracks = true,
+            ReorderStrategy = TrackReorderStrategy.MatchLanguagePriority,
             AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")]
         };
 
@@ -273,7 +273,7 @@ public class TrackPriorityTests
         {
             Enabled = true,
             ApplyLanguagePriority = true,
-            ReorderTracks = true,
+            ReorderStrategy = TrackReorderStrategy.MatchLanguagePriority,
             AllowedLanguages =
             [
                 IsoLanguage.OriginalLanguage,     // position 0
@@ -447,7 +447,7 @@ public class TrackPriorityTests
             {
                 Enabled = true,
                 ApplyLanguagePriority = true,
-                ReorderTracks = true,
+                ReorderStrategy = TrackReorderStrategy.MatchLanguagePriority,
                 DefaultStrategy = DefaultTrackStrategy.ForceFirstLanguage,
                 AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")]
             },
@@ -479,7 +479,7 @@ public class TrackPriorityTests
             {
                 Enabled = true,
                 ApplyLanguagePriority = true,
-                ReorderTracks = true,
+                ReorderStrategy = TrackReorderStrategy.MatchLanguagePriority,
                 DefaultStrategy = DefaultTrackStrategy.ForceFirstLanguage,
                 AllowedLanguages =
                 [
@@ -509,6 +509,60 @@ public class TrackPriorityTests
 
         Assert.IsTrue(audioOutputs[0].IsDefault == true);   // English = default
         Assert.IsTrue(audioOutputs[1].IsDefault == false);   // Spanish = not default
+    }
+
+    // --- Independent features: reorder without removal, defaults without matching tracks ---
+
+    [TestMethod]
+    public void Reorder_Alphabetical_WorksWithoutEnabledFilter()
+    {
+        var settings = new TrackSettings
+        {
+            Enabled = false,
+            ReorderStrategy = TrackReorderStrategy.Alphabetical
+        };
+
+        var tracks = new List<MediaTrack>
+        {
+            Audio(1, "Japanese", "Aac", 2),
+            Audio(2, "English", "Aac", 2),
+            Audio(3, "Dutch", "Aac", 2),
+        };
+
+        var result = tracks.GetAllowedTracks(settings, null);
+
+        Assert.AreEqual(3, result.Count, "No tracks should be removed when Enabled=false");
+        Assert.AreEqual("Dutch", result[0].LanguageName);
+        Assert.AreEqual("English", result[1].LanguageName);
+        Assert.AreEqual("Japanese", result[2].LanguageName);
+    }
+
+    [TestMethod]
+    public void ForceFirstLanguage_NoMatchingTracks_PreservesOriginalDefaults()
+    {
+        var profile = new Profile
+        {
+            AudioSettings = new TrackSettings
+            {
+                Enabled = true,
+                ApplyLanguagePriority = true,
+                DefaultStrategy = DefaultTrackStrategy.ForceFirstLanguage,
+                AllowedLanguages = [IsoLanguage.Find("English")]
+            },
+            SubtitleSettings = new TrackSettings { Enabled = false }
+        };
+
+        // File only has French audio (kept via fallback), no English tracks at all
+        var file = MakeFile("French",
+            Audio(1, "French", "Aac", 6, isDefault: true)
+        );
+
+        var allowed = file.GetAllowedTracks(profile);
+        var outputs = file.BuildTrackOutputs(profile, allowed.ToSnapshots(), file.Tracks.ToSnapshots(), false);
+
+        var audioOutput = outputs.First(o => o.Type == MkvMerge.AudioTrack);
+        Assert.IsTrue(audioOutput.IsDefault == true,
+            "Original default flag should be preserved when no tracks match the priority list");
     }
 
 }

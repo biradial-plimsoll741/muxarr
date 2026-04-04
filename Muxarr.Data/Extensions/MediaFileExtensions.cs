@@ -126,109 +126,124 @@ public static class MediaFileExtensions
 
     public static List<T> GetAllowedTracks<T>(this List<T> tracks, TrackSettings s, string? originalLanguage) where T : IMediaTrack
     {
-        if (!s.Enabled || tracks.Count == 0)
+        if (tracks.Count == 0)
         {
             return tracks;
         }
 
-        // Don't remap undetermined tracks when the user explicitly allows "Undetermined" as a language.
-        // Their explicit allow should take precedence over the original-language assumption.
-        var undeterminedExplicitlyAllowed = s.AllowedLanguages.Any(x => x.Name == IsoLanguage.UndeterminedName);
-        var assumeUndetermined = !undeterminedExplicitlyAllowed
-                                  && tracks.Count == 1
-                                  && tracks[0].ShouldResolveUndetermined(s, 1, originalLanguage);
+        // --- Track filtering (only when removal is enabled) ---
+        var allowedTracks = tracks.ToList();
 
-        var tracksByLanguage = tracks.GroupBy(t =>
-            t.LanguageName == IsoLanguage.UnknownName ? (originalLanguage ?? IsoLanguage.UnknownName)
-            : (assumeUndetermined && t.LanguageName == IsoLanguage.UndeterminedName) ? originalLanguage!
-            : t.LanguageName);
-
-        var allowedTracks = new List<T>();
-
-        foreach (var languageGroup in tracksByLanguage)
+        if (s.Enabled)
         {
-            var language = languageGroup.Key;
-            var tracksInLanguage = languageGroup.ToList();
+            // Don't remap undetermined tracks when the user explicitly allows "Undetermined" as a language.
+            // Their explicit allow should take precedence over the original-language assumption.
+            var undeterminedExplicitlyAllowed = s.AllowedLanguages.Any(x => x.Name == IsoLanguage.UndeterminedName);
+            var assumeUndetermined = !undeterminedExplicitlyAllowed
+                                      && tracks.Count == 1
+                                      && tracks[0].ShouldResolveUndetermined(s, 1, originalLanguage);
 
-            var isAllowedLanguage = s.AllowedLanguages.Any(x => x.Name == language);
-            var isOriginalLanguage = language == originalLanguage;
-            var keepOriginal = isOriginalLanguage && s.AllowedLanguages.Any(x => x.IsOriginalLanguagePlaceholder);
-            var keepLanguage = isAllowedLanguage || keepOriginal;
+            var tracksByLanguage = tracks.GroupBy(t =>
+                t.LanguageName == IsoLanguage.UnknownName ? (originalLanguage ?? IsoLanguage.UnknownName)
+                : (assumeUndetermined && t.LanguageName == IsoLanguage.UndeterminedName) ? originalLanguage!
+                : t.LanguageName);
 
-            if (!keepLanguage)
+            allowedTracks = new List<T>();
+
+            foreach (var languageGroup in tracksByLanguage)
             {
-                continue;
-            }
+                var language = languageGroup.Key;
+                var tracksInLanguage = languageGroup.ToList();
 
-            var filteredTracks = tracksInLanguage.AsEnumerable();
+                var isAllowedLanguage = s.AllowedLanguages.Any(x => x.Name == language);
+                var isOriginalLanguage = language == originalLanguage;
+                var keepOriginal = isOriginalLanguage && s.AllowedLanguages.Any(x => x.IsOriginalLanguagePlaceholder);
+                var keepLanguage = isAllowedLanguage || keepOriginal;
 
-            if (s.RemoveCommentary)
-            {
-                var nonCommentaryTracks = tracksInLanguage.Where(t => !t.IsCommentary).ToList();
-                if (nonCommentaryTracks.Any())
+                if (!keepLanguage)
                 {
-                    filteredTracks = filteredTracks.Where(t => !t.IsCommentary);
+                    continue;
                 }
-            }
 
-            if (s.RemoveImpaired)
-            {
-                var nonHITracks = tracksInLanguage.Where(t => !t.IsHearingImpaired).ToList();
-                if (nonHITracks.Any())
+                var filteredTracks = tracksInLanguage.AsEnumerable();
+
+                if (s.RemoveCommentary)
                 {
-                    filteredTracks = filteredTracks.Where(t => !t.IsHearingImpaired);
+                    var nonCommentaryTracks = tracksInLanguage.Where(t => !t.IsCommentary).ToList();
+                    if (nonCommentaryTracks.Any())
+                    {
+                        filteredTracks = filteredTracks.Where(t => !t.IsCommentary);
+                    }
                 }
-            }
 
-            if (s.ExcludeCodecs && s.ExcludedCodecs.Count > 0)
-            {
-                filteredTracks = filteredTracks.Where(t =>
+                if (s.RemoveImpaired)
                 {
-                    var parsed = Enum.TryParse<SubtitleCodec>(t.Codec, out var e)
-                        ? e
-                        : SubtitleCodecExtensions.ParseSubtitleCodec(t.Codec);
-                    return parsed == SubtitleCodec.Unknown || !s.ExcludedCodecs.Contains(parsed);
-                });
+                    var nonHITracks = tracksInLanguage.Where(t => !t.IsHearingImpaired).ToList();
+                    if (nonHITracks.Any())
+                    {
+                        filteredTracks = filteredTracks.Where(t => !t.IsHearingImpaired);
+                    }
+                }
+
+                if (s.ExcludeCodecs && s.ExcludedCodecs.Count > 0)
+                {
+                    filteredTracks = filteredTracks.Where(t =>
+                    {
+                        var parsed = Enum.TryParse<SubtitleCodec>(t.Codec, out var e)
+                            ? e
+                            : SubtitleCodecExtensions.ParseSubtitleCodec(t.Codec);
+                        return parsed == SubtitleCodec.Unknown || !s.ExcludedCodecs.Contains(parsed);
+                    });
+                }
+
+                // Apply per-language track limits (MaxTracks).
+                // After language/flag/codec filtering, keep only the top N tracks by quality score.
+                var pref = FindMatchingPreference(language, originalLanguage, s);
+                if (pref?.MaxTracks is > 0)
+                {
+                    var strategy = pref.QualityStrategy ?? AudioQualityStrategy.BestQuality;
+                    filteredTracks = filteredTracks
+                        .OrderByDescending(t => TrackQualityScorer.ScoreTrack(t, strategy))
+                        .Take(pref.MaxTracks.Value);
+                }
+
+                allowedTracks.AddRange(filteredTracks);
             }
 
-            // Apply per-language track limits (MaxTracks).
-            // After language/flag/codec filtering, keep only the top N tracks by quality score.
-            var pref = FindMatchingPreference(language, originalLanguage, s);
-            if (pref?.MaxTracks is > 0)
+            // If all tracks would be removed, keep at least one for audio (silence is never correct).
+            // For subtitles, having none is fine — users can add "Undetermined" to their allowed
+            // languages if they want to keep unlabeled tracks.
+            if (allowedTracks.Count == 0 && tracks[0].Type != MediaTrackType.Subtitles)
             {
-                var strategy = pref.QualityStrategy ?? AudioQualityStrategy.BestQuality;
-                filteredTracks = filteredTracks
-                    .OrderByDescending(t => TrackQualityScorer.ScoreTrack(t, strategy))
-                    .Take(pref.MaxTracks.Value);
-            }
+                var bestTracks = tracks
+                    .OrderByDescending(t =>
+                        s.AllowedLanguages.Any(x => x.Name == t.LanguageName) ||
+                        t.LanguageName == originalLanguage)
+                    .ThenByDescending(t => !t.IsCommentary)
+                    .ThenByDescending(t => !t.IsHearingImpaired)
+                    .ThenByDescending(x => x.TrackNumber);
 
-            allowedTracks.AddRange(filteredTracks);
+                allowedTracks.Add(bestTracks.First());
+            }
         }
 
-        // If all tracks would be removed, keep at least one for audio (silence is never correct).
-        // For subtitles, having none is fine — users can add "Undetermined" to their allowed
-        // languages if they want to keep unlabeled tracks.
-        if (allowedTracks.Count == 0 && tracks[0].Type != MediaTrackType.Subtitles)
+        // --- Track reordering (independent of removal) ---
+        if (s.ReorderStrategy != TrackReorderStrategy.DontReorder && allowedTracks.Count > 1)
         {
-            var bestTracks = tracks
-                .OrderByDescending(t =>
-                    s.AllowedLanguages.Any(x => x.Name == t.LanguageName) ||
-                    t.LanguageName == originalLanguage)
-                .ThenByDescending(t => !t.IsCommentary)
-                .ThenByDescending(t => !t.IsHearingImpaired)
-                .ThenByDescending(x => x.TrackNumber);
-
-            allowedTracks.Add(bestTracks.First());
-        }
-
-        // Physically reorder tracks by language priority when opted in.
-        // Uses a stable sort so tracks within the same language keep their source order.
-        // Requires remux — only needed for players that use track order (e.g., Plex).
-        if (s is { ApplyLanguagePriority: true, ReorderTracks: true } && allowedTracks.Count > 1)
-        {
-            allowedTracks = allowedTracks
-                .OrderBy(t => GetLanguagePriority(t.LanguageName, s, originalLanguage))
-                .ToList();
+            if (s.ReorderStrategy == TrackReorderStrategy.MatchLanguagePriority && s.ApplyLanguagePriority)
+            {
+                allowedTracks = allowedTracks
+                    .OrderBy(t => GetLanguagePriority(t.LanguageName, s, originalLanguage))
+                    .ThenByDescending(t => TrackQualityScorer.ScoreTrack(t))
+                    .ToList();
+            }
+            else if (s.ReorderStrategy == TrackReorderStrategy.Alphabetical)
+            {
+                allowedTracks = allowedTracks
+                    .OrderBy(t => t.LanguageName, StringComparer.OrdinalIgnoreCase)
+                    .ThenByDescending(t => TrackQualityScorer.ScoreTrack(t))
+                    .ToList();
+            }
         }
 
         return allowedTracks;
@@ -426,8 +441,8 @@ public static class MediaFileExtensions
             snapshot.ApplyTrackMutations(settings, totalTracksOfType, originalLanguage, standardizeNames);
         }
 
-        ReassignPreviewDefaultFlags(snapshots, profile.AudioSettings, MediaTrackType.Audio);
-        ReassignPreviewDefaultFlags(snapshots, profile.SubtitleSettings, MediaTrackType.Subtitles);
+        ReassignPreviewDefaultFlags(snapshots, profile.AudioSettings, MediaTrackType.Audio, originalLanguage);
+        ReassignPreviewDefaultFlags(snapshots, profile.SubtitleSettings, MediaTrackType.Subtitles, originalLanguage);
     }
 
     // Mutation methods — TrackSnapshot only (used at conversion time on snapshot copies)
@@ -628,11 +643,11 @@ public static class MediaFileExtensions
     /// <summary>
     /// Assigns default track flags based on the configured strategy.
     /// DontChange: no-op, preserve original flags.
-    /// SpecCompliant: commentary/HI/VI = not default, everything else = default (spec-correct).
-    /// ForceFirstLanguage: only first track = default, rest = not default (needs priority list).
+    /// SpecCompliant: commentary/HI/VI = not default, everything else = default.
+    /// ForceFirstLanguage: only the first track matching the highest-priority language = default.
     /// </summary>
     private static void ReassignPreviewDefaultFlags(List<TrackSnapshot> previews, TrackSettings? settings,
-        MediaTrackType trackType)
+        MediaTrackType trackType, string? originalLanguage)
     {
         if (settings == null || settings.DefaultStrategy == DefaultTrackStrategy.DontChange)
         {
@@ -643,9 +658,26 @@ public static class MediaFileExtensions
 
         if (settings.DefaultStrategy == DefaultTrackStrategy.ForceFirstLanguage && settings.ApplyLanguagePriority)
         {
-            for (var i = 0; i < tracksOfType.Count; i++)
+            // Find the first track of the highest-priority language. Works regardless of track order.
+            // If no tracks match any priority language, preserve original flags (don't remove all defaults).
+            TrackSnapshot? bestTrack = null;
+            var bestPriority = int.MaxValue;
+            foreach (var track in tracksOfType)
             {
-                tracksOfType[i].IsDefault = i == 0;
+                var priority = GetLanguagePriority(track.LanguageName, settings, originalLanguage);
+                if (priority < bestPriority)
+                {
+                    bestPriority = priority;
+                    bestTrack = track;
+                }
+            }
+
+            if (bestTrack != null)
+            {
+                foreach (var track in tracksOfType)
+                {
+                    track.IsDefault = ReferenceEquals(track, bestTrack);
+                }
             }
         }
         else if (settings.DefaultStrategy == DefaultTrackStrategy.SpecCompliant)

@@ -7,6 +7,21 @@ using Muxarr.Data.Extensions;
 
 namespace Muxarr.Data.Entities
 {
+    public enum TrackReorderStrategy
+    {
+        /// <summary>Preserve original track order from the source file.</summary>
+        DontReorder,
+
+        /// <summary>Reorder tracks alphabetically by language name. Best quality first within each language.</summary>
+        Alphabetical,
+
+        /// <summary>
+        /// Reorder tracks to match the AllowedLanguages priority list. Best quality first within each language.
+        /// Requires ApplyLanguagePriority to be enabled.
+        /// </summary>
+        MatchLanguagePriority
+    }
+
     public enum DefaultTrackStrategy
     {
         /// <summary>
@@ -90,10 +105,9 @@ namespace Muxarr.Data.Entities
         public DefaultTrackStrategy DefaultStrategy { get; set; }
 
         /// <summary>
-        /// When enabled, tracks are physically reordered in the file to match the AllowedLanguages priority.
-        /// Requires a full remux. Useful for players like Plex that ignore the default flag and use track order.
+        /// Controls whether and how tracks are physically reordered in the output file.
         /// </summary>
-        public bool ReorderTracks { get; set; }
+        public TrackReorderStrategy ReorderStrategy { get; set; }
 
         public bool StandardizeTrackNames { get; set; }
         public string TrackNameTemplate { get; set; } = string.Empty;
