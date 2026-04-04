@@ -17,7 +17,7 @@ namespace Muxarr.Data.Entities
 
         /// <summary>
         /// Reorder tracks to match the AllowedLanguages priority list. Best quality first within each language.
-        /// Requires ApplyLanguagePriority to be enabled.
+        /// Requires AllowedLanguages to be configured.
         /// </summary>
         MatchLanguagePriority
     }
@@ -37,7 +37,7 @@ namespace Muxarr.Data.Entities
 
         /// <summary>
         /// Only the first priority language's tracks are marked as default.
-        /// Requires ApplyLanguagePriority to be enabled for a meaningful priority order.
+        /// Requires AllowedLanguages to be configured for a meaningful priority order.
         /// Use when the player doesn't have language preference settings.
         /// </summary>
         ForceFirstLanguage
@@ -93,14 +93,8 @@ namespace Muxarr.Data.Entities
         public bool AssumeUndeterminedIsOriginal { get; set; }
 
         /// <summary>
-        /// When enabled, the order of AllowedLanguages determines default flag behavior and enables
-        /// per-language settings (MaxTracks, quality preference).
-        /// </summary>
-        public bool ApplyLanguagePriority { get; set; }
-
-        /// <summary>
         /// Controls how the default track flag is assigned. Works independently of track removal.
-        /// ForceFirstLanguage additionally requires ApplyLanguagePriority for a meaningful priority order.
+        /// ForceFirstLanguage requires AllowedLanguages to be configured for a meaningful priority order.
         /// </summary>
         public DefaultTrackStrategy DefaultStrategy { get; set; }
 

@@ -9,27 +9,12 @@
     {
         <div class="ms-3 ps-3 border-start mb-3">
         <div class="mb-3">
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <label class="form-label mb-0">Allowed @TrackType Languages</label>
-                <div class="form-check form-switch mb-0 ms-auto">
-                    <InputCheckbox id="@($"applyPriority{TrackTypeLabel}")" class="form-check-input" @bind-Value="Settings.ApplyLanguagePriority" />
-                    <label class="form-check-label small text-muted" for="@($"applyPriority{TrackTypeLabel}")">Customize</label>
-                </div>
-            </div>
+            <label class="form-label mb-1">Allowed @TrackType Languages</label>
             <LanguagePriorityEditor Languages="Settings.AllowedLanguages"
-                                    ShowPriority="Settings.ApplyLanguagePriority"
                                     TrackType="TrackType" />
             <small class="form-text text-muted">
-                @if (Settings.ApplyLanguagePriority)
-                {
-                    <text>Drag to set priority. Use <i class="bi bi-gear"></i> for per-language settings.</text>
-                }
-                else
-                {
-                    <text>When there is more than 1 @TrackTypeLabel.ToLower() language in a video file, only allowed @TrackTypeLabel.ToLower() languages are kept.</text>
-                }
+                Drag to set priority. Click <i class="bi bi-gear"></i> for per-language settings like track limits. This order is used by the default track and track order options below.
             </small>
-
         </div>
 
         <div class="mb-3 form-check form-switch">
@@ -210,7 +195,7 @@
 
     private string TrackTypeLabel => TrackType == MediaTrackType.Audio ? "Audio" : "Subtitle";
     private bool IsAudio => TrackType == MediaTrackType.Audio;
-    private bool HasLanguagePriority => Settings is { Enabled: true, ApplyLanguagePriority: true };
+    private bool HasLanguagePriority => Settings.AllowedLanguages.Count > 0;
     private string DefaultTemplate => IsAudio ? "{language} {channels}" : "{language}";
 
     private string PreviewLanguage =>

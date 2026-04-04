@@ -1364,7 +1364,6 @@ public class ConversionPipelineTests
         var profile = MakeProfile(audio: new TrackSettings
         {
             Enabled = true,
-            ApplyLanguagePriority = true,
             DefaultStrategy = DefaultTrackStrategy.ForceFirstLanguage,
             AllowedLanguages = [IsoLanguage.Find("English"), IsoLanguage.Find("Japanese")]
         });
@@ -1472,16 +1471,14 @@ public class ConversionPipelineTests
             audio: new TrackSettings
             {
                 Enabled = true,
-                ApplyLanguagePriority = true,
-                AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")],
+                    AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")],
                 StandardizeTrackNames = true,
                 TrackNameTemplate = "{language} {channels}"
             },
             subtitle: new TrackSettings
             {
                 Enabled = true,
-                ApplyLanguagePriority = true,
-                AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")],
+                    AllowedLanguages = [IsoLanguage.Find("Japanese"), IsoLanguage.Find("English")],
                 StandardizeTrackNames = true,
                 TrackNameTemplate = "{language} {forced}"
             });

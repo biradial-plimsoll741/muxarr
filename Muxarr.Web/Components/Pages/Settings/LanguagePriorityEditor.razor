@@ -13,19 +13,16 @@
         var isDragOver = _dragOverIndex == index && _dragSourceIndex != index;
         var isOriginal = pref.IsOriginalLanguagePlaceholder;
 
-        <div class="lpe-item @(isFirst && ShowPriority ? "lpe-item-default" : "") @(isDragOver ? "lpe-item-dragover" : "") @(_dragSourceIndex == index ? "lpe-item-dragging" : "") @(isOriginal ? "lpe-item-original" : "")"
-             draggable="@(ShowPriority ? "true" : "false")"
+        <div class="lpe-item @(isDragOver ? "lpe-item-dragover" : "") @(_dragSourceIndex == index ? "lpe-item-dragging" : "") @(isOriginal ? "lpe-item-original" : "")"
+             draggable="true"
              @ondragstart="() => OnDragStart(index)"
              @ondragenter="() => OnDragEnter(index)"
              @ondragover:preventDefault
              @ondrop="() => OnDrop(index)"
              @ondragend="OnDragEnd">
 
-            @if (ShowPriority)
-            {
-                <i class="bi bi-grip-vertical lpe-drag-handle"></i>
-                <span class="lpe-priority-number">@(index + 1)</span>
-            }
+            <i class="bi bi-grip-vertical lpe-drag-handle"></i>
+            <span class="lpe-priority-number">@(index + 1)</span>
 
             @if (isOriginal)
             {
@@ -40,21 +37,13 @@
                 <span class="lpe-lang-code">@pref.ThreeLetterCode</span>
             }
 
-            @if (isFirst && ShowPriority)
-            {
-                <ToolTip Tip="Default track"><i class="bi bi-star-fill lpe-default-star"></i></ToolTip>
-            }
-
-            @if (ShowPriority)
-            {
-                <ToolTip Tip="Per-language settings">
-                    <button type="button"
-                            class="lpe-icon-btn @(pref.HasOverrides ? "lpe-gear-active" : "") @(isExpanded ? "lpe-gear-expanded" : "")"
-                            @onclick="() => ToggleExpanded(index)">
-                        <i class="bi @(pref.HasOverrides ? "bi-gear-fill" : "bi-gear")"></i>
-                    </button>
-                </ToolTip>
-            }
+            <ToolTip Tip="Per-language settings">
+                <button type="button"
+                        class="lpe-icon-btn @(pref.HasOverrides ? "lpe-gear-active" : "") @(isExpanded ? "lpe-gear-expanded" : "")"
+                        @onclick="() => ToggleExpanded(index)">
+                    <i class="bi @(pref.HasOverrides ? "bi-gear-fill" : "bi-gear")"></i>
+                </button>
+            </ToolTip>
 
             <ToolTip Tip="Remove language">
                 <button type="button" class="lpe-icon-btn lpe-remove-btn" @onclick="() => OnRemove(index)">
@@ -68,7 +57,9 @@
             <div class="lpe-advanced-panel">
                 <div class="row g-2">
                     <div class="@(IsAudio ? "col-6" : "col-12")">
-                        <label class="lpe-advanced-label">Max tracks</label>
+                        <ToolTip Tip="Limit the number of tracks kept for this language. Best quality is kept first.">
+                            <label class="lpe-advanced-label">Max tracks</label>
+                        </ToolTip>
                         <select class="form-select form-select-sm"
                                 value="@(pref.MaxTracks?.ToString() ?? "")"
                                 @onchange="e => SetMaxTracks(pref, e.Value?.ToString())">
@@ -98,7 +89,9 @@
                     @if (IsAudio)
                     {
                         <div class="col-6">
-                            <label class="lpe-advanced-label">Quality preference</label>
+                            <ToolTip Tip="When limiting tracks, prefer highest quality (lossless, more channels) or smallest file size (lossy, fewer channels).">
+                                <label class="lpe-advanced-label">Quality preference</label>
+                            </ToolTip>
                             <select class="form-select form-select-sm"
                                     value="@(pref.QualityStrategy?.ToString() ?? "")"
                                     @onchange="e => SetQualityStrategy(pref, e.Value?.ToString())">
@@ -141,7 +134,6 @@
 
 @code {
     [Parameter, EditorRequired] public required List<LanguagePreference> Languages { get; set; }
-    [Parameter] public bool ShowPriority { get; set; }
     [Parameter] public MediaTrackType TrackType { get; set; }
 
     private bool IsAudio => TrackType == MediaTrackType.Audio;

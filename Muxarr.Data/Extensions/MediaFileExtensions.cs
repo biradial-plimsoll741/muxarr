@@ -230,7 +230,7 @@ public static class MediaFileExtensions
         // --- Track reordering (independent of removal) ---
         if (s.ReorderStrategy != TrackReorderStrategy.DontReorder && allowedTracks.Count > 1)
         {
-            if (s.ReorderStrategy == TrackReorderStrategy.MatchLanguagePriority && s.ApplyLanguagePriority)
+            if (s.ReorderStrategy == TrackReorderStrategy.MatchLanguagePriority && s.AllowedLanguages.Count > 0)
             {
                 allowedTracks = allowedTracks
                     .OrderBy(t => GetLanguagePriority(t.LanguageName, s, originalLanguage))
@@ -656,7 +656,7 @@ public static class MediaFileExtensions
 
         var tracksOfType = previews.Where(t => t.Type == trackType).ToList();
 
-        if (settings.DefaultStrategy == DefaultTrackStrategy.ForceFirstLanguage && settings.ApplyLanguagePriority)
+        if (settings.DefaultStrategy == DefaultTrackStrategy.ForceFirstLanguage && settings.AllowedLanguages.Count > 0)
         {
             // Find the first track of the highest-priority language. Works regardless of track order.
             // If no tracks match any priority language, preserve original flags (don't remove all defaults).

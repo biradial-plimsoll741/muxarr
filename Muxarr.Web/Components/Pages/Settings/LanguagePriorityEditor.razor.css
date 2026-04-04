@@ -23,12 +23,6 @@
     border-color: var(--bs-border-color-translucent);
 }
 
-/* Default language highlight */
-.lpe-item-default {
-    border-color: rgba(var(--bs-primary-rgb), 0.3);
-    background: rgba(var(--bs-primary-rgb), 0.06);
-}
-
 /* Original language placeholder */
 .lpe-item-original {
     border-style: dashed;
@@ -79,12 +73,6 @@
 .lpe-lang-code {
     font-size: 0.75rem;
     color: var(--bs-secondary-color);
-}
-
-/* Default star */
-.lpe-default-star {
-    color: var(--bs-warning);
-    font-size: 0.6rem;
 }
 
 /* Icon buttons (gear + remove) */
