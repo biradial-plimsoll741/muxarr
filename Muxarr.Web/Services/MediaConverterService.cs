@@ -262,11 +262,18 @@ public class MediaConverterService(
         // No tracks to remove — check if any output actually differs from the original.
         var hasMetadataChanges = trackOutputs.Any(t =>
             t.DiffersFrom(conversion.TracksBefore.FirstOrDefault(b => b.TrackNumber == t.TrackNumber)));
+        var hasOrderChanges = !trackOutputs.Select(t => t.TrackNumber)
+            .SequenceEqual(conversion.TracksBefore.Select(t => t.TrackNumber));
         if (conversion.AllowedTracks.Count >= conversion.MediaFile.TrackCount)
         {
             var isMatroska = string.Equals(conversion.MediaFile.ContainerType, "Matroska", StringComparison.OrdinalIgnoreCase);
 
-            if (hasMetadataChanges && isMatroska)
+            if (hasOrderChanges)
+            {
+                // Track reordering requires a full remux — mkvpropedit can't change track order.
+                conversion.Log("Track order changed by language priority. Remuxing to apply new order..", logger);
+            }
+            else if (hasMetadataChanges && isMatroska)
             {
                 conversion.State = ConversionState.Processing;
                 conversion.Log("Tracks are optimal. Fixing metadata in-place with mkvpropedit..", logger);
@@ -306,7 +313,7 @@ public class MediaConverterService(
             else if (hasMetadataChanges)
             {
                 // Non-MKV files (e.g. .mp4) don't support mkvpropedit — fall through to full remux.
-                conversion.Log("Tracks are optimal but file is not MKV. Remuxing to apply metadata changes..", logger);
+                conversion.Log($"Metadata changes needed but container ({conversion.MediaFile.ContainerType}) does not support in-place editing. Full remux required.", logger);
             }
             else
             {
@@ -458,6 +465,9 @@ public class MediaConverterService(
             {
                 conversion.LogError($"Failed to clean up temp file: {ex.Message}", logger);
             }
+
+            try { await context.SaveChangesAsync(); }
+            catch { /* best effort - context may be disposed or in a bad state after cancellation */ }
 
             ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
         }

@@ -204,6 +204,7 @@
     [Inject] public required NavigationManager NavigationManager { get; set; }
     [Inject] public required MediaConverterService MediaConverter { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required IModalService ModalService { get; set; }
 
     [Filter]
     private string _stateFilter = "All";
@@ -273,14 +274,22 @@
         StateHasChanged();
     }
 
-    private void OnCancelCurrent()
+    private async Task OnCancelCurrent()
     {
+        if (!await ModalService.ShowConfirm("Are you sure you want to cancel the current conversion?", "Cancel Conversion"))
+        {
+            return;
+        }
         MediaConverter.CancelCurrentConversion();
         ToastService.ShowWarning("Cancelling current conversion.");
     }
 
     private async Task OnCancelQueued(MediaConversion conversion)
     {
+        if (!await ModalService.ShowConfirm($"Are you sure you want to cancel '{conversion.Name}'?", "Cancel Conversion"))
+        {
+            return;
+        }
         await MediaConverter.CancelQueuedConversion(conversion.Id);
         _activeConversions.Remove(conversion);
         await UpdateList();
@@ -289,6 +298,10 @@
 
     private async Task OnClearQueue()
     {
+        if (!await ModalService.ShowConfirm("Are you sure you want to clear the entire queue?", "Clear Queue"))
+        {
+            return;
+        }
         await MediaConverter.ClearQueue();
         await UpdateList();
         ToastService.ShowWarning("Queue cleared.");

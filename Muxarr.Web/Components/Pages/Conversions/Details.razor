@@ -32,11 +32,32 @@
         {
             <div class="col-md-12">
                 <div class="border rounded p-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="text-primary spinner-border me-2"></i>
-                        <h5 class="mb-0">Converting..</h5>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="text-primary spinner-border me-2"></i>
+                            <h5 class="mb-0">Converting..</h5>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="OnCancel">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </button>
                     </div>
                     <ConversionProgressBar Conversion="Conversion" />
+                </div>
+            </div>
+        }
+        else if (Conversion.State == ConversionState.New)
+        {
+            <div class="col-md-12">
+                <div class="border rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-hourglass text-warning me-2"></i>
+                            <h5 class="mb-0">Queued</h5>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="OnCancel">
+                            <i class="bi bi-x-circle me-1"></i>Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         }
@@ -151,6 +172,7 @@
     [Inject] public required NavigationManager NavigationManager { get; set; }
     [Inject] public required MediaConverterService MediaConverter { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required IModalService ModalService { get; set; }
 
     [Parameter] public int Id { get; set; }
 
@@ -166,6 +188,28 @@
             .AsNoTracking()
             .Include(x => x.MediaFile)
             .FirstOrDefaultAsync(f => f.Id == Id);
+    }
+
+    private async Task OnCancel()
+    {
+        if (!await ModalService.ShowConfirm(
+                "Are you sure you want to cancel this conversion?",
+                "Cancel Conversion"))
+        {
+            return;
+        }
+
+        if (Conversion!.State == ConversionState.Processing)
+        {
+            MediaConverter.CancelCurrentConversion();
+            ToastService.ShowWarning("Cancelling current conversion.");
+        }
+        else if (Conversion.State == ConversionState.New)
+        {
+            await MediaConverter.CancelQueuedConversion(Conversion.Id);
+            Conversion.State = ConversionState.Failed;
+            ToastService.ShowWarning($"Cancelled {Conversion.Name}.");
+        }
     }
 
     private void NavigateToFile()

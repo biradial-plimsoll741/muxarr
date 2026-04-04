@@ -349,11 +349,16 @@ public static class MediaFileExtensions
 
         }
 
-        // Check if language priority would change the default flag or track order.
-        if (profile.AudioSettings is { ApplyLanguagePriority: true } && allowedTracks.Count > 1)
+        // Check if language priority would change track order or default flags.
+        // allowedTracks is already reordered by GetAllowedTracks when priority is enabled.
+        if (profile.AudioSettings is { ApplyLanguagePriority: true })
         {
             var audioTracks = allowedTracks.Where(t => t.Type == MediaTrackType.Audio).ToList();
             if (audioTracks.Count > 0 && !audioTracks[0].IsDefault)
+            {
+                return true;
+            }
+            if (IsReordered(audioTracks))
             {
                 return true;
             }
@@ -366,8 +371,27 @@ public static class MediaFileExtensions
             {
                 return true;
             }
+            if (IsReordered(subTracks))
+            {
+                return true;
+            }
         }
 
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if tracks are not in ascending track number order (i.e., reordered by priority).
+    /// </summary>
+    private static bool IsReordered<T>(List<T> tracks) where T : IMediaTrack
+    {
+        for (var i = 1; i < tracks.Count; i++)
+        {
+            if (tracks[i].TrackNumber < tracks[i - 1].TrackNumber)
+            {
+                return true;
+            }
+        }
         return false;
     }
 
