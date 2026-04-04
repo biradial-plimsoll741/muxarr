@@ -115,9 +115,9 @@ public class WebhookService(
                 return;
             }
 
-            if (!mediaFile.HasRedundantTracks)
+            if (!mediaFile.HasRedundantTracks && !mediaFile.HasNonStandardMetadata)
             {
-                logger.LogInformation("Webhook: no redundant tracks in {Path}, skipping queue", item.FilePath);
+                logger.LogInformation("Webhook: no changes needed for {Path}, skipping queue", item.FilePath);
                 return;
             }
 
