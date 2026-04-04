@@ -201,19 +201,34 @@ public static class MediaFileExtensions
             allowedTracks.AddRange(filteredTracks);
         }
 
-        // If all tracks would be removed, keep at least one for audio (silence is never correct).
-        // For subtitles, having none is fine — don't force-keep an unwanted language.
-        if (allowedTracks.Count == 0 && tracks[0].Type != MediaTrackType.Subtitles)
+        // If all tracks would be removed, apply fallbacks:
+        // - Audio: always keep at least one (silence is never correct).
+        // - Subtitles: keep untagged tracks rather than silently losing them. A user who configured
+        //   allowed languages clearly wants subtitles — dropping an undetermined sub that might be
+        //   the right language is worse than keeping one that isn't.
+        if (allowedTracks.Count == 0)
         {
-            var bestTracks = tracks
-                .OrderByDescending(t =>
-                    s.AllowedLanguages.Any(x => x.Name == t.LanguageName) ||
-                    t.LanguageName == originalLanguage)
-                .ThenByDescending(t => !t.IsCommentary)
-                .ThenByDescending(t => !t.IsHearingImpaired)
-                .ThenByDescending(x => x.TrackNumber);
+            if (tracks[0].Type != MediaTrackType.Subtitles)
+            {
+                var bestTracks = tracks
+                    .OrderByDescending(t =>
+                        s.AllowedLanguages.Any(x => x.Name == t.LanguageName) ||
+                        t.LanguageName == originalLanguage)
+                    .ThenByDescending(t => !t.IsCommentary)
+                    .ThenByDescending(t => !t.IsHearingImpaired)
+                    .ThenByDescending(x => x.TrackNumber);
 
-            allowedTracks.Add(bestTracks.First());
+                allowedTracks.Add(bestTracks.First());
+            }
+            else
+            {
+                var untagged = tracks.Where(t =>
+                    t.LanguageName == IsoLanguage.UndeterminedName || t.LanguageName == IsoLanguage.UnknownName).ToList();
+                if (untagged.Count > 0)
+                {
+                    allowedTracks.AddRange(untagged);
+                }
+            }
         }
 
         // Reorder tracks by language priority when enabled.
