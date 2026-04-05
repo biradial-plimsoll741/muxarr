@@ -21,7 +21,7 @@ public class MediaScannerService(
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mkv", ".webm",
-        ".mp4", ".m4v", ".mov", ".3gp", ".3g2"
+        ".mp4", ".m4v"
     };
 
     private readonly ConcurrentQueue<ScanDirectory> _directoryQueue = new();
