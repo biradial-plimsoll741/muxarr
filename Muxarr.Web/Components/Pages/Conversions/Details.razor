@@ -20,7 +20,7 @@
             <i class="bi bi-arrow-left me-1"></i>Conversions
         </a>
     </nav>
-    <h2 class="border-bottom pb-3 mb-4">
+    <h2 class="border-bottom pb-3 mb-4 text-break">
         <i class="bi bi-arrow-repeat me-2"></i>@Conversion.Name
     </h2>
 
@@ -81,7 +81,7 @@
                             <div class="text-muted small mb-1">File</div>
                             @if (Conversion.MediaFile != null)
                             {
-                                <a href="" class="small"
+                                <a href="" class="small text-break d-inline-block"
                                    @onclick="@NavigateToFile">@(Path.GetFileName(Conversion.MediaFile?.Path))</a>
                             }
                             else

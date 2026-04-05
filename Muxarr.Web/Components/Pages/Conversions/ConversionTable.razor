@@ -1,59 +1,99 @@
-<table class="table table-striped">
-    <thead>
-    <tr>
-        <th>State</th>
-        <th>Progress</th>
-        <th>Size Reduction</th>
-        <th>Started</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    @if (Items?.Any() == true)
-    {
-        @foreach (var conversion in Items)
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>State</th>
+            <th>Progress</th>
+            <th>Size Reduction</th>
+            <th>Started</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (Items?.Any() == true)
+        {
+            @foreach (var conversion in Items)
+            {
+                <tr>
+                    <td>
+                        <ConversionStateBadge Conversion="conversion"/>
+                    </td>
+                    <td>
+                        <ConversionProgressBar Conversion="conversion"/>
+                    </td>
+                    <td>
+                        @if (conversion.State == ConversionState.Completed)
+                        {
+                            <span>@conversion.GetSizeChangePercentage()</span>
+                        }
+                    </td>
+                    <td>
+                        <TimeAgo DateTime="conversion.CreatedDate"/>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        @if (conversion.State is ConversionState.Processing or ConversionState.New)
+                        {
+                            <button class="btn btn-outline-danger btn-sm me-1" title="Cancel"
+                                    @onclick="() => OnCancel(conversion)">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        }
+                        <button class="btn btn-outline-primary btn-sm" title="View"
+                                @onclick="() => Navigate(conversion.Id)">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
         {
             <tr>
-                <td>
-                    <ConversionStateBadge Conversion="conversion"/>
-                </td>
-                <td>
-                    <ConversionProgressBar Conversion="conversion"/>
-                </td>
-                <td>
-                    @if (conversion.State == ConversionState.Completed)
-                    {
-                        <span>@conversion.GetSizeChangePercentage()</span>
-                    }
-                </td>
-                <td>
-                    <TimeAgo DateTime="conversion.CreatedDate"/>
-                </td>
-                <td>
-                    <button class="btn btn-outline-primary btn-sm" title="View"
-                            @onclick="() => Navigate(conversion.Id)">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </td>
+                <td colspan="5" class="text-center">No conversions available.</td>
             </tr>
         }
-    }
-    else
-    {
-        <tr>
-            <td colspan="7" class="text-center">No conversions available.</td>
-        </tr>
-    }
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>
 
 @code {
     [Parameter] [EditorRequired] public required ICollection<MediaConversion> Items { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
     [Inject] public required NavigationManager NavigationManager { get; set; }
+    [Inject] public required MediaConverterService MediaConverter { get; set; }
+    [Inject] public required IModalService ModalService { get; set; }
+    [Inject] public required IToastService ToastService { get; set; }
 
     private void Navigate(int id)
     {
         NavigationManager.NavigateTo($"/conversions/{id}");
+    }
+
+    private async Task OnCancel(MediaConversion conversion)
+    {
+        if (!await ModalService.ShowConfirm(
+                $"Are you sure you want to cancel '{conversion.Name}'?",
+                "Cancel Conversion"))
+        {
+            return;
+        }
+
+        if (conversion.State == ConversionState.Processing)
+        {
+            MediaConverter.CancelCurrentConversion();
+            ToastService.ShowWarning("Cancelling current conversion.");
+        }
+        else if (conversion.State == ConversionState.New)
+        {
+            await MediaConverter.CancelQueuedConversion(conversion.Id);
+            conversion.State = ConversionState.Failed;
+            ToastService.ShowWarning($"Cancelled {conversion.Name}.");
+        }
+
+        if (OnCancelled.HasDelegate)
+        {
+            await OnCancelled.InvokeAsync();
+        }
     }
 
 }

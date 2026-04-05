@@ -34,6 +34,7 @@ services:
 
 ## Features
 
+- **Supported containers** - Matroska (`.mkv`, `.webm`) and MP4-family (`.mp4`, `.m4v`, `.mov`, `.3gp`, `.3g2`)
 - **Lossless track removal** - strip redundant audio tracks (commentary, foreign dubs) and subtitles (SDH, foreign). A typical 4GB file processes in about a minute depending on disk speed, saving up to 10% in file size.
 - **Original language detection** - integrates with your *arr stack so foreign films and shows always keep the correct audio track
 - **Automatic processing** - webhook support to process new imports as they arrive
