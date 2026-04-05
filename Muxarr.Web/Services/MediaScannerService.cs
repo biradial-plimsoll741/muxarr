@@ -18,7 +18,7 @@ public class MediaScannerService(
 {
     // Everything scan-side goes through ffprobe. mkvmerge stays on the write
     // side (remux + mkvpropedit) where it's irreplaceable.
-    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mkv", ".webm",
         ".mp4", ".m4v"

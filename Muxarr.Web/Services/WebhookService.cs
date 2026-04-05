@@ -74,10 +74,10 @@ public class WebhookService(
                 return;
             }
 
-            var ext = Path.GetExtension(item.FilePath).ToLowerInvariant();
-            if (ext is not ".mkv" and not ".mp4")
+            var ext = Path.GetExtension(item.FilePath);
+            if (!MediaScannerService.SupportedExtensions.Contains(ext))
             {
-                logger.LogDebug("Webhook ignoring non-media file: {Path}", item.FilePath);
+                logger.LogDebug("Webhook ignoring non-supported-media file: {Path}", item.FilePath);
                 return;
             }
 
