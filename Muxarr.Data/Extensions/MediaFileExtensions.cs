@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Extensions;
+using Muxarr.Core.FFmpeg;
 using Muxarr.Core.Language;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Data.Entities;
@@ -104,6 +106,122 @@ public static class MediaFileExtensions
         file.Resolution = firstVideoTrack?.Properties.PixelDimensions;
         file.VideoBitDepth = firstVideoTrack?.Properties.ColorBitsPerChannel ?? 0;
         file.DurationMs = (mkvInfo.Container?.Properties?.Duration ?? 0) / 1_000_000;
+    }
+
+    /// <summary>
+    /// Populates a MediaFile from ffprobe output. Used for non-Matroska
+    /// containers where ffprobe is the source of truth (mkvmerge's MP4
+    /// demuxer hides the udta.name atom and a few other fields). Container
+    /// type is normalized to the same canonical strings mkvmerge emits so
+    /// downstream classification works the same way.
+    /// </summary>
+    public static void SetFileDataFromFFprobe(this MediaFile file, FFprobeResult? probe)
+    {
+        if (probe == null)
+        {
+            file.Tracks.Clear();
+            file.ContainerType = null;
+            return;
+        }
+
+        file.ContainerType = NormalizeFFprobeContainer(probe.Format?.FormatName);
+        file.Tracks.Clear();
+
+        foreach (var stream in probe.Streams)
+        {
+            var type = stream.CodecType.ToMediaTrackTypeFromFFprobe();
+            if (type == MediaTrackType.Unknown)
+            {
+                continue; // skip data/attachment/timecode streams
+            }
+
+            var tags = stream.Tags;
+            var disposition = stream.Disposition ?? new FFprobeDisposition();
+            var trackName = tags != null && tags.TryGetValue("name", out var n) ? n
+                : tags != null && tags.TryGetValue("title", out var t) ? t
+                : null;
+            var language = tags != null && tags.TryGetValue("language", out var l) ? l : "und";
+
+            var track = new MediaTrack
+            {
+                Type = type,
+                TrackNumber = stream.Index,
+                Codec = CodecExtensions.ParseCodec(stream.CodecName ?? string.Empty),
+                LanguageCode = language,
+                LanguageName = IsoLanguage.Find(language).Name,
+                TrackName = trackName,
+                AudioChannels = stream.Channels,
+                IsDefault = disposition.Default == 1,
+                IsForced = disposition.Forced == 1 || TrackNameFlags.ContainsForced(trackName),
+                IsHearingImpaired = disposition.HearingImpaired == 1 || TrackNameFlags.ContainsHearingImpaired(trackName),
+                IsVisualImpaired = disposition.VisualImpaired == 1 || TrackNameFlags.ContainsVisualImpaired(trackName),
+                IsCommentary = disposition.Comment == 1 || TrackNameFlags.ContainsCommentary(trackName),
+                IsOriginal = disposition.Original == 1
+            };
+
+            if (track.Type != MediaTrackType.Video
+                && (track.LanguageName == IsoLanguage.UnknownName || track.LanguageName == IsoLanguage.UndeterminedName))
+            {
+                var parsed = IsoLanguage.Find(trackName, true);
+                if (parsed != IsoLanguage.Unknown)
+                {
+                    track.LanguageName = parsed.Name;
+                    track.LanguageCode = parsed.ThreeLetterCode ?? track.LanguageCode;
+                }
+            }
+
+            file.Tracks.Add(track);
+        }
+
+        file.TrackCount = file.Tracks.Count;
+
+        var video = probe.Streams.FirstOrDefault(s => s.CodecType == "video");
+        if (video is { Width: > 0, Height: > 0 })
+        {
+            file.Resolution = $"{video.Width}x{video.Height}";
+        }
+        file.VideoBitDepth = int.TryParse(video?.BitsPerRawSample, out var depth) ? depth : 0;
+
+        if (double.TryParse(probe.Format?.Duration, NumberStyles.Any, CultureInfo.InvariantCulture, out var durationSec))
+        {
+            file.DurationMs = (long)(durationSec * 1000);
+        }
+    }
+
+    /// <summary>
+    /// Normalizes ffprobe's comma-separated format_name ("mov,mp4,m4a,3gp,3g2,mj2")
+    /// into the canonical container strings mkvmerge emits, so ContainerFamily
+    /// classification stays single-sourced.
+    /// </summary>
+    private static string? NormalizeFFprobeContainer(string? formatName)
+    {
+        if (string.IsNullOrEmpty(formatName))
+        {
+            return null;
+        }
+
+        var lower = formatName.ToLowerInvariant();
+        if (lower.Contains("matroska") || lower.Contains("webm"))
+        {
+            return "Matroska";
+        }
+        if (lower.Contains("mp4") || lower.Contains("mov") || lower.Contains("m4a") || lower.Contains("3gp"))
+        {
+            return "MP4/QuickTime";
+        }
+
+        return formatName;
+    }
+
+    private static MediaTrackType ToMediaTrackTypeFromFFprobe(this string? codecType)
+    {
+        return codecType switch
+        {
+            "video" => MediaTrackType.Video,
+            "audio" => MediaTrackType.Audio,
+            "subtitle" => MediaTrackType.Subtitles,
+            _ => MediaTrackType.Unknown
+        };
     }
 
     // Allowed tracks filtering

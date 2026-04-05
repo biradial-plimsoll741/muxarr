@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Muxarr.Core.Config;
+using Muxarr.Core.Extensions;
+using Muxarr.Core.FFmpeg;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Core.Utilities;
 using Muxarr.Data;
@@ -46,6 +48,7 @@ public class MediaConverterService(
                 logger.LogInformation("Cancelling current conversion");
                 _currentConversionCts.Cancel();
                 MkvMerge.KillExistingProcesses();
+                FFmpeg.KillExistingProcesses();
             }
         }
         catch (ObjectDisposedException)
@@ -262,200 +265,84 @@ public class MediaConverterService(
         var trackOutputs = conversion.MediaFile.BuildTrackOutputs(
             profile, conversion.AllowedTracks, conversion.TracksBefore, conversion.IsCustomConversion);
 
-        // No tracks to remove — check if any output actually differs from the original.
+        // No tracks to remove - check if any output actually differs from the original.
         var hasMetadataChanges = trackOutputs.Any(t =>
             t.DiffersFrom(conversion.TracksBefore.FirstOrDefault(b => b.TrackNumber == t.TrackNumber)));
         var hasOrderChanges = !trackOutputs.Select(t => t.TrackNumber)
             .SequenceEqual(conversion.TracksBefore.Select(t => t.TrackNumber));
-        if (conversion.AllowedTracks.Count >= conversion.MediaFile.TrackCount)
+        var canSkipRemux = conversion.AllowedTracks.Count >= conversion.MediaFile.TrackCount && !hasOrderChanges;
+        var family = conversion.MediaFile.ContainerType.ToContainerFamily();
+
+        // Short-circuit cases that don't need the temp file pipeline: nothing
+        // to change, or a Matroska file that mkvpropedit can patch in place.
+        if (canSkipRemux && !hasMetadataChanges)
         {
-            var isMatroska = string.Equals(conversion.MediaFile.ContainerType, "Matroska",
-                StringComparison.OrdinalIgnoreCase);
+            conversion.Log("File already optimized, skipping.", logger);
+            conversion.SizeAfter = conversion.SizeBefore;
+            conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
+            conversion.SizeDifference = 0;
+            conversion.State = ConversionState.Completed;
+        }
+        else if (canSkipRemux && family == ContainerFamily.Matroska)
+        {
+            await RunMkvPropEditInPlaceAsync(conversion, trackOutputs, context, token);
+        }
 
-            if (hasOrderChanges)
-            {
-                // Track reordering requires a full remux — mkvpropedit can't change track order.
-                conversion.Log("Track order changed by language priority. Remuxing to apply new order..", logger);
-            }
-            else if (hasMetadataChanges && isMatroska)
-            {
-                conversion.State = ConversionState.Processing;
-                conversion.Log("Tracks are optimal. Fixing metadata in-place with mkvpropedit..", logger);
-                await context.SaveChangesAsync(token);
+        if (conversion.State is ConversionState.Completed or ConversionState.Failed)
+        {
+            conversion.Progress = 100;
+            context.Update(conversion);
+            await context.SaveChangesAsync(token);
+            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            return;
+        }
 
-                var propResult = await MkvPropEdit.EditTrackProperties(conversion.MediaFile.Path, trackOutputs);
-                if (propResult.Success)
-                {
-                    await scanner.ScanMediaFile(conversion.MediaFile, true, context, conversion.MediaFile.Profile);
+        if (hasOrderChanges)
+        {
+            conversion.Log("Track order changed by language priority. Remuxing to apply new order..", logger);
+        }
 
-                    var freshTracks = conversion.MediaFile.Tracks.ToSnapshots();
-                    var stillDiffers = trackOutputs.Any(t =>
-                        t.DiffersFrom(freshTracks.FirstOrDefault(f => f.TrackNumber == t.TrackNumber)));
+        // MP4 metadata-only edits go through ffmpeg stream-copy so the
+        // container and every codec (notably tx3g) survive. Fall back to
+        // mkvmerge remux if ffprobe's stream indices don't line up with
+        // mkvmerge's track IDs.
+        var useFfmpegMp4MetadataEdit = canSkipRemux
+                                       && hasMetadataChanges
+                                       && family == ContainerFamily.Mp4
+                                       && await Mp4PropEdit.CanEditAsync(conversion.MediaFile.Path, trackOutputs);
 
-                    if (stillDiffers)
-                    {
-                        conversion.Log(
-                            "mkvpropedit reported success but some changes did not apply. Falling through to remux.",
-                            logger);
-                    }
-                    else
-                    {
-                        conversion.Log("Metadata updated successfully.", logger);
-                        conversion.SizeAfter = conversion.MediaFile.Size;
-                        conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
-                        conversion.SizeDifference = Math.Abs(conversion.SizeBefore - conversion.SizeAfter);
-                        conversion.State = ConversionState.Completed;
-                    }
-                }
-                else
-                {
-                    var errorDetail = !string.IsNullOrWhiteSpace(propResult.Error)
-                        ? propResult.Error
-                        : propResult.Output;
-                    conversion.Log($"mkvpropedit failed: {errorDetail}", logger, true);
-                    conversion.State = ConversionState.Failed;
-                }
-            }
-            else if (hasMetadataChanges)
-            {
-                // Non-MKV files (e.g. .mp4) don't support mkvpropedit — fall through to full remux.
-                conversion.Log(
-                    $"Metadata changes needed but container ({conversion.MediaFile.ContainerType}) does not support in-place editing. Full remux required.",
-                    logger);
-            }
-            else
-            {
-                conversion.Log("File already optimized, skipping.", logger);
-                conversion.SizeAfter = conversion.SizeBefore;
-                conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
-                conversion.SizeDifference = 0;
-                conversion.State = ConversionState.Completed;
-            }
-
-            if (conversion.State is ConversionState.Completed or ConversionState.Failed)
-            {
-                conversion.Progress = 100;
-                context.Update(conversion);
-                await context.SaveChangesAsync(token);
-                ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
-                return;
-            }
+        if (canSkipRemux && hasMetadataChanges && !useFfmpegMp4MetadataEdit && family != ContainerFamily.Matroska)
+        {
+            conversion.Log(
+                $"Metadata changes needed but container ({conversion.MediaFile.ContainerType}) has no in-place editor. Falling back to full remux.",
+                logger);
         }
 
         // Place temp file next to source so the final move is an atomic rename
-        // instead of a cross-filesystem copy (e.g. /tmp → mounted media volume).
+        // instead of a cross-filesystem copy (e.g. /tmp -> mounted media volume).
         var tmp = conversion.MediaFile.Path + ".muxtmp";
         try
         {
             conversion.TempFilePath = tmp;
             conversion.State = ConversionState.Processing;
-            conversion.Log($"Starting mux for {conversion.MediaFile.GetName()}..", logger);
             conversion.Progress = 0;
             await context.SaveChangesAsync(token);
 
-            var lastReportedProgress = -1;
-            var result = await MkvMerge.RemuxFile(
-                conversion.MediaFile.Path,
-                tmp,
-                trackOutputs,
-                (line, progress) =>
-                {
-                    // mkvmerge is ~95% of total work; validation + file swap are near-instant.
-                    var newProgress = (int)(progress * 0.95);
-                    if (!line.StartsWith("Progress"))
-                    {
-                        conversion.Log(line, logger);
-                    }
-
-                    if (newProgress != lastReportedProgress)
-                    {
-                        lastReportedProgress = newProgress;
-                        conversion.Progress = newProgress;
-                        ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
-                    }
-                }
-            );
-
-            token.ThrowIfCancellationRequested();
-
-            if (!MkvMerge.IsSuccess(result))
+            if (useFfmpegMp4MetadataEdit)
             {
-                throw new Exception(
-                    $"Error during mux for: {conversion.MediaFile.GetName()}. Error: {result.Error} Output: {result.Output}");
+                await RunFfmpegMp4MetadataEditAsync(conversion, trackOutputs, tmp, context, token);
+            }
+            else
+            {
+                await RunMkvMergeRemuxAsync(conversion, trackOutputs, tmp, context, token);
             }
 
-            if (result.ExitCode == 1)
-            {
-                conversion.Log($"Mux completed with warnings for {conversion.MediaFile.GetName()}.", logger);
-            }
-
-            conversion.Log($"Finished mux for {conversion.MediaFile.GetName()}.", logger);
-            await context.SaveChangesAsync(token);
-
-            var fileInfo = new FileInfo(tmp);
-            if (!fileInfo.Exists || fileInfo.Length == 0)
-            {
-                throw new Exception("Something happened to the output file!");
-            }
-
-            var info = await MkvMerge.GetFileInfo(tmp);
-            var count = (info.Result?.Tracks
-                    .ToList().Count)
-                .GetValueOrDefault(0); // Only count audio/subtitle tracks.
-
-            if (count != conversion.AllowedTracks.Count)
-            {
-                throw new Exception($"Trackcount was {count}. Expected: {conversion.AllowedTracks.Count}");
-            }
-
-            conversion.Log("Validation of new file is ok!", logger);
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
-
-            token.ThrowIfCancellationRequested();
-
-            var backupFile = conversion.MediaFile.Path + ".muxbak";
-            conversion.Log("Renaming old file..", logger);
-            File.Move(conversion.MediaFile.Path, backupFile);
-
-            conversion.Log("Moving new file..", logger);
-            await context.SaveChangesAsync(token);
-            await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
-                i =>
-                {
-                    // File move is typically instant (atomic rename on same filesystem).
-                    // Only uses meaningful progress for cross-filesystem copies.
-                    conversion.Progress = 95 + (int)(i * 0.05);
-                    ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
-                }, token);
-
-            conversion.Log("Removing old file..", logger);
-            File.Delete(backupFile);
-
-            await scanner.ScanMediaFile(conversion.MediaFile, true, context, conversion.MediaFile.Profile);
-            conversion.SizeAfter = conversion.MediaFile.Size;
-            conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
-            conversion.SizeDifference = Math.Abs(conversion.SizeBefore - conversion.SizeAfter);
-
-            await RunPostProcessing(conversion, context);
-
-            conversion.State = ConversionState.Completed;
-            conversion.Progress = 100;
-            conversion.Log("Done!", logger);
-            await context.SaveChangesAsync(token);
-
-            try
-            {
-                var statsService = scope.ServiceProvider.GetRequiredService<LibraryStatsService>();
-                await statsService.UpdateConversionStats(conversion.SizeDifference);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to update conversion stats");
-            }
+            await FinalizeTemporaryOutputAsync(conversion, tmp, context, scope, token);
         }
         catch (OperationCanceledException)
         {
             MkvMerge.KillExistingProcesses();
+            FFmpeg.KillExistingProcesses();
             conversion.LogError("Conversion was cancelled.", logger);
             await context.SaveChangesAsync();
         }
@@ -493,10 +380,220 @@ public class MediaConverterService(
         }
     }
 
+    /// <summary>
+    /// Applies metadata changes to a Matroska file in-place via mkvpropedit.
+    /// Rescans afterwards and falls through to a full remux if any requested
+    /// change failed to stick.
+    /// </summary>
+    private async Task RunMkvPropEditInPlaceAsync(MediaConversion conversion, List<TrackOutput> trackOutputs,
+        AppDbContext context, CancellationToken token)
+    {
+        var mediaFile = conversion.MediaFile!;
+        conversion.State = ConversionState.Processing;
+        conversion.Log("Tracks are optimal. Fixing metadata in-place with mkvpropedit..", logger);
+        await context.SaveChangesAsync(token);
+
+        var propResult = await MkvPropEdit.EditTrackProperties(mediaFile.Path, trackOutputs);
+        if (!propResult.Success)
+        {
+            var errorDetail = !string.IsNullOrWhiteSpace(propResult.Error) ? propResult.Error : propResult.Output;
+            conversion.Log($"mkvpropedit failed: {errorDetail}", logger, true);
+            conversion.State = ConversionState.Failed;
+            return;
+        }
+
+        await scanner.ScanMediaFile(mediaFile, true, context, mediaFile.Profile);
+
+        var freshTracks = mediaFile.Tracks.ToSnapshots();
+        var stillDiffers = trackOutputs.Any(t =>
+            t.DiffersFrom(freshTracks.FirstOrDefault(f => f.TrackNumber == t.TrackNumber)));
+
+        if (stillDiffers)
+        {
+            conversion.Log("mkvpropedit reported success but some changes did not apply. Falling through to remux.",
+                logger);
+            return;
+        }
+
+        conversion.Log("Metadata updated successfully.", logger);
+        conversion.SizeAfter = mediaFile.Size;
+        conversion.TracksAfter = mediaFile.Tracks.ToSnapshots();
+        conversion.SizeDifference = Math.Abs(conversion.SizeBefore - conversion.SizeAfter);
+        conversion.State = ConversionState.Completed;
+    }
+
+    /// <summary>
+    /// Runs mkvmerge to produce the remuxed temp file. Caller handles
+    /// validation and the final swap via <see cref="FinalizeTemporaryOutputAsync"/>.
+    /// </summary>
+    private async Task RunMkvMergeRemuxAsync(MediaConversion conversion, List<TrackOutput> trackOutputs, string tmp,
+        AppDbContext context, CancellationToken token)
+    {
+        var mediaFile = conversion.MediaFile!;
+        conversion.Log($"Starting mux for {mediaFile.GetName()}..", logger);
+        await context.SaveChangesAsync(token);
+
+        var reportProgress = BuildProgressReporter(conversion);
+        var result = await MkvMerge.RemuxFile(mediaFile.Path, tmp, trackOutputs,
+            (line, progress) =>
+            {
+                if (!line.StartsWith("Progress"))
+                {
+                    conversion.Log(line, logger);
+                }
+                reportProgress(progress);
+            });
+
+        token.ThrowIfCancellationRequested();
+
+        if (!MkvMerge.IsSuccess(result))
+        {
+            throw new Exception(
+                $"Error during mux for: {mediaFile.GetName()}. Error: {result.Error} Output: {result.Output}");
+        }
+
+        if (result.ExitCode == 1)
+        {
+            conversion.Log($"Mux completed with warnings for {mediaFile.GetName()}.", logger);
+        }
+
+        conversion.Log($"Finished mux for {mediaFile.GetName()}.", logger);
+        await context.SaveChangesAsync(token);
+    }
+
+    /// <summary>
+    /// Runs ffmpeg stream-copy to write updated metadata into the temp file
+    /// while keeping the MP4 container and every codec intact.
+    /// </summary>
+    private async Task RunFfmpegMp4MetadataEditAsync(MediaConversion conversion, List<TrackOutput> trackOutputs,
+        string tmp, AppDbContext context, CancellationToken token)
+    {
+        var mediaFile = conversion.MediaFile!;
+        conversion.Log($"Fixing metadata in-place with ffmpeg (MP4 stream copy) for {mediaFile.GetName()}..", logger);
+        await context.SaveChangesAsync(token);
+
+        var reportProgress = BuildProgressReporter(conversion);
+        var result = await Mp4PropEdit.EditTrackProperties(mediaFile.Path, tmp, trackOutputs, mediaFile.DurationMs,
+            (line, progress, isStderr) =>
+            {
+                // Only stderr is human-readable; the -progress pipe:1 stream
+                // on stdout would flood the log.
+                if (isStderr)
+                {
+                    conversion.Log(line, logger);
+                }
+                reportProgress(progress);
+            });
+
+        token.ThrowIfCancellationRequested();
+
+        if (!FFmpeg.IsSuccess(result))
+        {
+            throw new Exception(
+                $"Error during ffmpeg metadata edit for: {mediaFile.GetName()}. Error: {result.Error} Output: {result.Output}");
+        }
+
+        conversion.Log($"Finished metadata edit for {mediaFile.GetName()}.", logger);
+        await context.SaveChangesAsync(token);
+    }
+
+    /// <summary>
+    /// Returns a callback that maps a 0-100 tool progress value onto
+    /// conversion progress (capped at 95% to leave room for the finalize
+    /// swap) and fires <see cref="ConverterStateChanged"/> on actual changes.
+    /// Shared by both the mkvmerge remux and ffmpeg metadata-edit runners.
+    /// </summary>
+    private Action<int> BuildProgressReporter(MediaConversion conversion)
+    {
+        var last = -1;
+        return raw =>
+        {
+            var p = (int)(raw * 0.95);
+            if (p == last)
+            {
+                return;
+            }
+            last = p;
+            conversion.Progress = p;
+            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+        };
+    }
+
+    /// <summary>
+    /// Validates the temp file, swaps it over the original via .muxbak,
+    /// rescans, runs post-processing and updates stats. Shared by both
+    /// tempfile writers.
+    /// </summary>
+    private async Task FinalizeTemporaryOutputAsync(MediaConversion conversion, string tmp, AppDbContext context,
+        IServiceScope scope, CancellationToken token)
+    {
+        var fileInfo = new FileInfo(tmp);
+        if (!fileInfo.Exists || fileInfo.Length == 0)
+        {
+            throw new Exception("Something happened to the output file!");
+        }
+
+        var info = await MkvMerge.GetFileInfo(tmp);
+        var count = (info.Result?.Tracks
+                .ToList().Count)
+            .GetValueOrDefault(0);
+
+        if (count != conversion.AllowedTracks.Count)
+        {
+            throw new Exception($"Trackcount was {count}. Expected: {conversion.AllowedTracks.Count}");
+        }
+
+        conversion.Log("Validation of new file is ok!", logger);
+        ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+
+        token.ThrowIfCancellationRequested();
+
+        var backupFile = conversion.MediaFile!.Path + ".muxbak";
+        conversion.Log("Renaming old file..", logger);
+        File.Move(conversion.MediaFile.Path, backupFile);
+
+        conversion.Log("Moving new file..", logger);
+        await context.SaveChangesAsync(token);
+        await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
+            i =>
+            {
+                // File move is typically instant (atomic rename on same filesystem).
+                // Only uses meaningful progress for cross-filesystem copies.
+                conversion.Progress = 95 + (int)(i * 0.05);
+                ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            }, token);
+
+        conversion.Log("Removing old file..", logger);
+        File.Delete(backupFile);
+
+        await scanner.ScanMediaFile(conversion.MediaFile, true, context, conversion.MediaFile.Profile);
+        conversion.SizeAfter = conversion.MediaFile.Size;
+        conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
+        conversion.SizeDifference = Math.Abs(conversion.SizeBefore - conversion.SizeAfter);
+
+        await RunPostProcessing(conversion, context);
+
+        conversion.State = ConversionState.Completed;
+        conversion.Progress = 100;
+        conversion.Log("Done!", logger);
+        await context.SaveChangesAsync(token);
+
+        try
+        {
+            var statsService = scope.ServiceProvider.GetRequiredService<LibraryStatsService>();
+            await statsService.UpdateConversionStats(conversion.SizeDifference);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to update conversion stats");
+        }
+    }
+
     private async Task CleanupLeftoverConversions(AppDbContext context, CancellationToken token)
     {
         // Kill off any lingering processes after a crash maybe.
         MkvMerge.KillExistingProcesses();
+        FFmpeg.KillExistingProcesses();
 
         var stuckConversions = await context.MediaConversions
             .Include(x => x.MediaFile)

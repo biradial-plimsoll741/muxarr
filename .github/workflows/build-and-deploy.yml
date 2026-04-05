@@ -29,13 +29,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install mkvtoolnix (Linux)
+      - name: Install mkvtoolnix + ffmpeg (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mkvtoolnix
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends mkvtoolnix ffmpeg
 
-      - name: Install mkvtoolnix (macOS)
+      - name: Install mkvtoolnix + ffmpeg (macOS)
         if: runner.os == 'macOS'
-        run: brew install mkvtoolnix
+        run: brew install mkvtoolnix ffmpeg
 
       - name: Install mkvtoolnix (Windows)
         if: runner.os == 'Windows'
@@ -49,6 +49,20 @@ jobs:
           }
           if (-not $success) { throw "Failed to install mkvtoolnix after 3 attempts" }
           echo "C:\Program Files\MKVToolNix" >> $env:GITHUB_PATH
+
+      - name: Install ffmpeg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $success = $false
+          for ($i = 1; $i -le 3; $i++) {
+            choco install ffmpeg -y --no-progress
+            # choco's ffmpeg shim lands in C:\ProgramData\chocolatey\bin which is already on PATH.
+            $ffmpeg = Get-Command ffmpeg -ErrorAction SilentlyContinue
+            if ($ffmpeg) { $success = $true; break }
+            Write-Warning "Attempt $i failed, retrying in 10s..."
+            Start-Sleep -Seconds 10
+          }
+          if (-not $success) { throw "Failed to install ffmpeg after 3 attempts" }
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v5

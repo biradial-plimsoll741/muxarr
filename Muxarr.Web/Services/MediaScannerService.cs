@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
+using Muxarr.Core.Extensions;
+using Muxarr.Core.FFmpeg;
 using Muxarr.Core.MkvToolNix;
 using Muxarr.Core.Utilities;
 using Muxarr.Data;
@@ -15,6 +17,18 @@ public class MediaScannerService(
     ILogger<MediaScannerService> logger,
     ArrSyncService arrSyncService) : ScheduledServiceBase(logger)
 {
+    // mkvmerge handles the Matroska family (.mkv, .webm); everything else
+    // goes through ffprobe. Adding a new supported extension usually just
+    // means adding it here.
+    private static readonly HashSet<string> MatroskaExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mkv", ".webm"
+    };
+    private static readonly HashSet<string> FFprobeExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".m4v", ".mov", ".3gp", ".3g2"
+    };
+
     private readonly ConcurrentQueue<ScanDirectory> _directoryQueue = new();
     private DateTime _lastScanUpdate = DateTime.MinValue;
     private CancellationTokenSource? _scanCts;
@@ -116,9 +130,7 @@ public class MediaScannerService(
             }
 
             var ext = Path.GetExtension(file);
-            if (string.IsNullOrEmpty(ext) ||
-                (!ext.Equals(".mkv", StringComparison.OrdinalIgnoreCase) &&
-                 !ext.Equals(".mp4", StringComparison.OrdinalIgnoreCase)))
+            if (!MatroskaExtensions.Contains(ext) && !FFprobeExtensions.Contains(ext))
             {
                 continue;
             }
@@ -210,14 +222,8 @@ public class MediaScannerService(
             // ReSharper disable once EntityFramework.NPlusOne.IncompleteDataUsage
             if (forceRescan || dbFile.NeedsFileProbe(fileInfo))
             {
-                var info = await MkvMerge.GetFileInfo(dbFile.Path);
-                if (!string.IsNullOrEmpty(info.Error))
-                {
-                    logger.LogWarning("mkvmerge failed for '{Path}': {Error}", dbFile.Path, info.Error);
-                }
+                await ProbeFile(dbFile);
 
-                dbFile.MkvMergeOutput = !string.IsNullOrEmpty(info.Error) ? info.Error : info.Output;
-                dbFile.SetFileData(info.Result); // Set all tracks using mkvmerge output.
                 dbFile.HasRedundantTracks =
                     profile != null && dbFile.GetAllowedTracks(profile).Count < dbFile.TrackCount;
                 dbFile.HasNonStandardMetadata = dbFile.CheckHasNonStandardMetadata(profile);
@@ -229,6 +235,36 @@ public class MediaScannerService(
             dbFile.FileCreationTime = fileInfo.CreationTime.ToUniversalTime();
 
             await context.SaveChangesAsync();
+        }
+    }
+
+    /// <summary>
+    /// Probes a media file with the right tool for its container. Matroska
+    /// files go through mkvmerge, everything else through ffprobe. Both write
+    /// their raw JSON to MediaFile.MkvMergeOutput for the debug viewer.
+    /// </summary>
+    private async Task ProbeFile(MediaFile dbFile)
+    {
+        var ext = Path.GetExtension(dbFile.Path);
+        if (MatroskaExtensions.Contains(ext))
+        {
+            var info = await MkvMerge.GetFileInfo(dbFile.Path);
+            if (!string.IsNullOrEmpty(info.Error))
+            {
+                logger.LogWarning("mkvmerge failed for '{Path}': {Error}", dbFile.Path, info.Error);
+            }
+            dbFile.MkvMergeOutput = !string.IsNullOrEmpty(info.Error) ? info.Error : info.Output;
+            dbFile.SetFileData(info.Result);
+        }
+        else
+        {
+            var probe = await FFmpeg.GetStreamInfo(dbFile.Path);
+            if (!string.IsNullOrEmpty(probe.Error))
+            {
+                logger.LogWarning("ffprobe failed for '{Path}': {Error}", dbFile.Path, probe.Error);
+            }
+            dbFile.MkvMergeOutput = !string.IsNullOrEmpty(probe.Error) ? probe.Error : probe.Output;
+            dbFile.SetFileDataFromFFprobe(probe.Result);
         }
     }
 
