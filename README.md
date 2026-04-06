@@ -47,8 +47,8 @@ services:
 ## Screenshots
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/conversion.png" alt="Conversion Details" width="800"/><br/>
-  <em>Conversion detail: 4.48 GB to 4.02 GB (10.3% saved) by removing redundant audio and subtitle tracks</em>
+  <img src="https://raw.githubusercontent.com/KirovAir/muxarr/master/docs/screenshots/demo.gif" alt="Muxarr Demo" width="800"/><br/>
+  <em>A quick demo of a file being optimized (35.9% reduction)</em>
 </p>
 
 <p align="center">
