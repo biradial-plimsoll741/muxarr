@@ -16,13 +16,13 @@
                 <i class="bi @(MediaConverter.IsPaused ? "bi-play-fill" : "bi-pause-fill") me-1"></i>
                 @(MediaConverter.IsPaused ? "Resume" : "Pause")
             </button>
-            @if (_activeConversions.Any(c => c.State == ConversionState.Processing))
+            @if (_processingConversions.Count > 0)
             {
                 <button class="btn btn-outline-danger" @onclick="OnCancelCurrent" title="Cancel current conversion">
                     <i class="bi bi-x-circle me-1"></i>Cancel Current
                 </button>
             }
-            @if (_activeConversions.Any(c => c.State == ConversionState.New))
+            @if (_totalQueuedCount > 0)
             {
                 <button class="btn btn-outline-danger" @onclick="OnClearQueue" title="Clear all queued conversions">
                     <i class="bi bi-trash me-1"></i>Clear Queue
@@ -39,11 +39,15 @@
     }
 
     @* Active Conversions Section *@
-    @if (_activeConversions.Count > 0)
+    @if (_processingConversions.Count > 0 || _totalQueuedCount > 0)
     {
         <div class="card border-primary mb-4">
-            <div class="card-header bg-primary text-white">
-                <i class="bi bi-arrow-repeat me-2"></i>Active Conversions
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-arrow-repeat me-2"></i>Active Conversions</span>
+                @if (_totalQueuedCount > 0)
+                {
+                    <span class="badge bg-light text-primary">@_totalQueuedCount queued</span>
+                }
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -58,7 +62,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        @foreach (var conversion in _activeConversions)
+                        @foreach (var conversion in _processingConversions)
                         {
                             <tr>
                                 <td>
@@ -76,20 +80,44 @@
                                     <TimeAgo DateTime="conversion.CreatedDate"/>
                                 </td>
                                 <td class="text-center">
-                                    @if (conversion.State == ConversionState.Processing)
-                                    {
-                                        <button class="btn btn-outline-danger btn-sm" title="Cancel"
-                                                @onclick="OnCancelCurrent">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    }
-                                    else if (conversion.State == ConversionState.New)
-                                    {
-                                        <button class="btn btn-outline-danger btn-sm" title="Cancel"
-                                                @onclick="() => OnCancelQueued(conversion)">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    }
+                                    <button class="btn btn-outline-danger btn-sm" title="Cancel"
+                                            @onclick="OnCancelCurrent">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var conversion in _queuedConversions)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="" @onclick="@(() => Navigate(conversion))" @onclick:preventDefault>
+                                        <span class="small">@conversion.Name</span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <ConversionStateBadge Conversion="conversion"/>
+                                </td>
+                                <td>
+                                    <ConversionProgressBar Conversion="conversion"/>
+                                </td>
+                                <td>
+                                    <TimeAgo DateTime="conversion.CreatedDate"/>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-danger btn-sm" title="Cancel"
+                                            @onclick="() => OnCancelQueued(conversion)">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        @if (_totalQueuedCount > MaxQueuedVisible)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-2">
+                                    <i class="bi bi-three-dots me-1"></i>
+                                    and @(_totalQueuedCount - MaxQueuedVisible) more queued
                                 </td>
                             </tr>
                         }
@@ -215,7 +243,14 @@
     [Filter] private string _stateFilter = "All";
 
     private readonly string[] _stateOptions = ["All", "New", "Processing", "Completed", "Failed"];
-    private List<MediaConversion> _activeConversions = new();
+    private List<MediaConversion> _processingConversions = new();
+    private List<MediaConversion> _queuedConversions = new();
+    private int _totalQueuedCount;
+    private const int MaxQueuedVisible = 5;
+
+    private int _recentCompletionCount;
+    private string? _lastCompletionName;
+    private CancellationTokenSource? _toastDebounceCts;
 
     protected override void OnInitialized()
     {
@@ -234,11 +269,19 @@
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
 
-        // Load active conversions
-        _activeConversions = await context.MediaConversions
+        _processingConversions = await context.MediaConversions
             .Include(c => c.MediaFile)
-            .Where(c => c.State == ConversionState.Processing || c.State == ConversionState.New)
-            .OrderByDescending(c => c.CreatedDate)
+            .Where(c => c.State == ConversionState.Processing)
+            .ToListAsync();
+
+        _totalQueuedCount = await context.MediaConversions
+            .CountAsync(c => c.State == ConversionState.New);
+
+        _queuedConversions = await context.MediaConversions
+            .Include(c => c.MediaFile)
+            .Where(c => c.State == ConversionState.New)
+            .OrderBy(c => c.CreatedDate)
+            .Take(MaxQueuedVisible)
             .ToListAsync();
 
         // Main query
@@ -298,7 +341,8 @@
         }
 
         await MediaConverter.CancelQueuedConversion(conversion.Id);
-        _activeConversions.Remove(conversion);
+        _queuedConversions.Remove(conversion);
+        _totalQueuedCount = Math.Max(0, _totalQueuedCount - 1);
         await UpdateList();
         ToastService.ShowWarning($"Cancelled {conversion.Name}.");
     }
@@ -345,7 +389,7 @@
         {
             if (e.Conversion is { State: ConversionState.Completed, MediaFile: not null })
             {
-                ToastService.ShowInfo($"Finished {e.Conversion.MediaFile.GetName()}!");
+                HandleCompletionToast(e.Conversion);
             }
 
             // Update in main list
@@ -356,8 +400,8 @@
                 conversion.State = e.Conversion.State;
             }
 
-            // Update in active list
-            var active = _activeConversions.FirstOrDefault(x => x.Id == e.Conversion.Id);
+            // Update processing list
+            var active = _processingConversions.FirstOrDefault(x => x.Id == e.Conversion.Id);
             if (active != null)
             {
                 active.Progress = e.Conversion.Progress;
@@ -365,14 +409,62 @@
 
                 if (active.State is ConversionState.Completed or ConversionState.Failed)
                 {
-                    _activeConversions.Remove(active);
+                    _processingConversions.Remove(active);
                 }
             }
-            else if (e.Conversion.State is ConversionState.Processing or ConversionState.New)
+            else if (e.Conversion.State == ConversionState.Processing)
             {
-                _activeConversions.Add(e.Conversion);
+                var queued = _queuedConversions.FirstOrDefault(x => x.Id == e.Conversion.Id);
+                if (queued != null)
+                {
+                    _queuedConversions.Remove(queued);
+                }
+                _totalQueuedCount = Math.Max(0, _totalQueuedCount - 1);
+                _processingConversions.Add(e.Conversion);
             }
 
+            StateHasChanged();
+        });
+    }
+
+    private void HandleCompletionToast(MediaConversion conversion)
+    {
+        _recentCompletionCount++;
+        _lastCompletionName = conversion.MediaFile?.GetName() ?? conversion.Name;
+
+        _toastDebounceCts?.Cancel();
+        _toastDebounceCts = new CancellationTokenSource();
+        _ = ShowDebouncedToastAsync(_toastDebounceCts.Token);
+    }
+
+    private async Task ShowDebouncedToastAsync(CancellationToken token)
+    {
+        try
+        {
+            await Task.Delay(3000, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            if (_recentCompletionCount <= 0)
+            {
+                return;
+            }
+
+            if (_recentCompletionCount == 1)
+            {
+                ToastService.ShowInfo($"Finished {_lastCompletionName}!");
+            }
+            else
+            {
+                ToastService.ShowInfo($"Finished {_recentCompletionCount} conversions!");
+            }
+            _recentCompletionCount = 0;
+            _lastCompletionName = null;
             StateHasChanged();
         });
     }
@@ -381,6 +473,8 @@
     {
         MediaConverter.ConverterStateChanged -= OnConverterStateChanged;
         MediaConverter.QueueStateChanged -= OnQueueStateChanged;
+        _toastDebounceCts?.Cancel();
+        _toastDebounceCts?.Dispose();
         base.Dispose();
     }
 
