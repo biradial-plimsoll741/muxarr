@@ -1,0 +1,140 @@
+@using Muxarr.Core.Config
+@using Muxarr.Web.Services.Notifications
+<div class="modal-body">
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control" @bind="Config.Name" placeholder="My Notification"/>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Provider</label>
+        <select class="form-select" @bind="Config.Provider">
+            @foreach (var provider in Enum.GetValues<NotificationProvider>())
+            {
+                <option value="@provider">@provider</option>
+            }
+        </select>
+    </div>
+
+    @switch (Config.Provider)
+    {
+        case NotificationProvider.Pushover:
+            <div class="mb-3">
+                <label class="form-label">App Token</label>
+                <input type="text" class="form-control" @bind="Config.AppToken"/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">User Key</label>
+                <input type="text" class="form-control" @bind="Config.UserKey"/>
+            </div>
+            break;
+
+        case NotificationProvider.Discord:
+            <div class="mb-3">
+                <label class="form-label">Webhook URL</label>
+                <input type="url" class="form-control" @bind="Config.Url" placeholder="https://discord.com/api/webhooks/..."/>
+            </div>
+            break;
+
+        case NotificationProvider.Gotify:
+            <div class="mb-3">
+                <label class="form-label">Server URL</label>
+                <input type="url" class="form-control" @bind="Config.Url" placeholder="https://gotify.example.com"/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">App Token</label>
+                <input type="text" class="form-control" @bind="Config.Token"/>
+            </div>
+            break;
+
+        case NotificationProvider.Ntfy:
+            <div class="mb-3">
+                <label class="form-label">Server URL</label>
+                <input type="url" class="form-control" @bind="Config.Url" placeholder="https://ntfy.sh"/>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Topic</label>
+                <input type="text" class="form-control" @bind="Config.Topic" placeholder="muxarr"/>
+            </div>
+            break;
+
+        case NotificationProvider.Webhook:
+            <div class="mb-3">
+                <label class="form-label">URL</label>
+                <input type="url" class="form-control" @bind="Config.Url" placeholder="https://..."/>
+            </div>
+            break;
+    }
+
+    <div class="mb-3">
+        <label class="form-label">Triggers</label>
+        <div class="d-flex gap-3">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="notif-started" @bind="Config.OnStarted"/>
+                <label class="form-check-label" for="notif-started">Started</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="notif-completed" @bind="Config.OnCompleted"/>
+                <label class="form-check-label" for="notif-completed">Completed</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="notif-failed" @bind="Config.OnFailed"/>
+                <label class="form-check-label" for="notif-failed">Failed</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <button class="btn btn-outline-secondary btn-sm" @onclick="Test" disabled="@_testing">
+            @if (_testing)
+            {
+                <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            else
+            {
+                <i class="bi bi-send me-1"></i>
+            }
+            Test
+        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            <button class="btn btn-primary" @onclick="Save">
+                <i class="bi bi-check-lg me-1"></i>Save
+            </button>
+        </div>
+    </div>
+
+    @if (_testResult != null)
+    {
+        <div class="alert @(_testSuccess ? "alert-success" : "alert-danger") mt-3 mb-0 py-2">
+            @_testResult
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public required BlazoredModalInstance BlazoredModal { get; set; }
+    [Parameter] public NotificationConfig Config { get; set; } = new();
+
+    [Inject] public required NotificationService NotificationService { get; set; }
+
+    private bool _testing;
+    private string? _testResult;
+    private bool _testSuccess;
+
+    private async Task Test()
+    {
+        _testing = true;
+        _testResult = null;
+        StateHasChanged();
+
+        var error = await NotificationService.SendTestAsync(Config);
+        _testSuccess = error == null;
+        _testResult = error ?? "Test notification sent!";
+        _testing = false;
+    }
+
+    private async Task Cancel() => await BlazoredModal.CloseAsync(ModalResult.Cancel());
+
+    private async Task Save() => await BlazoredModal.CloseAsync(ModalResult.Ok(Config));
+}

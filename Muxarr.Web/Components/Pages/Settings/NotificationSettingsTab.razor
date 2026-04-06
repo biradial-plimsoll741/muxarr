@@ -1,0 +1,179 @@
+@using Muxarr.Core.Config
+@using Muxarr.Web.Components.Shared.Modals
+@using Muxarr.Web.Services.Notifications
+
+<p class="text-muted">Get notified when conversions start, complete, or fail.</p>
+
+@if (_configs.Count == 0)
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        No notifications configured. Click "Add Notification" to set one up.
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-3">
+        @foreach (var config in _configs)
+        {
+            <div class="border rounded p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi @GetProviderIcon(config.Provider) text-primary"></i>
+                            <h5 class="mb-0">@config.Name</h5>
+                            <span class="badge text-bg-secondary">@config.Provider</span>
+                            @if (!config.Enabled)
+                            {
+                                <span class="badge text-bg-warning">Disabled</span>
+                            }
+                        </div>
+                        <div class="d-flex gap-1">
+                            @if (config.OnStarted)
+                            {
+                                <span class="badge text-bg-light border">Started</span>
+                            }
+                            @if (config.OnCompleted)
+                            {
+                                <span class="badge text-bg-light border">Completed</span>
+                            }
+                            @if (config.OnFailed)
+                            {
+                                <span class="badge text-bg-light border">Failed</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <div class="form-check form-switch me-2">
+                            <input type="checkbox" class="form-check-input" checked="@config.Enabled"
+                                   @onchange="() => ToggleEnabled(config)"/>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => EditNotification(config)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteNotification(config)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<StickyBar>
+    <button class="btn btn-primary" @onclick="AddNotification">
+        <i class="bi bi-plus-lg me-2"></i>Add Notification
+    </button>
+</StickyBar>
+
+@code {
+    [Inject] public required IDbContextFactory<AppDbContext> ContextFactory { get; set; }
+    [Inject] public required IToastService ToastService { get; set; }
+    [CascadingParameter] public required IModalService Modal { get; set; }
+
+    private List<NotificationConfig> _configs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        _configs = context.Configs.GetOrDefault<List<NotificationConfig>>();
+    }
+
+    private async Task AddNotification()
+    {
+        var config = new NotificationConfig();
+        var parameters = new ModalParameters()
+            .Add(nameof(NotificationEditModal.Config), config);
+
+        var result = Modal.Show<NotificationEditModal>("Add Notification", parameters);
+        var modalResult = await result.Result;
+
+        if (!modalResult.Cancelled && modalResult.Data is NotificationConfig saved)
+        {
+            _configs.Add(saved);
+            await SaveConfigs();
+            ToastService.ShowSuccess($"Notification '{saved.Name}' added.");
+        }
+    }
+
+    private async Task EditNotification(NotificationConfig config)
+    {
+        var clone = CloneConfig(config);
+        var parameters = new ModalParameters()
+            .Add(nameof(NotificationEditModal.Config), clone);
+
+        var result = Modal.Show<NotificationEditModal>("Edit Notification", parameters);
+        var modalResult = await result.Result;
+
+        if (!modalResult.Cancelled && modalResult.Data is NotificationConfig saved)
+        {
+            var index = _configs.FindIndex(c => c.Id == config.Id);
+            if (index >= 0)
+            {
+                _configs[index] = saved;
+            }
+
+            await SaveConfigs();
+            ToastService.ShowSuccess($"Notification '{saved.Name}' updated.");
+        }
+    }
+
+    private async Task DeleteNotification(NotificationConfig config)
+    {
+        if (!await Modal.ShowConfirm($"Delete notification '{config.Name}'?"))
+        {
+            return;
+        }
+
+        _configs.Remove(config);
+        await SaveConfigs();
+        ToastService.ShowWarning($"Notification '{config.Name}' deleted.");
+    }
+
+    private async Task ToggleEnabled(NotificationConfig config)
+    {
+        config.Enabled = !config.Enabled;
+        await SaveConfigs();
+    }
+
+    private async Task SaveConfigs()
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            context.Configs.Set(_configs);
+            await context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save: {ex.Message}");
+        }
+    }
+
+    private static NotificationConfig CloneConfig(NotificationConfig src) => new()
+    {
+        Id = src.Id,
+        Name = src.Name,
+        Provider = src.Provider,
+        Enabled = src.Enabled,
+        OnStarted = src.OnStarted,
+        OnCompleted = src.OnCompleted,
+        OnFailed = src.OnFailed,
+        AppToken = src.AppToken,
+        UserKey = src.UserKey,
+        Url = src.Url,
+        Token = src.Token,
+        Topic = src.Topic
+    };
+
+    private static string GetProviderIcon(NotificationProvider provider) => provider switch
+    {
+        NotificationProvider.Pushover => "bi-phone",
+        NotificationProvider.Discord => "bi-discord",
+        NotificationProvider.Gotify => "bi-bell",
+        NotificationProvider.Ntfy => "bi-megaphone",
+        NotificationProvider.Webhook => "bi-globe",
+        _ => "bi-bell"
+    };
+}
