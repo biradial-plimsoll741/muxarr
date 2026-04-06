@@ -233,23 +233,29 @@
 
     private async Task OnCancel()
     {
-        if (!await ModalService.ShowConfirm(
-                "Are you sure you want to cancel this conversion?",
-                "Cancel Conversion"))
-        {
-            return;
-        }
-
         if (Conversion!.State == ConversionState.Processing)
         {
+            if (!await ModalService.ShowConfirm(
+                    "Are you sure you want to cancel this conversion?",
+                    "Cancel Conversion"))
+            {
+                return;
+            }
+
             MediaConverter.CancelCurrentConversion();
             ToastService.ShowWarning("Cancelling current conversion.");
         }
         else if (Conversion.State == ConversionState.New)
         {
+            if (!await ModalService.ShowConfirm(
+                    $"Are you sure you want to remove '{Conversion.Name}' from the queue?",
+                    "Remove from Queue"))
+            {
+                return;
+            }
+
             await MediaConverter.CancelQueuedConversion(Conversion.Id);
-            Conversion.State = ConversionState.Failed;
-            ToastService.ShowWarning($"Cancelled {Conversion.Name}.");
+            NavigationManager.NavigateTo("/conversions");
         }
     }
 

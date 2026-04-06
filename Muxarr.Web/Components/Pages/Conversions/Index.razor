@@ -16,12 +16,6 @@
                 <i class="bi @(MediaConverter.IsPaused ? "bi-play-fill" : "bi-pause-fill") me-1"></i>
                 @(MediaConverter.IsPaused ? "Resume" : "Pause")
             </button>
-            @if (_currentConversion != null)
-            {
-                <button class="btn btn-outline-danger" @onclick="OnCancelCurrent" title="Cancel current conversion">
-                    <i class="bi bi-x-circle me-1"></i>Cancel Current
-                </button>
-            }
             @if (_queuedCount > 0)
             {
                 <button class="btn btn-outline-danger" @onclick="OnClearQueue" title="Clear all queued conversions">
@@ -338,7 +332,7 @@
 
     private async Task OnCancelQueued(MediaConversion conversion)
     {
-        if (!await ModalService.ShowConfirm($"Are you sure you want to cancel '{conversion.Name}'?", "Cancel Conversion"))
+        if (!await ModalService.ShowConfirm($"Are you sure you want to remove '{conversion.Name}' from the queue?", "Remove from Queue"))
         {
             return;
         }
@@ -349,7 +343,7 @@
 
     private async Task OnClearQueue()
     {
-        if (!await ModalService.ShowConfirm("Are you sure you want to clear the entire queue?", "Clear Queue"))
+        if (!await ModalService.ShowConfirm("Are you sure you want to remove all queued conversions? These have not started yet and will be deleted.", "Clear Queue"))
         {
             return;
         }

@@ -61,11 +61,13 @@ public class MediaConverterService(
         using var scope = serviceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var conversion = await context.MediaConversions.FirstOrDefaultAsync(x => x.Id == conversionId);
-        if (conversion is { State: ConversionState.New })
+        var deleted = await context.MediaConversions
+            .Where(x => x.Id == conversionId && x.State == ConversionState.New)
+            .ExecuteDeleteAsync();
+
+        if (deleted > 0)
         {
-            conversion.LogError("Cancelled by user.", logger);
-            await context.SaveChangesAsync();
+            logger.LogInformation("Removed queued conversion {Id}", conversionId);
         }
     }
 
@@ -74,14 +76,11 @@ public class MediaConverterService(
         using var scope = serviceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var queued = await context.MediaConversions
+        var deleted = await context.MediaConversions
             .Where(x => x.State == ConversionState.New)
-            .ToListAsync();
+            .ExecuteDeleteAsync();
 
-        foreach (var conversion in queued) conversion.LogError("Cancelled by user (queue cleared).", logger);
-
-        await context.SaveChangesAsync();
-        logger.LogInformation("Cleared {Count} queued conversion(s)", queued.Count);
+        logger.LogInformation("Removed {Count} queued conversion(s)", deleted);
         QueueStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
