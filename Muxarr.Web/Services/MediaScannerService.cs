@@ -282,7 +282,8 @@ public class MediaScannerService(
             .Where(f =>
                 // Never purge files that live under an offline directory
                 !inaccessible.Any(dir => f.Path.StartsWith(dir)) &&
-                (!File.Exists(f.Path) || !profiles.Any(p => p.Directories.Any(dir => f.Path.StartsWith(dir)))))
+                (PathFilter.ShouldIgnore(f.Path) ||
+                !File.Exists(f.Path) || !profiles.Any(p => p.Directories.Any(dir => f.Path.StartsWith(dir)))))
             .Select(f => f.Id)
             .ToList();
 
