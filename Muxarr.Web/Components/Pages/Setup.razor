@@ -161,9 +161,6 @@
         return url;
     }
 
-    private bool HasService(ExternalService svc) =>
-        !string.IsNullOrWhiteSpace(svc.Url) && !string.IsNullOrWhiteSpace(svc.ApiKey);
-
     protected override async Task OnInitializedAsync()
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
@@ -248,11 +245,6 @@
 
         foreach (var svc in new[] { _sonarrService, _radarrService })
         {
-            if (!HasService(svc))
-            {
-                continue;
-            }
-
             svc.Url = svc.Url.SanitizeUrl();
 
             if (svc.Id == 0)
@@ -264,7 +256,6 @@
                 var existing = await context.ExternalServices.FindAsync(svc.Id);
                 if (existing != null)
                 {
-                    existing.Name = svc.Name;
                     existing.Url = svc.Url;
                     existing.ApiKey = svc.ApiKey;
                 }

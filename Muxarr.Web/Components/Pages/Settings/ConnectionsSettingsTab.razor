@@ -21,6 +21,8 @@
         {
             <div class="col-lg-6">
                 <ArrServiceCard Service="svc"
+                                ShowName="@HasMultiple(svc.Type)"
+                                CanDelete="@(!IsDefault(svc))"
                                 GetWebhookUrl="@(() => WebhookUrl)"
                                 AutoSave="@SaveSettingsSilent"
                                 OnDelete="@(() => RemoveService(svc))"/>
@@ -87,22 +89,45 @@
         }
     }
 
+    private bool HasMultiple(ExternalServiceType type) => Services.Count(s => s.Type == type) > 1;
+
+    private bool IsDefault(ExternalService svc) =>
+        svc == Services.FirstOrDefault(s => s.Type == svc.Type);
+
     protected override async Task OnInitializedAsync()
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
 
         Services = await context.ExternalServices.OrderBy(c => c.Id).ToListAsync();
+
+        // Ensure default Sonarr/Radarr records always exist
+        var changed = false;
+        if (!Services.Any(s => s.Type == ExternalServiceType.Sonarr))
+        {
+            var sonarr = new ExternalService { Name = "Sonarr", Type = ExternalServiceType.Sonarr };
+            context.ExternalServices.Add(sonarr);
+            Services.Insert(0, sonarr);
+            changed = true;
+        }
+        if (!Services.Any(s => s.Type == ExternalServiceType.Radarr))
+        {
+            var radarr = new ExternalService { Name = "Radarr", Type = ExternalServiceType.Radarr };
+            context.ExternalServices.Add(radarr);
+            Services.Add(radarr);
+            changed = true;
+        }
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+        }
+
         WebhookConfig = context.Configs.GetOrDefault<WebhookConfig>();
     }
 
     private void AddService(ExternalServiceType type)
     {
         var name = type == ExternalServiceType.Sonarr ? "Sonarr" : "Radarr";
-        var existing = Services.Count(c => c.Type == type);
-        if (existing > 0)
-        {
-            name += $" {existing + 1}";
-        }
+        name += $" {Services.Count(c => c.Type == type) + 1}";
 
         Services.Add(new ExternalService { Name = name, Type = type });
     }

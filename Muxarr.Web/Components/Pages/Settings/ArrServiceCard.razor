@@ -18,10 +18,13 @@
         }
     </div>
 
-    <div class="mb-3">
-        <label for="@($"name-{Service.Id}")" class="form-label">Name</label>
-        <InputText id="@($"name-{Service.Id}")" class="form-control" @bind-Value="Service.Name"/>
-    </div>
+    @if (ShowName)
+    {
+        <div class="mb-3">
+            <label for="@($"name-{Service.Id}")" class="form-label">Name</label>
+            <InputText id="@($"name-{Service.Id}")" class="form-control" @bind-Value="Service.Name"/>
+        </div>
+    }
 
     <div class="mb-3">
         <label for="@($"url-{Service.Id}")" class="form-label">URL</label>
@@ -55,9 +58,9 @@
             </button>
         }
 
-        @if (OnDelete.HasDelegate)
+        @if (CanDelete)
         {
-            <button type="button" class="btn btn-outline-danger btn-sm ms-auto" @onclick="OnDelete"
+            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnDelete"
                     disabled="@_isBusy">
                 <i class="bi bi-trash me-1"></i>Remove
             </button>
@@ -77,6 +80,8 @@
     private bool? _isWebhookConnected;
 
     [Parameter] [EditorRequired] public required ExternalService Service { get; set; }
+    [Parameter] public bool ShowName { get; set; }
+    [Parameter] public bool CanDelete { get; set; }
     [Parameter] public Func<string>? GetWebhookUrl { get; set; }
     [Parameter] public Func<Task>? AutoSave { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
