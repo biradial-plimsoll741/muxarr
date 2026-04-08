@@ -63,6 +63,7 @@
 @code {
     [Inject] public required IDbContextFactory<AppDbContext> ContextFactory { get; set; }
     [Inject] public required IToastService ToastService { get; set; }
+    [Inject] public required IModalService ModalService { get; set; }
 
     private List<ExternalService> Services { get; set; } = [];
     private WebhookConfig WebhookConfig { get; set; } = new();
@@ -108,6 +109,16 @@
 
     private async Task RemoveService(ExternalService svc)
     {
+        if (svc.Id != 0)
+        {
+            if (!await ModalService.ShowConfirm(
+                    $"Remove '{svc.Name}'? All synced media info from this connection will be deleted.",
+                    $"Remove {svc.Name}?"))
+            {
+                return;
+            }
+        }
+
         Services.Remove(svc);
 
         if (svc.Id != 0)
@@ -146,6 +157,11 @@
 
             foreach (var svc in Services)
             {
+                if (string.IsNullOrWhiteSpace(svc.Name))
+                {
+                    svc.Name = svc.Type == ExternalServiceType.Sonarr ? "Sonarr" : "Radarr";
+                }
+
                 svc.Url = svc.Url.SanitizeUrl();
 
                 if (svc.Id == 0)
