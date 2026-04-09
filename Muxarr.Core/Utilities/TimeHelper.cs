@@ -26,11 +26,11 @@ public static class TimeHelper
         return dateTime.ToString("MMMM d, yyyy");
     }
 
-    public static string FormatMinutes(int totalMinutes)
+    public static string FormatMinutes(int totalMinutes, string zeroLabel = "disabled")
     {
         if (totalMinutes <= 0)
         {
-            return "disabled";
+            return zeroLabel;
         }
         if (totalMinutes < 60)
         {

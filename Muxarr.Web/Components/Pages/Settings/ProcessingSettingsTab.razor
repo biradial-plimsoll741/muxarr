@@ -4,23 +4,6 @@
 
 <EditForm Model="WebhookConfig" OnValidSubmit="HandleSubmit">
     <div class="border rounded p-4 mb-4">
-        <h5 class="mb-3"><i class="bi bi-search me-2"></i>Library Scanning</h5>
-        <p class="text-muted small mb-3">Configure how often the library is automatically scanned for changes.
-            Set to 0 to disable when using webhooks. Manual scans can always be triggered from the library page.</p>
-
-        <div class="mb-3">
-            <div class="d-flex align-items-center gap-2">
-                <label for="scan-interval" class="form-label mb-0 text-nowrap">Scan interval</label>
-                <InputNumber id="scan-interval" class="form-control form-control-sm" style="width: 80px;"
-                             @bind-Value="ProcessingConfig.ScanIntervalMinutes"/>
-                <span class="text-muted small text-nowrap">
-                    minutes (@TimeHelper.FormatMinutes(ProcessingConfig.ScanIntervalMinutes))
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="border rounded p-4 mb-4">
         <h5 class="mb-3"><i class="bi bi-arrow-repeat me-2"></i>Webhook Processing</h5>
         <p class="text-muted small mb-3">Configure how and when files are processed after they arrive via webhook.
             Webhooks must be connected in the Connections tab first.</p>
@@ -40,6 +23,50 @@
             <small class="form-text text-muted">
                 Wait before processing to avoid file locks with other services (Bazarr, etc.)
             </small>
+        </div>
+    </div>
+
+    <div class="border rounded p-4 mb-4">
+        <h5 class="mb-3"><i class="bi bi-gear me-2"></i>Service Settings</h5>
+
+        <div class="mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <label for="scan-interval" class="form-label mb-0 text-nowrap">Scan interval</label>
+                <InputNumber id="scan-interval" class="form-control form-control-sm" style="width: 80px;"
+                             @bind-Value="ProcessingConfig.ScanIntervalMinutes"/>
+                <span class="text-muted small text-nowrap">
+                    minutes
+                    @if (ProcessingConfig.ScanIntervalMinutes <= 0)
+                    {
+                        @("(disabled)")
+                    }
+                    else if (ProcessingConfig.ScanIntervalMinutes >= 60)
+                    {
+                        @($"({TimeHelper.FormatMinutes(ProcessingConfig.ScanIntervalMinutes)})")
+                    }
+                </span>
+            </div>
+            <small class="form-text text-muted">Set to 0 to disable when using webhooks. Manual scans can always be triggered from the library page.</small>
+        </div>
+
+        <div class="mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <label for="conversion-timeout" class="form-label mb-0 text-nowrap">Conversion timeout</label>
+                <InputNumber id="conversion-timeout" class="form-control form-control-sm" style="width: 80px;"
+                             @bind-Value="ProcessingConfig.ConversionTimeoutMinutes"/>
+                <span class="text-muted small text-nowrap">
+                    minutes
+                    @if (ProcessingConfig.ConversionTimeoutMinutes <= 0)
+                    {
+                        @("(unlimited)")
+                    }
+                    else if (ProcessingConfig.ConversionTimeoutMinutes >= 60)
+                    {
+                        @($"({TimeHelper.FormatMinutes(ProcessingConfig.ConversionTimeoutMinutes)})")
+                    }
+                </span>
+            </div>
+            <small class="form-text text-muted">Maximum time for a single file conversion. Set to 0 to disable.</small>
         </div>
     </div>
 

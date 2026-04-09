@@ -3,6 +3,7 @@ namespace Muxarr.Core.Config;
 public class ProcessingConfig
 {
     public int ScanIntervalMinutes { get; set; }
+    public int ConversionTimeoutMinutes { get; set; } = 60;
 
     public bool PostProcessingEnabled { get; set; }
     public string PostProcessingCommand { get; set; } = string.Empty;

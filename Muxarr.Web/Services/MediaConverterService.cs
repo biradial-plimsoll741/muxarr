@@ -16,7 +16,7 @@ public class MediaConverterService(
     IServiceScopeFactory serviceScopeFactory,
     MediaScannerService scanner,
     ILogger<MediaConverterService> logger)
-    : ScheduledServiceBase(logger)
+    : ConfigurableServiceBase<ProcessingConfig>(serviceScopeFactory, logger)
 {
     private CancellationTokenSource? _currentConversionCts;
     private bool _firstRun = true;
@@ -58,7 +58,7 @@ public class MediaConverterService(
 
     public async Task CancelQueuedConversion(int conversionId)
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var deleted = await context.MediaConversions
@@ -73,7 +73,7 @@ public class MediaConverterService(
 
     public async Task ClearQueue()
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var deleted = await context.MediaConversions
@@ -90,7 +90,9 @@ public class MediaConverterService(
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        ReloadConfig();
+
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         if (_firstRun)
@@ -145,7 +147,7 @@ public class MediaConverterService(
             return false;
         }
 
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var profile = profileOverride ?? media.Profile ?? context.Profiles.ToList().GetBestCandidate(media.Path);
@@ -186,7 +188,7 @@ public class MediaConverterService(
             return false;
         }
 
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var profile = media.Profile ?? context.Profiles.ToList().GetBestCandidate(media.Path);
@@ -313,6 +315,9 @@ public class MediaConverterService(
         // byte-identical (metadata edits, track removal, and reorder all use
         // the same writer).
         var useFFmpeg = family != ContainerFamily.Matroska;
+        var conversionTimeout = Config.ConversionTimeoutMinutes > 0
+            ? TimeSpan.FromMinutes(Config.ConversionTimeoutMinutes)
+            : (TimeSpan?)null;
 
         // Place temp file next to source so the final move is an atomic rename
         // instead of a cross-filesystem copy (e.g. /tmp -> mounted media volume).
@@ -327,11 +332,11 @@ public class MediaConverterService(
 
             if (useFFmpeg)
             {
-                await RunFFmpegRemuxAsync(conversion, trackOutputs, tmp, context, token);
+                await RunFFmpegRemuxAsync(conversion, trackOutputs, tmp, context, conversionTimeout, token);
             }
             else
             {
-                await RunMkvMergeRemuxAsync(conversion, trackOutputs, tmp, context, token);
+                await RunMkvMergeRemuxAsync(conversion, trackOutputs, tmp, context, conversionTimeout, token);
             }
 
             await FinalizeTemporaryOutputAsync(conversion, tmp, context, scope, token);
@@ -421,7 +426,7 @@ public class MediaConverterService(
     }
 
     private async Task RunMkvMergeRemuxAsync(MediaConversion conversion, List<TrackOutput> trackOutputs, string tmp,
-        AppDbContext context, CancellationToken token)
+        AppDbContext context, TimeSpan? timeout, CancellationToken token)
     {
         var mediaFile = conversion.MediaFile!;
         conversion.Log($"Starting mux for {mediaFile.GetName()}..", logger);
@@ -436,9 +441,15 @@ public class MediaConverterService(
                     conversion.Log(line, logger);
                 }
                 reportProgress(progress);
-            });
+            }, timeout);
 
         token.ThrowIfCancellationRequested();
+
+        if (result.TimedOut)
+        {
+            throw new TimeoutException(
+                $"Conversion timed out after {Config.ConversionTimeoutMinutes} minute(s) for: {mediaFile.GetName()}");
+        }
 
         if (!MkvMerge.IsSuccess(result))
         {
@@ -456,7 +467,7 @@ public class MediaConverterService(
     }
 
     private async Task RunFFmpegRemuxAsync(MediaConversion conversion, List<TrackOutput> trackOutputs,
-        string tmp, AppDbContext context, CancellationToken token)
+        string tmp, AppDbContext context, TimeSpan? timeout, CancellationToken token)
     {
         var mediaFile = conversion.MediaFile!;
         conversion.Log($"Starting ffmpeg stream copy for {mediaFile.GetName()}..", logger);
@@ -472,9 +483,16 @@ public class MediaConverterService(
                 }
                 reportProgress(progress);
             },
-            faststart: mediaFile.HasFaststart);
+            faststart: mediaFile.HasFaststart,
+            timeout: timeout);
 
         token.ThrowIfCancellationRequested();
+
+        if (result.TimedOut)
+        {
+            throw new TimeoutException(
+                $"Conversion timed out after {Config.ConversionTimeoutMinutes} minute(s) for: {mediaFile.GetName()}");
+        }
 
         if (!FFmpeg.IsSuccess(result))
         {
@@ -562,7 +580,7 @@ public class MediaConverterService(
         conversion.TracksAfter = conversion.MediaFile.Tracks.ToSnapshots();
         conversion.SizeDifference = Math.Abs(conversion.SizeBefore - conversion.SizeAfter);
 
-        await RunPostProcessing(conversion, context);
+        await RunPostProcessing(conversion);
 
         conversion.State = ConversionState.Completed;
         conversion.Progress = 100;
@@ -676,15 +694,14 @@ public class MediaConverterService(
         }
     }
 
-    private async Task RunPostProcessing(MediaConversion conversion, AppDbContext context)
+    private async Task RunPostProcessing(MediaConversion conversion)
     {
-        var config = context.Configs.GetOrDefault<ProcessingConfig>();
-        if (!config.PostProcessingEnabled || string.IsNullOrWhiteSpace(config.PostProcessingCommand))
+        if (!Config.PostProcessingEnabled || string.IsNullOrWhiteSpace(Config.PostProcessingCommand))
         {
             return;
         }
 
-        var resolvedCommand = config.ResolveCommand(conversion.MediaFile!.Path);
+        var resolvedCommand = Config.ResolveCommand(conversion.MediaFile!.Path);
         conversion.Log($"Running post-processing: {resolvedCommand}", logger);
 
         try
