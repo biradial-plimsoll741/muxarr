@@ -8,11 +8,18 @@
             Manual scans can always be triggered from the library page.</p>
 
         <div class="mb-3">
-            <label for="scan-interval" class="form-label">Scan interval (hours)</label>
+            <label for="scan-interval" class="form-label">Scan interval (minutes)</label>
             <InputNumber id="scan-interval" class="form-control" style="max-width: 200px;"
-                         @bind-Value="ProcessingConfig.ScanIntervalHours"/>
+                         @bind-Value="ProcessingConfig.ScanIntervalMinutes"/>
             <small class="form-text text-muted">
-                Set to 0 to disable automatic scanning.
+                @if (ProcessingConfig.ScanIntervalMinutes <= 0)
+                {
+                    @:Disabled
+                }
+                else
+                {
+                    @($"{ProcessingConfig.ScanIntervalMinutes / 1440.0:G3} days")
+                }
             </small>
         </div>
     </div>

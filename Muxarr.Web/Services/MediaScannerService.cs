@@ -15,7 +15,7 @@ namespace Muxarr.Web.Services;
 public class MediaScannerService(
     IServiceScopeFactory serviceScopeFactory,
     ILogger<MediaScannerService> logger,
-    ArrSyncService arrSyncService) : ScheduledServiceBase(logger)
+    ArrSyncService arrSyncService) : ConfigurableServiceBase<ProcessingConfig>(serviceScopeFactory, logger)
 {
     // Everything scan-side goes through ffprobe. mkvmerge stays on the write
     // side (remux + mkvpropedit) where it's irreplaceable.
@@ -29,18 +29,9 @@ public class MediaScannerService(
     private DateTime _lastScanUpdate = DateTime.MinValue;
     private CancellationTokenSource? _scanCts;
 
-    public override TimeSpan? Interval
-    {
-        get
-        {
-            using var scope = serviceScopeFactory.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var config = context.Configs.GetOrDefault<ProcessingConfig>();
-            return config.ScanIntervalHours > 0
-                ? TimeSpan.FromHours(config.ScanIntervalHours)
-                : null;
-        }
-    }
+    public override TimeSpan? Interval => Config.ScanIntervalMinutes > 0
+        ? TimeSpan.FromMinutes(Config.ScanIntervalMinutes)
+        : null;
 
     public bool IsScanning
     {
@@ -106,7 +97,7 @@ public class MediaScannerService(
 
     public async Task ScanAll(bool forceRescan)
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         foreach (var profile in await context.Profiles.ToListAsync())
@@ -126,7 +117,7 @@ public class MediaScannerService(
 
         logger.LogInformation("Scanning '{Directory}' (force: {ForceRescan})", directory, forceRescan);
 
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var scanned = 0;
 
@@ -165,7 +156,7 @@ public class MediaScannerService(
             return;
         }
 
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await ScanFileCore(filePath, forceRescan, profile, context, webhookTitle, webhookOriginalLanguage);
     }
@@ -271,7 +262,7 @@ public class MediaScannerService(
 
     private async Task PurgeDeleted(CancellationToken token)
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var profiles = await context.Profiles.ToListAsync(token);
 
@@ -311,7 +302,7 @@ public class MediaScannerService(
 
     private async Task ComputeStats()
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using var scope = ServiceScopeFactory.CreateScope();
         var statsService = scope.ServiceProvider.GetRequiredService<LibraryStatsService>();
         await statsService.ComputeAndCacheAsync();
     }
