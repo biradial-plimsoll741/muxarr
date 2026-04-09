@@ -19,6 +19,7 @@ public class MediaConversion : AuditableEntity
     public List<TrackSnapshot> TracksAfter { get; set; } = new();
     public List<TrackSnapshot> AllowedTracks { get; set; } = new();
     public bool IsCustomConversion { get; set; }
+    public DateTime? StartedDate { get; set; }
     public ConversionState State { get; set; } = ConversionState.New;
     public MediaFile? MediaFile { get; set; }
 }

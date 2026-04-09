@@ -23,9 +23,7 @@
     <h2 class="border-bottom pb-3 mb-4 text-break">
         <i class="bi bi-arrow-repeat me-2"></i>@Conversion.Name
     </h2>
-
-
-
+    
     <div class="row g-4">
         <!-- Progress -->
         @if (Conversion.State == ConversionState.Processing)
@@ -93,14 +91,47 @@
 
                     <!-- Dates Column -->
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="mb-3">
-                            <div class="text-muted small mb-1">Started</div>
-                            <TimeAgo DateTime="Conversion.CreatedDate"/>
-                        </div>
-                        <div>
-                            <div class="text-muted small mb-1">Last Updated</div>
-                            <TimeAgo DateTime="Conversion.UpdatedDate"/>
-                        </div>
+                        @if (Conversion.State is ConversionState.New or ConversionState.Processing)
+                        {
+                            <div class="mb-3">
+                                <div class="text-muted small mb-1">Queued</div>
+                                <TimeAgo DateTime="Conversion.CreatedDate"/>
+                            </div>
+                            @if (Conversion.StartedDate.HasValue)
+                            {
+                                <div>
+                                    <div class="text-muted small mb-1">Started</div>
+                                    <TimeAgo DateTime="Conversion.StartedDate.Value"/>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            @if (Conversion.StartedDate.HasValue)
+                            {
+                                <div class="mb-3">
+                                    <div class="text-muted small mb-1">Started</div>
+                                    <TimeAgo DateTime="Conversion.StartedDate.Value"/>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3">
+                                    <div class="text-muted small mb-1">Queued</div>
+                                    <TimeAgo DateTime="Conversion.CreatedDate"/>
+                                </div>
+                            }
+                            <div>
+                                <div class="text-muted small mb-1">@(Conversion.State == ConversionState.Failed ? "Failed" : "Completed")</div>
+                                <div>
+                                    <TimeAgo DateTime="Conversion.UpdatedDate"/>
+                                    @if (Conversion.StartedDate.HasValue)
+                                    {
+                                        <span class="text-muted ms-2">(took <Duration Value="Conversion.UpdatedDate - Conversion.StartedDate.Value"/>)</span>
+                                    }
+                                </div>
+                            </div>
+                        }
                     </div>
 
                     <!-- Size Information Column -->
@@ -145,10 +176,17 @@
                     <i class="bi bi-collection-fill text-primary me-2"></i>
                     <h5 class="mb-0">Tracks After</h5>
                 </div>
-                <div class="table-responsive">
-                    <MediaTrackDetailTable Tracks="Conversion.TracksAfter"
-                                           OriginalLanguage="@Conversion.MediaFile?.OriginalLanguage"/>
-                </div>
+                @if (Conversion.TracksAfter.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <MediaTrackDetailTable Tracks="Conversion.TracksAfter"
+                                               OriginalLanguage="@Conversion.MediaFile?.OriginalLanguage"/>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No track data available.</p>
+                }
             </div>
         </div>
 
@@ -193,23 +231,29 @@
 
     private async Task OnCancel()
     {
-        if (!await ModalService.ShowConfirm(
-                "Are you sure you want to cancel this conversion?",
-                "Cancel Conversion"))
-        {
-            return;
-        }
-
         if (Conversion!.State == ConversionState.Processing)
         {
+            if (!await ModalService.ShowConfirm(
+                    "Are you sure you want to cancel this conversion?",
+                    "Cancel Conversion"))
+            {
+                return;
+            }
+
             MediaConverter.CancelCurrentConversion();
             ToastService.ShowWarning("Cancelling current conversion.");
         }
         else if (Conversion.State == ConversionState.New)
         {
+            if (!await ModalService.ShowConfirm(
+                    $"Are you sure you want to remove '{Conversion.Name}' from the queue?",
+                    "Remove from Queue"))
+            {
+                return;
+            }
+
             await MediaConverter.CancelQueuedConversion(Conversion.Id);
-            Conversion.State = ConversionState.Failed;
-            ToastService.ShowWarning($"Cancelled {Conversion.Name}.");
+            NavigationManager.NavigateTo("/conversions");
         }
     }
 
@@ -218,7 +262,7 @@
         NavigationManager.NavigateTo($"/library/{Conversion!.MediaFileId}");
     }
 
-    private void OnConverterStateChanged(object? sender, ConverterProgressEvent e)
+    private void OnConverterStateChanged(ConverterProgressEvent e)
     {
         _ = InvokeAsync(() =>
         {
@@ -238,6 +282,8 @@
             Conversion.Log = e.Conversion.Log;
             Conversion.Progress = e.Conversion.Progress;
             Conversion.State = e.Conversion.State;
+            Conversion.StartedDate ??= e.Conversion.StartedDate;
+            Conversion.UpdatedDate = e.Conversion.UpdatedDate;
 
             StateHasChanged();
         });

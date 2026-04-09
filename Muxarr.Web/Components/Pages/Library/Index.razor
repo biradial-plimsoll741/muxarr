@@ -37,8 +37,17 @@
         @if (SelectedItems.Count > 0)
         {
             <div class="col-auto">
-                <button @onclick="QueueSelected" class="btn btn-success btn-sm" type="button">
-                    <i class="bi bi-plus-circle me-1"></i>Queue @SelectedItems.Count to conversion
+                <button @onclick="QueueSelected" class="btn btn-success btn-sm" type="button"
+                        disabled="@_isQueueing">
+                    @if (_isQueueing)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-plus-circle me-1"></i>
+                    }
+                    Queue @SelectedItems.Count to conversion
                 </button>
             </div>
         }
@@ -62,7 +71,7 @@
         <div class="col">
             <SearchBar Parent="this"></SearchBar>
         </div>
-        <div class="col-auto d-flex justify-content-center gap-2 align-items-center">
+        <div class="col-12 col-md-auto d-flex flex-wrap gap-2 align-items-center">
             <ResetFilters Parent="this"></ResetFilters>
             @if (_profileSummaries.Count > 1)
             {
@@ -85,8 +94,6 @@
                     @onclick="() => _showAdvanced = !_showAdvanced">
                 <i class="bi bi-funnel me-1"></i>Advanced
             </button>
-        </div>
-        <div class="col-auto">
             <ItemsPerPage Parent="this"/>
         </div>
     </div>
@@ -543,6 +550,7 @@
     private async Task QueueAllFiltered()
     {
         _isQueueing = true;
+        StateHasChanged();
         try
         {
             await using var context = await ContextFactory.CreateDbContextAsync();
@@ -559,8 +567,17 @@
 
     private async Task QueueSelected()
     {
-        await QueueFiles(SelectedItems);
-        SelectedItems.Clear();
+        _isQueueing = true;
+        StateHasChanged();
+        try
+        {
+            await QueueFiles(SelectedItems);
+            SelectedItems.Clear();
+        }
+        finally
+        {
+            _isQueueing = false;
+        }
     }
 
     private async Task QueueFiles(IEnumerable<MediaFile> files)
@@ -595,7 +612,7 @@
         NavigationManager.NavigateTo($"/library/{file.Id}");
     }
 
-    private void OnScanningStateChanged(object? sender, bool isScanning)
+    private void OnScanningStateChanged(bool isScanning)
     {
         if (_disposed)
         {

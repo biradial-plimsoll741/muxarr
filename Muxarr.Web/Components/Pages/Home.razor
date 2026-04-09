@@ -84,7 +84,7 @@
                         </a>
                         <small class="text-muted">
                             Started
-                            <TimeAgo DateTime="_activeConversion.CreatedDate"/>
+                            <TimeAgo DateTime="_activeConversion.StartedDate ?? _activeConversion.CreatedDate"/>
                         </small>
                     </div>
                     <ConversionProgressBar Conversion="_activeConversion"/>
@@ -113,7 +113,7 @@
                                     <tr>
                                         <th>Name</th>
                                         <th>State</th>
-                                        <th>Time</th>
+                                        <th>Queued</th>
                                         <th>Size Change</th>
                                     </tr>
                                     </thead>
@@ -254,7 +254,7 @@
             .ToListAsync();
     }
 
-    private void OnConverterStateChanged(object? sender, ConverterProgressEvent e)
+    private void OnConverterStateChanged(ConverterProgressEvent e)
     {
         if (_disposed)
         {
@@ -286,6 +286,7 @@
                     Id = e.Conversion.Id,
                     Name = e.Conversion.Name,
                     CreatedDate = e.Conversion.CreatedDate,
+                    StartedDate = e.Conversion.StartedDate,
                     Progress = e.Conversion.Progress,
                     State = e.Conversion.State
                 };

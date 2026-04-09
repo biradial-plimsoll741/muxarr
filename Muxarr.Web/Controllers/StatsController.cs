@@ -39,8 +39,8 @@ public class StatsController(IDbContextFactory<AppDbContext> contextFactory) : C
 
         var lastConversionAt = await context.MediaConversions
             .Where(c => c.State == ConversionState.Completed)
-            .OrderByDescending(c => c.CreatedDate)
-            .Select(c => (DateTime?)c.CreatedDate)
+            .OrderByDescending(c => c.UpdatedDate)
+            .Select(c => (DateTime?)c.UpdatedDate)
             .FirstOrDefaultAsync();
 
         var lastFileAddedAt = await context.MediaFiles

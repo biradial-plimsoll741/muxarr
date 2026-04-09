@@ -1,0 +1,25 @@
+@FormatDuration(Value)
+
+@code {
+    [Parameter] [EditorRequired] public TimeSpan Value { get; set; }
+
+    private static string FormatDuration(TimeSpan duration)
+    {
+        if (duration < TimeSpan.Zero)
+        {
+            duration = duration.Duration();
+        }
+
+        if (duration.TotalHours >= 1)
+        {
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        }
+
+        if (duration.TotalMinutes >= 1)
+        {
+            return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+        }
+
+        return $"{(int)duration.TotalSeconds}s";
+    }
+}
