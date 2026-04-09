@@ -44,11 +44,11 @@ public class MediaScannerService(
             }
 
             field = value;
-            ScanningStateChanged?.Invoke(this, value);
+            ScanningStateChanged?.Invoke(value);
         }
     }
 
-    public event EventHandler<bool>? ScanningStateChanged;
+    public event Action<bool>? ScanningStateChanged;
 
     protected override async Task ExecuteAsync(CancellationToken token)
     {
@@ -140,7 +140,7 @@ public class MediaScannerService(
             if (DateTime.UtcNow - _lastScanUpdate > TimeSpan.FromSeconds(5))
             {
                 _lastScanUpdate = DateTime.UtcNow;
-                ScanningStateChanged?.Invoke(this, true);
+                ScanningStateChanged?.Invoke(true);
             }
         }
 

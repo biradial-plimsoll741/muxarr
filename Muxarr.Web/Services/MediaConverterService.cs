@@ -24,14 +24,14 @@ public class MediaConverterService(
     public override TimeSpan? Interval => TimeSpan.FromMinutes(60);
 
     public bool IsPaused { get; private set; }
-    public event EventHandler<ConverterProgressEvent>? ConverterStateChanged;
-    public event EventHandler? QueueStateChanged;
+    public event Action<ConverterProgressEvent>? ConverterStateChanged;
+    public event Action? QueueStateChanged;
 
     public void TogglePause()
     {
         IsPaused = !IsPaused;
         logger.LogInformation("Conversion queue {State}", IsPaused ? "paused" : "resumed");
-        QueueStateChanged?.Invoke(this, EventArgs.Empty);
+        QueueStateChanged?.Invoke();
 
         if (!IsPaused)
         {
@@ -81,7 +81,7 @@ public class MediaConverterService(
             .ExecuteDeleteAsync();
 
         logger.LogInformation("Removed {Count} queued conversion(s)", deleted);
-        QueueStateChanged?.Invoke(this, EventArgs.Empty);
+        QueueStateChanged?.Invoke();
     }
 
     /// <summary>
@@ -223,7 +223,7 @@ public class MediaConverterService(
             conversion.State = ConversionState.Failed;
             context.Update(conversion);
             await context.SaveChangesAsync(token);
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
             return;
         }
 
@@ -234,7 +234,7 @@ public class MediaConverterService(
             conversion.State = ConversionState.Failed;
             context.Update(conversion);
             await context.SaveChangesAsync(token);
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
             return;
         }
 
@@ -299,7 +299,7 @@ public class MediaConverterService(
             conversion.Progress = 100;
             context.Update(conversion);
             await context.SaveChangesAsync(token);
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
             return;
         }
 
@@ -373,7 +373,7 @@ public class MediaConverterService(
                 /* best effort - context may be disposed or in a bad state after cancellation */
             }
 
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
         }
     }
 
@@ -504,7 +504,7 @@ public class MediaConverterService(
             }
             last = p;
             conversion.Progress = p;
-            ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+            ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
         };
     }
 
@@ -535,7 +535,7 @@ public class MediaConverterService(
         OutputValidator.ValidateOrThrow(probed, conversion.MediaFile!, conversion.AllowedTracks);
 
         conversion.Log("Validation of new file is ok!", logger);
-        ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+        ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
 
         token.ThrowIfCancellationRequested();
 
@@ -551,7 +551,7 @@ public class MediaConverterService(
                 // File move is typically instant (atomic rename on same filesystem).
                 // Only uses meaningful progress for cross-filesystem copies.
                 conversion.Progress = 95 + (int)(i * 0.05);
-                ConverterStateChanged?.Invoke(this, new ConverterProgressEvent(conversion));
+                ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
             }, token);
 
         conversion.Log("Removing old file..", logger);
@@ -718,7 +718,7 @@ public class MediaConverterService(
     }
 }
 
-public class ConverterProgressEvent(MediaConversion conversion) : EventArgs
+public class ConverterProgressEvent(MediaConversion conversion)
 {
     public MediaConversion Conversion { get; } = conversion;
 }

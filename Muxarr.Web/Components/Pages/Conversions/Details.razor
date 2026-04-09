@@ -264,7 +264,7 @@
         NavigationManager.NavigateTo($"/library/{Conversion!.MediaFileId}");
     }
 
-    private void OnConverterStateChanged(object? sender, ConverterProgressEvent e)
+    private void OnConverterStateChanged(ConverterProgressEvent e)
     {
         _ = InvokeAsync(() =>
         {
