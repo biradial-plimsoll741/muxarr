@@ -46,7 +46,7 @@ public class NotificationService
         converter.ConverterStateChanged += OnConverterStateChanged;
     }
 
-    private void OnConverterStateChanged(object? sender, ConverterProgressEvent e)
+    private void OnConverterStateChanged(ConverterProgressEvent e)
     {
         var conversion = e.Conversion;
         var eventType = conversion.State switch
