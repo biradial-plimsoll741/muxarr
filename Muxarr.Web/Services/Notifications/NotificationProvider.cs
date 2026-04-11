@@ -6,18 +6,12 @@ using Muxarr.Web.Components.Shared;
 namespace Muxarr.Web.Services.Notifications;
 
 /// <summary>
-/// Non-generic base for DI registration and consumers (the modal, the service). Provider
-/// authors should not derive from this directly - inherit <see cref="NotificationProvider{TSettings}"/>
-/// instead, which gives you a strongly-typed settings object built by the cached binder.
+/// Non-generic base for DI registration. Provider authors should inherit
+/// <see cref="NotificationProvider{TSettings}"/>, not this class directly.
 /// </summary>
 public abstract class NotificationProvider
 {
-    /// <summary>Stable identifier persisted in <see cref="NotificationConfig.Provider"/>. Derived from the class name.</summary>
     public string Type => GetType().Name.Replace("Provider", "");
-
-    /// <summary>Human-friendly label shown in the UI. Override when the display name should differ from the storage key.</summary>
-    public virtual string DisplayName => Type;
-
     public virtual string Icon => "bi-bell";
     public abstract IReadOnlyDictionary<string, FieldAttribute> Fields { get; }
     public abstract Task SendAsync(HttpClient client, NotificationConfig config, NotificationPayload payload);
@@ -46,6 +40,31 @@ public abstract class NotificationProvider
         }
 
         return result;
+    }
+
+    /// <summary>Truncates to <paramref name="max"/> chars, appending an ellipsis on overflow.</summary>
+    public static string Clip(string? value, int max)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length <= max)
+        {
+            return value ?? string.Empty;
+        }
+
+        return value[..(max - 1)] + "…";
+    }
+
+    /// <summary>Escapes <c>&amp;</c>, <c>&lt;</c>, <c>&gt;</c> to HTML entities. Order matters - <c>&amp;</c> first.</summary>
+    protected static string EscapeHtml(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
     }
 }
 

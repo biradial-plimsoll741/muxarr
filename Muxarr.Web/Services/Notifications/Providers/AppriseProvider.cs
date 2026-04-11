@@ -8,8 +8,21 @@ public class AppriseSettings
     [Field("Apprise API URL", Type = FieldType.Url, Placeholder = "http://apprise:8000")]
     public string Url { get; set; } = "";
 
-    [Field("Tag", HelpText = "Only notify URLs tagged with this value in your Apprise config. Leave empty to notify all.")]
+    [Field("Notification URLs",
+        HelpText = "Stateless mode. Comma- or space-separated apprise:// URLs. If set, Configuration Key is ignored.")]
+    public string Urls { get; set; } = "";
+
+    [Field("Configuration Key",
+        HelpText = "Persistent mode. The key your notification URLs are stored under. Register them first via /add/{key} or the Apprise API web UI.")]
+    public string ConfigKey { get; set; } = "";
+
+    [Field("Tag",
+        HelpText = "Persistent mode only. Comma = OR, space = AND across tags.")]
     public string Tag { get; set; } = "";
+
+    [Field("Format", Default = "text",
+        HelpText = "text, markdown, or html.")]
+    public string Format { get; set; } = "text";
 }
 
 public class AppriseProvider : NotificationProvider<AppriseSettings>
@@ -18,7 +31,20 @@ public class AppriseProvider : NotificationProvider<AppriseSettings>
 
     protected override Task SendCoreAsync(HttpClient client, AppriseSettings s, NotificationPayload payload)
     {
-        var body = new Dictionary<string, string>
+        if (string.IsNullOrWhiteSpace(s.Url))
+        {
+            throw new InvalidOperationException("Apprise API URL is required.");
+        }
+
+        var hasUrls = !string.IsNullOrWhiteSpace(s.Urls);
+        var hasKey = !string.IsNullOrWhiteSpace(s.ConfigKey);
+        if (!hasUrls && !hasKey)
+        {
+            throw new InvalidOperationException(
+                "Set either Notification URLs (stateless mode) or Configuration Key (persistent mode).");
+        }
+
+        var body = new Dictionary<string, object>
         {
             ["title"] = payload.Title,
             ["body"] = payload.Body,
@@ -27,14 +53,26 @@ public class AppriseProvider : NotificationProvider<AppriseSettings>
                 NotificationEventType.Failed => "failure",
                 NotificationEventType.Completed => "success",
                 _ => "info"
-            }
+            },
+            ["format"] = string.IsNullOrWhiteSpace(s.Format) ? "text" : s.Format.Trim().ToLowerInvariant()
         };
 
-        if (!string.IsNullOrEmpty(s.Tag))
+        string endpoint;
+        if (hasUrls)
         {
-            body["tag"] = s.Tag;
+            body["urls"] = s.Urls.Trim();
+            endpoint = BuildUrl(s.Url, "notify");
+        }
+        else
+        {
+            // Tag is only meaningful when filtering across URLs registered under a key.
+            if (!string.IsNullOrWhiteSpace(s.Tag))
+            {
+                body["tag"] = s.Tag.Trim();
+            }
+            endpoint = BuildUrl(s.Url, $"notify/{Uri.EscapeDataString(s.ConfigKey.Trim())}");
         }
 
-        return PostJsonAsync(client, BuildUrl(s.Url, "notify"), body);
+        return PostJsonAsync(client, endpoint, body);
     }
 }

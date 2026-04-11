@@ -228,17 +228,21 @@ public sealed class NotificationService
 
     private static NotificationPayload BuildPayload(NotificationEventType type, MediaConversion conversion, string? filePath)
     {
-        var lastError = type == NotificationEventType.Failed ? GetLastError(conversion) : null;
+        // Cap before interpolation so a long filename or error doesn't crowd out the trailing info.
+        var name = NotificationProvider.Clip(conversion.Name, 256);
+        var lastError = type == NotificationEventType.Failed
+            ? NotificationProvider.Clip(GetLastError(conversion), 512)
+            : null;
 
         var (title, body) = type switch
         {
             NotificationEventType.Started =>
-                ("Conversion Started", $"{conversion.Name} - {conversion.SizeBefore.DisplayFileSize()}"),
+                ("Conversion Started", $"{name} - {conversion.SizeBefore.DisplayFileSize()}"),
             NotificationEventType.Completed =>
-                ("Conversion Completed", $"{conversion.Name} - {BuildSizeChangeSummary(conversion)}"),
+                ("Conversion Completed", $"{name} - {BuildSizeChangeSummary(conversion)}"),
             NotificationEventType.Failed =>
-                ("Conversion Failed", $"{conversion.Name} - {lastError}"),
-            _ => ("Muxarr", conversion.Name)
+                ("Conversion Failed", $"{name} - {lastError}"),
+            _ => ("Muxarr", name)
         };
 
         return new NotificationPayload

@@ -25,6 +25,19 @@ public class EmbyProvider : NotificationProvider<EmbySettings>
 {
     public override string Icon => "bi-play-circle-fill";
 
-    protected override Task SendCoreAsync(HttpClient client, EmbySettings s, NotificationPayload payload) =>
-        JellyfinProvider.RefreshAsync(client, s.ServerUrl, s.ApiKey, s.LibraryItemId, s.FullMetadataRefresh);
+    protected override async Task SendCoreAsync(HttpClient client, EmbySettings s, NotificationPayload payload)
+    {
+        if (string.IsNullOrWhiteSpace(s.ApiKey))
+        {
+            throw new InvalidOperationException("Emby API Key is required.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            JellyfinProvider.BuildRefreshUrl(s.ServerUrl, s.LibraryItemId, s.FullMetadataRefresh));
+
+        // Emby only accepts X-Emby-Token. Do not switch to the Authorization: MediaBrowser Token=
+        // form here - that's a Jellyfin extension and Emby's parser will reject it.
+        request.Headers.Add("X-Emby-Token", s.ApiKey);
+        await SendRequestAsync(client, request);
+    }
 }

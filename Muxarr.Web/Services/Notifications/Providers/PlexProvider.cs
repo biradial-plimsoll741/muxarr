@@ -36,12 +36,13 @@ public class PlexProvider : NotificationProvider<PlexSettings>
             throw new InvalidOperationException("Plex Server URL and X-Plex-Token are required.");
         }
 
-        var section = string.IsNullOrWhiteSpace(s.LibrarySectionId) ? "all" : s.LibrarySectionId.Trim();
-        var url = $"{s.ServerUrl.TrimEnd('/')}/library/sections/{Uri.EscapeDataString(section)}/refresh"
+        var sectionId = s.LibrarySectionId?.Trim();
+        var sectionSegment = string.IsNullOrEmpty(sectionId) ? "all" : Uri.EscapeDataString(sectionId);
+        var url = $"{s.ServerUrl.TrimEnd('/')}/library/sections/{sectionSegment}/refresh"
                   + $"?X-Plex-Token={Uri.EscapeDataString(s.Token)}";
 
         if (s.UsePathRefresh
-            && section != "all"
+            && !string.IsNullOrEmpty(sectionId)
             && !string.IsNullOrWhiteSpace(payload.FilePath))
         {
             var folder = Path.GetDirectoryName(payload.FilePath);
@@ -52,7 +53,7 @@ public class PlexProvider : NotificationProvider<PlexSettings>
                 {
                     url = withPath;
                 }
-                // else: silently fall back to a section-level refresh - still correct, just broader.
+                // else: fall back to a section-level refresh - still correct, just broader.
             }
         }
 

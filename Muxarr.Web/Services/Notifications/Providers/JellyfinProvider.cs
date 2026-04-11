@@ -25,38 +25,43 @@ public class JellyfinProvider : NotificationProvider<JellyfinSettings>
 {
     public override string Icon => "bi-collection-play";
 
-    protected override Task SendCoreAsync(HttpClient client, JellyfinSettings s, NotificationPayload payload) =>
-        RefreshAsync(client, s.ServerUrl, s.ApiKey, s.LibraryItemId, s.FullMetadataRefresh);
+    protected override async Task SendCoreAsync(HttpClient client, JellyfinSettings s, NotificationPayload payload)
+    {
+        if (string.IsNullOrWhiteSpace(s.ApiKey))
+        {
+            throw new InvalidOperationException("Jellyfin API Key is required.");
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post,
+            BuildRefreshUrl(s.ServerUrl, s.LibraryItemId, s.FullMetadataRefresh));
+
+        // Modern Jellyfin auth. The legacy X-Emby-Token header still works on 10.11.x but the
+        // DisableLegacyAuthorization migration in Jellyfin master will flip it off on upgrade.
+        request.Headers.Add("Authorization", $"MediaBrowser Token=\"{s.ApiKey}\"");
+        await SendRequestAsync(client, request);
+    }
 
     /// <summary>
-    /// Triggers a library rescan on Jellyfin or Emby. Both servers share the same
-    /// /Library/Refresh and /Items/{id}/Refresh endpoints (Jellyfin forked from Emby in 2018)
-    /// and both accept the X-Emby-Token header for API key auth, so the implementation is shared.
+    /// Builds the refresh endpoint URL. Jellyfin and Emby share the same /Library/Refresh and
+    /// /Items/{id}/Refresh paths (Jellyfin forked from Emby in 2018), so EmbyProvider also calls this.
+    /// Auth headers differ - each provider adds its own.
     /// </summary>
-    public static async Task RefreshAsync(HttpClient client, string serverUrl, string apiKey,
-        string libraryItemId, bool fullMetadataRefresh)
+    public static string BuildRefreshUrl(string serverUrl, string libraryItemId, bool fullMetadataRefresh)
     {
-        if (string.IsNullOrWhiteSpace(serverUrl) || string.IsNullOrWhiteSpace(apiKey))
+        if (string.IsNullOrWhiteSpace(serverUrl))
         {
-            throw new InvalidOperationException("Server URL and API Key are required.");
+            throw new InvalidOperationException("Server URL is required.");
         }
 
         var baseUrl = serverUrl.TrimEnd('/');
-        string url;
 
         if (string.IsNullOrWhiteSpace(libraryItemId))
         {
-            url = $"{baseUrl}/Library/Refresh";
-        }
-        else
-        {
-            var mode = fullMetadataRefresh ? "FullRefresh" : "Default";
-            url = $"{baseUrl}/Items/{Uri.EscapeDataString(libraryItemId.Trim())}/Refresh"
-                  + $"?metadataRefreshMode={mode}&imageRefreshMode={mode}";
+            return $"{baseUrl}/Library/Refresh";
         }
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Add("X-Emby-Token", apiKey);
-        await SendRequestAsync(client, request);
+        var mode = fullMetadataRefresh ? "FullRefresh" : "Default";
+        return $"{baseUrl}/Items/{Uri.EscapeDataString(libraryItemId.Trim())}/Refresh"
+               + $"?metadataRefreshMode={mode}&imageRefreshMode={mode}";
     }
 }

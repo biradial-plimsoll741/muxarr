@@ -19,7 +19,7 @@
                 @bind:set="OnProviderChanged">
             @foreach (var provider in NotificationService.Providers)
             {
-                <option value="@provider.Type">@provider.DisplayName</option>
+                <option value="@provider.Type">@provider.Type</option>
             }
         </select>
     </div>

@@ -22,11 +22,17 @@ public class DiscordProvider : NotificationProvider<DiscordSettings>
             _ => 3447003                                 // blue
         };
 
+        // Discord embed limits: title 256, description 4096. Exceeding either returns 400.
         return PostJsonAsync(client, s.Url, new
         {
             embeds = new[]
             {
-                new { title = payload.Title, description = payload.Body, color }
+                new
+                {
+                    title = Clip(payload.Title, 256),
+                    description = Clip(payload.Body, 4096),
+                    color
+                }
             }
         });
     }

@@ -24,7 +24,7 @@ else
                         <div class="d-flex align-items-center gap-2 mb-1">
                             <i class="bi @GetProviderIcon(config.Provider) text-primary"></i>
                             <h5 class="mb-0">@config.Name</h5>
-                            <span class="badge text-bg-secondary">@GetProviderDisplayName(config.Provider)</span>
+                            <span class="badge text-bg-secondary">@config.Provider</span>
                             @if (!config.Enabled)
                             {
                                 <span class="badge text-bg-warning">Disabled</span>
@@ -165,7 +165,4 @@ else
 
     private string GetProviderIcon(string provider) =>
         NotificationService.Providers.FirstOrDefault(p => p.Type == provider)?.Icon ?? "bi-bell";
-
-    private string GetProviderDisplayName(string provider) =>
-        NotificationService.Providers.FirstOrDefault(p => p.Type == provider)?.DisplayName ?? provider;
 }

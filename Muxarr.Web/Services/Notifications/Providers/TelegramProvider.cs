@@ -16,10 +16,15 @@ public class TelegramProvider : NotificationProvider<TelegramSettings>
     public override string Icon => "bi-telegram";
 
     protected override Task SendCoreAsync(HttpClient client, TelegramSettings s, NotificationPayload payload)
-        => PostJsonAsync(client, $"https://api.telegram.org/bot{s.BotToken}/sendMessage", new
+    {
+        // sendMessage caps text at 4096 characters after entity parsing.
+        var text = Clip($"<b>{EscapeHtml(payload.Title)}</b>\n{EscapeHtml(payload.Body)}", 4096);
+
+        return PostJsonAsync(client, $"https://api.telegram.org/bot{s.BotToken}/sendMessage", new
         {
             chat_id = s.ChatId,
-            text = $"<b>{payload.Title}</b>\n{payload.Body}",
+            text,
             parse_mode = "HTML"
         });
+    }
 }
