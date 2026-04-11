@@ -25,29 +25,6 @@ public class EmbyProvider : NotificationProvider<EmbySettings>
 {
     public override string Icon => "bi-play-circle-fill";
 
-    protected override async Task SendCoreAsync(HttpClient client, EmbySettings s, NotificationPayload payload)
-    {
-        if (string.IsNullOrWhiteSpace(s.ServerUrl) || string.IsNullOrWhiteSpace(s.ApiKey))
-        {
-            throw new InvalidOperationException("Emby Server URL and API Key are required.");
-        }
-
-        var baseUrl = s.ServerUrl.TrimEnd('/');
-        string url;
-
-        if (string.IsNullOrWhiteSpace(s.LibraryItemId))
-        {
-            url = $"{baseUrl}/Library/Refresh";
-        }
-        else
-        {
-            var mode = s.FullMetadataRefresh ? "FullRefresh" : "Default";
-            url = $"{baseUrl}/Items/{Uri.EscapeDataString(s.LibraryItemId.Trim())}/Refresh"
-                  + $"?metadataRefreshMode={mode}&imageRefreshMode={mode}";
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Add("X-Emby-Token", s.ApiKey);
-        await SendRequestAsync(client, request);
-    }
+    protected override Task SendCoreAsync(HttpClient client, EmbySettings s, NotificationPayload payload) =>
+        JellyfinProvider.RefreshAsync(client, s.ServerUrl, s.ApiKey, s.LibraryItemId, s.FullMetadataRefresh);
 }

@@ -25,29 +25,38 @@ public class JellyfinProvider : NotificationProvider<JellyfinSettings>
 {
     public override string Icon => "bi-collection-play";
 
-    protected override async Task SendCoreAsync(HttpClient client, JellyfinSettings s, NotificationPayload payload)
+    protected override Task SendCoreAsync(HttpClient client, JellyfinSettings s, NotificationPayload payload) =>
+        RefreshAsync(client, s.ServerUrl, s.ApiKey, s.LibraryItemId, s.FullMetadataRefresh);
+
+    /// <summary>
+    /// Triggers a library rescan on Jellyfin or Emby. Both servers share the same
+    /// /Library/Refresh and /Items/{id}/Refresh endpoints (Jellyfin forked from Emby in 2018)
+    /// and both accept the X-Emby-Token header for API key auth, so the implementation is shared.
+    /// </summary>
+    public static async Task RefreshAsync(HttpClient client, string serverUrl, string apiKey,
+        string libraryItemId, bool fullMetadataRefresh)
     {
-        if (string.IsNullOrWhiteSpace(s.ServerUrl) || string.IsNullOrWhiteSpace(s.ApiKey))
+        if (string.IsNullOrWhiteSpace(serverUrl) || string.IsNullOrWhiteSpace(apiKey))
         {
-            throw new InvalidOperationException("Jellyfin Server URL and API Key are required.");
+            throw new InvalidOperationException("Server URL and API Key are required.");
         }
 
-        var baseUrl = s.ServerUrl.TrimEnd('/');
+        var baseUrl = serverUrl.TrimEnd('/');
         string url;
 
-        if (string.IsNullOrWhiteSpace(s.LibraryItemId))
+        if (string.IsNullOrWhiteSpace(libraryItemId))
         {
             url = $"{baseUrl}/Library/Refresh";
         }
         else
         {
-            var mode = s.FullMetadataRefresh ? "FullRefresh" : "Default";
-            url = $"{baseUrl}/Items/{Uri.EscapeDataString(s.LibraryItemId.Trim())}/Refresh"
+            var mode = fullMetadataRefresh ? "FullRefresh" : "Default";
+            url = $"{baseUrl}/Items/{Uri.EscapeDataString(libraryItemId.Trim())}/Refresh"
                   + $"?metadataRefreshMode={mode}&imageRefreshMode={mode}";
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Add("X-Emby-Token", s.ApiKey);
+        request.Headers.Add("X-Emby-Token", apiKey);
         await SendRequestAsync(client, request);
     }
 }
