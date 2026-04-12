@@ -19,10 +19,6 @@ public class AppriseSettings
     [Field("Tag",
         HelpText = "Persistent mode only. Comma = OR, space = AND across tags.")]
     public string Tag { get; set; } = "";
-
-    [Field("Format", Default = "text",
-        HelpText = "text, markdown, or html.")]
-    public string Format { get; set; } = "text";
 }
 
 public class AppriseProvider : NotificationProvider<AppriseSettings>
@@ -54,7 +50,7 @@ public class AppriseProvider : NotificationProvider<AppriseSettings>
                 NotificationEventType.Completed => "success",
                 _ => "info"
             },
-            ["format"] = string.IsNullOrWhiteSpace(s.Format) ? "text" : s.Format.Trim().ToLowerInvariant()
+            ["format"] = "text"
         };
 
         string endpoint;
