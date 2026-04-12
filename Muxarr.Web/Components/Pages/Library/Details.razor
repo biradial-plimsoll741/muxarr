@@ -139,7 +139,7 @@
                     @if (File.Tracks.Any())
                     {
                         <MediaTrackDetailTable Tracks="File.Tracks"
-                                               PreviewTracks="_showPreview ? PreviewTracks : null"
+                                               PreviewTracks="_showPreview ? Preview?.Tracks : null"
                                                OriginalLanguage="@File.OriginalLanguage"/>
                     }
                     else
@@ -194,7 +194,7 @@
     [Parameter] public int Id { get; set; }
 
     protected MediaFile? File { get; set; }
-    protected List<TrackSnapshot>? PreviewTracks { get; set; }
+    protected MediaSnapshot? Preview { get; set; }
     private List<Profile> _profiles = new();
     private bool _showPreview = true;
     private int _selectedProfileId;
@@ -230,7 +230,7 @@
         _profiles = await context.Profiles.OrderBy(p => p.Name).ToListAsync();
         _selectedProfileId = File.ProfileId;
         _selectedProfile = _profiles.FirstOrDefault(p => p.Id == _selectedProfileId);
-        PreviewTracks = File.BuildTargetSnapshot(_selectedProfile).Tracks;
+        Preview = File.BuildTargetSnapshot(_selectedProfile);
     }
 
     private void OnConverterStateChanged(ConverterProgressEvent e)
@@ -297,13 +297,13 @@
 
     private async Task CustomConversion()
     {
-        var selectedTracks = await ModalService.ShowCustomConversion(File!.Tracks, _profiles, _selectedProfile, File.OriginalLanguage);
-        if (selectedTracks == null)
+        var customTarget = await ModalService.ShowCustomConversion(File!, _profiles, _selectedProfile);
+        if (customTarget == null)
         {
             return;
         }
 
-        if (!await MediaConverter.AddMediaToQueue(File!, selectedTracks))
+        if (!await MediaConverter.AddMediaToQueue(File!, customTarget))
         {
             ToastService.ShowError($"'{File!.GetName()}' is not accessible. The file or its mount may be offline.");
             return;
@@ -319,7 +319,7 @@
         {
             _selectedProfileId = id;
             _selectedProfile = _profiles.FirstOrDefault(p => p.Id == id);
-            PreviewTracks = File!.BuildTargetSnapshot(_selectedProfile).Tracks;
+            Preview = File!.BuildTargetSnapshot(_selectedProfile);
         }
     }
 

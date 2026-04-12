@@ -181,7 +181,7 @@ public class MediaConverterService(
         return true;
     }
 
-    public async Task<bool> AddMediaToQueue(MediaFile media, List<TrackSnapshot> customAllowedTracks)
+    public async Task<bool> AddMediaToQueue(MediaFile media, MediaSnapshot customTarget)
     {
         if (!File.Exists(media.Path))
         {
@@ -203,7 +203,7 @@ public class MediaConverterService(
         {
             MediaFileId = media.Id,
             SizeBefore = media.Size,
-            TargetSnapshot = media.ToMediaSnapshot(customAllowedTracks),
+            TargetSnapshot = customTarget,
             SnapshotBefore = media.ToMediaSnapshot(),
             State = ConversionState.New,
             Name = media.GetName(),

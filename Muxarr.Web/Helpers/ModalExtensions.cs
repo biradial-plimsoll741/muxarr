@@ -31,16 +31,14 @@ public static class ModalExtensions
         await result.Result;
     }
 
-    public static async Task<List<TrackSnapshot>?> ShowCustomConversion(
+    public static async Task<MediaSnapshot?> ShowCustomConversion(
         this IModalService modal,
-        ICollection<MediaTrack> tracks,
+        MediaFile file,
         List<Profile> profiles,
-        Profile? profile = null,
-        string? originalLanguage = null)
+        Profile? profile = null)
     {
         var parameters = new ModalParameters()
-            .Add(nameof(CustomConversionModal.Tracks), tracks)
-            .Add(nameof(CustomConversionModal.OriginalLanguage), originalLanguage)
+            .Add(nameof(CustomConversionModal.File), file)
             .Add(nameof(CustomConversionModal.Profiles), profiles)
             .Add(nameof(CustomConversionModal.Profile), profile);
 
@@ -53,6 +51,6 @@ public static class ModalExtensions
             return null;
         }
 
-        return (List<TrackSnapshot>?)modalResult.Data;
+        return (MediaSnapshot?)modalResult.Data;
     }
 }

@@ -171,8 +171,7 @@
 
 @code {
     [CascadingParameter] public required BlazoredModalInstance BlazoredModal { get; set; }
-    [Parameter] public ICollection<MediaTrack> Tracks { get; set; } = new List<MediaTrack>();
-    [Parameter] public string? OriginalLanguage { get; set; }
+    [Parameter, EditorRequired] public MediaFile File { get; set; } = default!;
     [Parameter] public Profile? Profile { get; set; }
     [Parameter] public List<Profile> Profiles { get; set; } = new();
 
@@ -184,7 +183,7 @@
 
     protected override void OnInitialized()
     {
-        var trackLanguages = Tracks
+        var trackLanguages = File.Tracks
             .Where(t => t.Type != MediaTrackType.Video)
             .Select(t => t.LanguageName)
             .Distinct()
@@ -195,7 +194,7 @@
             .ThenBy(l => l.Name)
             .ToList();
 
-        _editableTracks = Tracks.Select(t => t.ToSnapshot()).ToList();
+        _editableTracks = File.Tracks.Select(t => t.ToSnapshot()).ToList();
 
         // Start from raw file state: all tracks selected, no mutations applied.
         // User can click "Apply Profile" to filter and mutate based on a profile.
@@ -223,14 +222,7 @@
             return;
         }
 
-        // Build a temporary MediaFile and resolve the target snapshot via the profile.
-        var tempFile = new MediaFile
-        {
-            OriginalLanguage = OriginalLanguage,
-            Tracks = Tracks.ToList()
-        };
-        tempFile.TrackCount = tempFile.Tracks.Count;
-        var target = tempFile.BuildTargetSnapshot(profile);
+        var target = File.BuildTargetSnapshot(profile);
 
         // Apply track selection from profile.
         var allowedIds = target.Tracks.Select(t => t.TrackNumber).ToHashSet();
@@ -331,7 +323,8 @@
         }
 
         var selectedTracks = _editableTracks.Where(t => _selectedTrackIds.Contains(t.TrackNumber)).ToList();
-        await BlazoredModal.CloseAsync(ModalResult.Ok(selectedTracks));
+        var snapshot = File.ToMediaSnapshot(selectedTracks);
+        await BlazoredModal.CloseAsync(ModalResult.Ok(snapshot));
     }
 
     private static string GetGroupIcon(MediaTrackType type)

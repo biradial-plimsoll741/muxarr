@@ -52,18 +52,18 @@ namespace Muxarr.Data.Migrations
                 UPDATE MediaConversion
                 SET SnapshotBefore = CASE
                         WHEN SnapshotBefore IS NOT NULL AND SnapshotBefore != ''
-                        THEN '{"Tracks":' || SnapshotBefore || ',"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
-                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
+                        THEN '{"Tracks":' || SnapshotBefore || ',"HasChapters":false,"HasAttachments":false}'
+                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false}'
                     END,
                     SnapshotAfter = CASE
                         WHEN SnapshotAfter IS NOT NULL AND SnapshotAfter != ''
-                        THEN '{"Tracks":' || SnapshotAfter || ',"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
-                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
+                        THEN '{"Tracks":' || SnapshotAfter || ',"HasChapters":false,"HasAttachments":false}'
+                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false}'
                     END,
                     TargetSnapshot = CASE
                         WHEN TargetSnapshot IS NOT NULL AND TargetSnapshot != ''
-                        THEN '{"Tracks":' || TargetSnapshot || ',"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
-                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false,"HasGlobalTags":false}'
+                        THEN '{"Tracks":' || TargetSnapshot || ',"HasChapters":false,"HasAttachments":false}'
+                        ELSE '{"Tracks":[],"HasChapters":false,"HasAttachments":false}'
                     END
                 """;
 
