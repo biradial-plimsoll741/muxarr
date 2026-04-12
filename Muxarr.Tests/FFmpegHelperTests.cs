@@ -59,6 +59,25 @@ public class FFmpegHelperTests
     }
 
     [TestMethod]
+    [DataRow(nameof(TrackOutput.IsDefault), true, "+default")]
+    [DataRow(nameof(TrackOutput.IsDefault), false, "-default")]
+    [DataRow(nameof(TrackOutput.IsForced), true, "+forced")]
+    [DataRow(nameof(TrackOutput.IsHearingImpaired), true, "+hearing_impaired")]
+    [DataRow(nameof(TrackOutput.IsVisualImpaired), true, "+visual_impaired")]
+    [DataRow(nameof(TrackOutput.IsVisualImpaired), false, "-visual_impaired")]
+    [DataRow(nameof(TrackOutput.IsCommentary), true, "+comment")]
+    [DataRow(nameof(TrackOutput.IsOriginal), true, "+original")]
+    [DataRow(nameof(TrackOutput.IsOriginal), false, "-original")]
+    [DataRow(nameof(TrackOutput.IsDub), true, "+dub")]
+    public void BuildDispositionValue_AllSupportedFlags(string fieldName, bool value, string expected)
+    {
+        var track = new TrackOutput { TrackNumber = 1, Type = MkvMerge.AudioTrack };
+        typeof(TrackOutput).GetProperty(fieldName)!.SetValue(track, (bool?)value);
+
+        Assert.AreEqual(expected, FFmpegHelper.BuildDispositionValue(track));
+    }
+
+    [TestMethod]
     public void BuildDispositionValue_CommentaryMapsToFfmpegCommentFlag()
     {
         // ffmpeg uses "comment", mkvmerge uses "commentary"; the rename has

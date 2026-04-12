@@ -9,6 +9,8 @@ public class TrackOutput
     public bool? IsDefault { get; set; }
     public bool? IsForced { get; set; }
     public bool? IsHearingImpaired { get; set; }
+    public bool? IsVisualImpaired { get; set; }
     public bool? IsCommentary { get; set; }
+    public bool? IsOriginal { get; set; }
     public bool? IsDub { get; set; }
 }

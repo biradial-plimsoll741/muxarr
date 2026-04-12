@@ -36,9 +36,17 @@ public static class FFmpegHelper
         {
             parts.Add(track.IsHearingImpaired.Value ? "+hearing_impaired" : "-hearing_impaired");
         }
+        if (track.IsVisualImpaired != null)
+        {
+            parts.Add(track.IsVisualImpaired.Value ? "+visual_impaired" : "-visual_impaired");
+        }
         if (track.IsCommentary != null)
         {
             parts.Add(track.IsCommentary.Value ? "+comment" : "-comment");
+        }
+        if (track.IsOriginal != null)
+        {
+            parts.Add(track.IsOriginal.Value ? "+original" : "-original");
         }
         if (track.IsDub != null)
         {

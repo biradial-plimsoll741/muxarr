@@ -92,9 +92,17 @@ public static class MkvMerge
             {
                 command += $" --hearing-impaired-flag {track.TrackNumber}:{(track.IsHearingImpaired.Value ? "1" : "0")}";
             }
+            if (track.IsVisualImpaired != null)
+            {
+                command += $" --visual-impaired-flag {track.TrackNumber}:{(track.IsVisualImpaired.Value ? "1" : "0")}";
+            }
             if (track.IsCommentary != null)
             {
                 command += $" --commentary-flag {track.TrackNumber}:{(track.IsCommentary.Value ? "1" : "0")}";
+            }
+            if (track.IsOriginal != null)
+            {
+                command += $" --original-flag {track.TrackNumber}:{(track.IsOriginal.Value ? "1" : "0")}";
             }
         }
 

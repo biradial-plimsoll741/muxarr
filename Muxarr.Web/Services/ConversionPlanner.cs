@@ -93,9 +93,17 @@ public static class ConversionPlanner
                 {
                     output.IsHearingImpaired = track.IsHearingImpaired;
                 }
+                if (original == null || track.IsVisualImpaired != original.IsVisualImpaired)
+                {
+                    output.IsVisualImpaired = track.IsVisualImpaired;
+                }
                 if (original == null || track.IsCommentary != original.IsCommentary)
                 {
                     output.IsCommentary = track.IsCommentary;
+                }
+                if (original == null || track.IsOriginal != original.IsOriginal)
+                {
+                    output.IsOriginal = track.IsOriginal;
                 }
                 if (supportsDubFlag && (original == null || track.IsDub != original.IsDub))
                 {
@@ -109,7 +117,9 @@ public static class ConversionPlanner
                 output.IsDefault = track.IsDefault;
                 output.IsForced = track.IsForced;
                 output.IsHearingImpaired = track.IsHearingImpaired;
+                output.IsVisualImpaired = track.IsVisualImpaired;
                 output.IsCommentary = track.IsCommentary;
+                output.IsOriginal = track.IsOriginal;
                 if (supportsDubFlag)
                 {
                     output.IsDub = track.IsDub;
@@ -129,7 +139,8 @@ public static class ConversionPlanner
     {
         return output.Name != null || output.LanguageCode != null
             || output.IsDefault != null || output.IsForced != null
-            || output.IsHearingImpaired != null || output.IsCommentary != null
+            || output.IsHearingImpaired != null || output.IsVisualImpaired != null
+            || output.IsCommentary != null || output.IsOriginal != null
             || output.IsDub != null;
     }
 

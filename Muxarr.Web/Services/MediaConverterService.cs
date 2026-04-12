@@ -564,22 +564,35 @@ public class MediaConverterService(
         token.ThrowIfCancellationRequested();
 
         var backupFile = conversion.MediaFile!.Path + ".muxbak";
-        conversion.Log("Renaming old file..", logger);
-        File.Move(conversion.MediaFile.Path, backupFile);
+        var swapCommitted = false;
+        try
+        {
+            conversion.Log("Renaming old file..", logger);
+            File.Move(conversion.MediaFile.Path, backupFile);
 
-        conversion.Log("Moving new file..", logger);
-        await context.SaveChangesAsync(token);
-        await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
-            i =>
+            conversion.Log("Moving new file..", logger);
+            await context.SaveChangesAsync(token);
+            await FileHelper.MoveFileAsync(tmp, conversion.MediaFile.Path,
+                i =>
+                {
+                    // File move is typically instant (atomic rename on same filesystem).
+                    // Only uses meaningful progress for cross-filesystem copies.
+                    conversion.Progress = 95 + (int)(i * 0.05);
+                    ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
+                }, token);
+
+            conversion.Log("Removing old file..", logger);
+            File.Delete(backupFile);
+            swapCommitted = true;
+        }
+        catch
+        {
+            if (!swapCommitted)
             {
-                // File move is typically instant (atomic rename on same filesystem).
-                // Only uses meaningful progress for cross-filesystem copies.
-                conversion.Progress = 95 + (int)(i * 0.05);
-                ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
-            }, token);
-
-        conversion.Log("Removing old file..", logger);
-        File.Delete(backupFile);
+                RestoreFromBackup(conversion, backupFile);
+            }
+            throw;
+        }
 
         await scanner.ScanMediaFile(conversion.MediaFile, true, context, conversion.MediaFile.Profile);
         conversion.SizeAfter = conversion.MediaFile.Size;
@@ -601,6 +614,38 @@ public class MediaConverterService(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Failed to update conversion stats");
+        }
+    }
+
+    /// <summary>
+    /// Rolls back a partially-committed file swap. If .muxbak exists, the atomic
+    /// rename didn't complete, so delete any half-written output and restore the
+    /// original. Any failure here is logged but swallowed - the outer catch will
+    /// mark the conversion Failed and the startup cleanup is the last-resort safety net.
+    /// </summary>
+    private void RestoreFromBackup(MediaConversion conversion, string backupFile)
+    {
+        if (!File.Exists(backupFile))
+        {
+            return;
+        }
+
+        try
+        {
+            var originalPath = conversion.MediaFile!.Path;
+            if (File.Exists(originalPath))
+            {
+                File.Delete(originalPath);
+            }
+            File.Move(backupFile, originalPath);
+            conversion.LogError(
+                $"Swap failed - restored original from {Path.GetFileName(backupFile)}.", logger);
+        }
+        catch (Exception ex)
+        {
+            conversion.LogError(
+                $"CRITICAL: could not restore backup. Original file is at {backupFile}. Error: {ex.Message}",
+                logger);
         }
     }
 

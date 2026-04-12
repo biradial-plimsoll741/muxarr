@@ -200,6 +200,43 @@ public class ConversionPlannerTests
         Assert.AreEqual(ConversionPlanner.ConversionStrategy.MetadataEdit, strategy);
     }
 
+    // --- Strategy: IsOriginal / IsVisualImpaired trigger conversion (regression: used to be silently dropped) ---
+
+    [TestMethod]
+    [DataRow("IsOriginal")]
+    [DataRow("IsVisualImpaired")]
+    public void Strategy_FlagToggle_Matroska_ReturnsMetadataEdit(string flagName)
+    {
+        var file = MakeFileWithContainer("Matroska", null, Video(0), Audio(1, "English"));
+        var before = file.ToMediaSnapshot();
+
+        var modifiedTracks = file.Tracks.ToSnapshots();
+        SetFlag(modifiedTracks.First(t => t.Type == MediaTrackType.Audio), flagName, true);
+        var target = file.ToMediaSnapshot(modifiedTracks);
+
+        var strategy = ConversionPlanner.DetermineStrategy(file, before, target);
+
+        Assert.AreEqual(ConversionPlanner.ConversionStrategy.MetadataEdit, strategy,
+            $"{flagName} change on Matroska must route to mkvpropedit, not Skip");
+    }
+
+    [TestMethod]
+    [DataRow("IsOriginal")]
+    [DataRow("IsVisualImpaired")]
+    public void Strategy_FlagToggle_Mp4_ReturnsRemux(string flagName)
+    {
+        var file = MakeFileWithContainer("MP4/QuickTime", null, Video(0), Audio(1, "English"));
+        var before = file.ToMediaSnapshot();
+
+        var modifiedTracks = file.Tracks.ToSnapshots();
+        SetFlag(modifiedTracks.First(t => t.Type == MediaTrackType.Audio), flagName, true);
+        var target = file.ToMediaSnapshot(modifiedTracks);
+
+        var strategy = ConversionPlanner.DetermineStrategy(file, before, target);
+
+        Assert.AreEqual(ConversionPlanner.ConversionStrategy.Remux, strategy);
+    }
+
     // --- BuildTrackOutputs: IsDub container behavior ---
 
     [TestMethod]
@@ -283,7 +320,8 @@ public class ConversionPlannerTests
         {
             Type = MediaTrackType.Audio, TrackNumber = 1,
             TrackName = "Foo", LanguageCode = "eng", LanguageName = "English",
-            IsDefault = true, IsForced = false, IsCommentary = false, IsHearingImpaired = false
+            IsDefault = true, IsForced = false, IsCommentary = false, IsHearingImpaired = false,
+            IsVisualImpaired = false, IsOriginal = true
         };
         var snapshot = new MediaSnapshot { Tracks = [track] };
 
@@ -295,6 +333,8 @@ public class ConversionPlannerTests
         Assert.IsNotNull(outputs[0].IsForced);
         Assert.IsNotNull(outputs[0].IsCommentary);
         Assert.IsNotNull(outputs[0].IsHearingImpaired);
+        Assert.IsNotNull(outputs[0].IsVisualImpaired);
+        Assert.IsNotNull(outputs[0].IsOriginal);
     }
 
     // --- BuildTrackOutputs: video tracks ---
@@ -329,7 +369,9 @@ public class ConversionPlannerTests
     [DataRow("IsDefault")]
     [DataRow("IsForced")]
     [DataRow("IsHearingImpaired")]
+    [DataRow("IsVisualImpaired")]
     [DataRow("IsCommentary")]
+    [DataRow("IsOriginal")]
     public void BuildTrackOutputs_FlagToggle_DetectedInDiff(string flagName)
     {
         var beforeTrack = new TrackSnapshot { Type = MediaTrackType.Audio, TrackNumber = 1, LanguageCode = "eng", LanguageName = "English" };
@@ -361,7 +403,9 @@ public class ConversionPlannerTests
     [DataRow("IsDefault", true)]
     [DataRow("IsForced", true)]
     [DataRow("IsHearingImpaired", true)]
+    [DataRow("IsVisualImpaired", true)]
     [DataRow("IsCommentary", true)]
+    [DataRow("IsOriginal", true)]
     [DataRow("IsDub", true)]
     public void HasChanges_AnyFieldSet_ReturnsTrue(string field, object value)
     {
@@ -465,7 +509,9 @@ public class ConversionPlannerTests
             case "IsDefault": track.IsDefault = value; break;
             case "IsForced": track.IsForced = value; break;
             case "IsHearingImpaired": track.IsHearingImpaired = value; break;
+            case "IsVisualImpaired": track.IsVisualImpaired = value; break;
             case "IsCommentary": track.IsCommentary = value; break;
+            case "IsOriginal": track.IsOriginal = value; break;
             case "IsDub": track.IsDub = value; break;
             default: throw new ArgumentException($"Unknown flag: {flagName}");
         }
@@ -478,7 +524,9 @@ public class ConversionPlannerTests
             "IsDefault" => output.IsDefault,
             "IsForced" => output.IsForced,
             "IsHearingImpaired" => output.IsHearingImpaired,
+            "IsVisualImpaired" => output.IsVisualImpaired,
             "IsCommentary" => output.IsCommentary,
+            "IsOriginal" => output.IsOriginal,
             "IsDub" => output.IsDub,
             _ => throw new ArgumentException($"Unknown flag: {flagName}")
         };
@@ -495,7 +543,9 @@ public class ConversionPlannerTests
             case "IsDefault": output.IsDefault = (bool)value; break;
             case "IsForced": output.IsForced = (bool)value; break;
             case "IsHearingImpaired": output.IsHearingImpaired = (bool)value; break;
+            case "IsVisualImpaired": output.IsVisualImpaired = (bool)value; break;
             case "IsCommentary": output.IsCommentary = (bool)value; break;
+            case "IsOriginal": output.IsOriginal = (bool)value; break;
             case "IsDub": output.IsDub = (bool)value; break;
             default: throw new ArgumentException($"Unknown field: {field}");
         }

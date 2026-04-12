@@ -47,9 +47,19 @@ public static class MkvPropEdit
                 props += $" --set flag-hearing-impaired={(track.IsHearingImpaired.Value ? "1" : "0")}";
             }
 
+            if (track.IsVisualImpaired != null)
+            {
+                props += $" --set flag-visual-impaired={(track.IsVisualImpaired.Value ? "1" : "0")}";
+            }
+
             if (track.IsCommentary != null)
             {
                 props += $" --set flag-commentary={(track.IsCommentary.Value ? "1" : "0")}";
+            }
+
+            if (track.IsOriginal != null)
+            {
+                props += $" --set flag-original={(track.IsOriginal.Value ? "1" : "0")}";
             }
 
             if (!string.IsNullOrEmpty(props))
