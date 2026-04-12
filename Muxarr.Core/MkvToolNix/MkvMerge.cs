@@ -176,6 +176,11 @@ public static class MkvMerge
                || TrackNameFlags.ContainsCommentary(track.Properties.TrackName);
     }
 
+    public static bool IsDub(this Track track)
+    {
+        return TrackNameFlags.ContainsDub(track.Properties.TrackName);
+    }
+
 }
 
 public class TrackOutput
@@ -188,5 +193,6 @@ public class TrackOutput
     public bool? IsForced { get; set; }
     public bool? IsHearingImpaired { get; set; }
     public bool? IsCommentary { get; set; }
+    public bool? IsDub { get; set; }
 
 }

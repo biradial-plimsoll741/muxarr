@@ -16,6 +16,10 @@
     {
         <ToolTip Tip="Forced - shows even when subtitles are off"><i class="bi bi-lock ms-1"></i></ToolTip>
     }
+    @if (Track.IsDub)
+    {
+        <ToolTip Tip="Dubbed"><i class="bi bi-translate ms-1"></i></ToolTip>
+    }
     @if (ShowAllFlags)
     {
         @if (Track.IsOriginal)

@@ -23,7 +23,7 @@ public static class TestData
     public static MediaTrack Audio(int trackNumber = 0, string language = "English",
         string codec = nameof(AudioCodec.Aac), int channels = 6,
         bool commentary = false, bool hi = false, bool isDefault = false,
-        string? trackName = null, string? languageCode = null)
+        bool dub = false, string? trackName = null, string? languageCode = null)
     {
         var iso = IsoLanguage.Find(language);
         return new MediaTrack
@@ -37,6 +37,7 @@ public static class TestData
             IsCommentary = commentary,
             IsHearingImpaired = hi,
             IsDefault = isDefault,
+            IsDub = dub,
             TrackName = trackName
         };
     }
@@ -44,7 +45,7 @@ public static class TestData
     public static MediaTrack Sub(int trackNumber = 0, string language = "English",
         string codec = nameof(SubtitleCodec.Srt),
         bool forced = false, bool hi = false, bool commentary = false,
-        string? trackName = null, string? languageCode = null)
+        bool dub = false, string? trackName = null, string? languageCode = null)
     {
         var iso = IsoLanguage.Find(language);
         return new MediaTrack
@@ -57,6 +58,7 @@ public static class TestData
             IsForced = forced,
             IsHearingImpaired = hi,
             IsCommentary = commentary,
+            IsDub = dub,
             TrackName = trackName
         };
     }

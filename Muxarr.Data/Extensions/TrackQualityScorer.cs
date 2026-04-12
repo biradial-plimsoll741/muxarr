@@ -32,7 +32,7 @@ public static class TrackQualityScorer
     }
 
     /// <summary>
-    /// Audio: Lossless+Spatial > Lossless > Lossy+Spatial > Lossy, then channels, then Regular > Commentary.
+    /// Audio: Lossless+Spatial > Lossless > Lossy+Spatial > Lossy, then channels, then Regular > Dub/AD > Commentary.
     /// </summary>
     private static int ScoreAudioTrack(IMediaTrack track)
     {
@@ -42,7 +42,7 @@ public static class TrackQualityScorer
 
         var isLossless = LosslessAudioCodecs.Contains(codec);
         var isSpatial = IsSpatialAudio(track);
-        var flagScore = track.IsCommentary ? 0 : track.IsVisualImpaired ? 1 : 2;
+        var flagScore = track.IsCommentary ? 0 : track.IsVisualImpaired ? 1 : track.IsDub ? 1 : 2;
 
         return (isLossless ? 1000 : 0) + (isSpatial ? 500 : 0) + (track.AudioChannels * 10) + flagScore;
     }
@@ -62,6 +62,7 @@ public static class TrackQualityScorer
         // SDH adds noise (sound descriptions), forced is partial (foreign dialogue only),
         // commentary is niche. Lower score = less preferred when deduplicating.
         var flagScore = track.IsCommentary ? 5
+            : track.IsDub ? 8
             : track.IsForced ? 10
             : track.IsHearingImpaired ? 50
             : 100;

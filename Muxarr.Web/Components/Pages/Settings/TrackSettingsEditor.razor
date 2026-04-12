@@ -88,7 +88,7 @@
             @switch (Settings.DefaultStrategy)
             {
                 case DefaultTrackStrategy.SpecCompliant:
-                    <text>Commentary and accessibility tracks are marked as non-default. Your player picks from the
+                    <text>Commentary, accessibility, and dub tracks are marked as non-default. Your player picks from the
                         rest.</text>
                     break;
                 case DefaultTrackStrategy.ForceFirstLanguage:
@@ -151,7 +151,7 @@
             <InputText id="@($"trackNameTemplate{TrackTypeLabel}")" class="form-control form-control-sm"
                        @bind-Value="Settings.TrackNameTemplate"/>
             <small class="form-text text-muted d-block">
-                Placeholders: <code>{language}</code>, <code>{nativelanguage}</code>, <code>{codec}</code>,
+                Placeholders: <code>{language}</code>, <code>{lang}</code>, <code>{nativelanguage}</code>, <code>{codec}</code>,
                 @if (IsAudio)
                 {
                     <code>{channels}</code>
@@ -159,9 +159,17 @@
                 }
                 <code>{trackname}</code>,
                 <code>{hi}</code>, <code>{forced}</code>, <code>{commentary}</code>, <code>{visualimpaired}</code>,
-                <code>{original}</code>, <code>{flags}</code>.
+                <code>{original}</code>, <code>{dub}</code>, <code>{flags}</code>.
                 Leave empty to clear all track names.
             </small>
+
+            @if (HasDubWarning)
+            {
+                <small class="form-text text-warning d-block mt-1">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Template does not include <code>{dub}</code> or <code>{flags}</code>.
+                    Dub tracks in MKV files won't preserve their classification after remux since MKV has no native dub flag.
+                </small>
+            }
 
             @if (!string.IsNullOrWhiteSpace(Settings.TrackNameTemplate))
             {
@@ -225,7 +233,7 @@
     private string TrackTypeLabel => TrackType == MediaTrackType.Audio ? "Audio" : "Subtitle";
     private bool IsAudio => TrackType == MediaTrackType.Audio;
     private bool HasLanguagePriority => Settings.AllowedLanguages.Count > 0;
-    private string DefaultTemplate => IsAudio ? "{language} {channels}" : "{language}";
+    private string DefaultTemplate => IsAudio ? "{language} {channels} {dub}" : "{language} {dub}";
 
     private string PreviewLanguage =>
         Settings.AllowedLanguages.Count > 0 ? Settings.AllowedLanguages[0].Language.Name : "English";
@@ -245,7 +253,7 @@
             };
             if (SecondLanguage != null)
             {
-                tracks.Add(new TrackSnapshot { Type = MediaTrackType.Audio, LanguageName = SecondLanguage, Codec = "E-AC-3", AudioChannels = 6 });
+                tracks.Add(new TrackSnapshot { Type = MediaTrackType.Audio, LanguageName = SecondLanguage, Codec = "E-AC-3", AudioChannels = 6, IsDub = true });
             }
 
             return tracks;
@@ -260,7 +268,7 @@
             };
             if (SecondLanguage != null)
             {
-                tracks.Add(new TrackSnapshot { Type = MediaTrackType.Subtitles, LanguageName = SecondLanguage, Codec = "SRT" });
+                tracks.Add(new TrackSnapshot { Type = MediaTrackType.Subtitles, LanguageName = SecondLanguage, Codec = "SRT", IsDub = true });
             }
 
             return tracks;
@@ -268,6 +276,13 @@
     }
 
     private bool _hasOverrides => Settings.TrackNameOverrides.Any(kv => !string.IsNullOrEmpty(kv.Value));
+
+    private bool HasDubWarning =>
+        Settings.StandardizeTrackNames
+        && !string.IsNullOrEmpty(Settings.TrackNameTemplate)
+        && !Settings.TrackNameTemplate.Contains("{dub}", StringComparison.OrdinalIgnoreCase)
+        && !Settings.TrackNameTemplate.Contains("{flags}", StringComparison.OrdinalIgnoreCase)
+        && !Settings.TrackNameOverrides.ContainsKey(TrackFlag.Dub);
 
     private static string FlagIcon(TrackFlag flag)
     {
@@ -277,6 +292,7 @@
             TrackFlag.Forced => "bi-lock",
             TrackFlag.Commentary => "bi-chat-quote",
             TrackFlag.VisualImpaired => "bi-eye",
+            TrackFlag.Dub => "bi-translate",
             _ => "bi-question-circle"
         };
     }

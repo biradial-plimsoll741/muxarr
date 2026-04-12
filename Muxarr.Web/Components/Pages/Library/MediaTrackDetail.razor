@@ -114,6 +114,10 @@
             {
                 changes.Add(new FlagChange("AD", Preview.IsVisualImpaired));
             }
+            if (Preview.IsDub != Track.IsDub)
+            {
+                changes.Add(new FlagChange("Dub", Preview.IsDub));
+            }
             return changes;
         }
     }

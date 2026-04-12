@@ -41,6 +41,7 @@ public class MediaTrack : IMediaTrack
     public bool IsDefault { get; set; }
     public bool IsForced { get; set; }
     public bool IsOriginal { get; set; }
+    public bool IsDub { get; set; }
     public string Codec { get; set; } = string.Empty;
     public int AudioChannels { get; set; }
     public string LanguageCode { get; set; } = string.Empty;

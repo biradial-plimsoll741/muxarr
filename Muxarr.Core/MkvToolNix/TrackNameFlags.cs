@@ -91,6 +91,18 @@ public static class TrackNameFlags
                || name.Contains("Audio Descri", StringComparison.InvariantCultureIgnoreCase);
     }
 
+    public static bool ContainsDub(string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return false;
+        }
+
+        return ContainsWord(name, "Dub") || ContainsWord(name, "Dubbed")
+               || name.Contains("Dubtitle", StringComparison.InvariantCultureIgnoreCase)
+               || name.Contains("Dubbing", StringComparison.InvariantCultureIgnoreCase);
+    }
+
     private static bool ContainsWord(string text, string word)
     {
         var index = 0;

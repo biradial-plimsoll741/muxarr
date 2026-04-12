@@ -79,6 +79,7 @@ public static class MediaFileExtensions
                 IsDefault = x.Properties.DefaultTrack,
                 IsForced = x.IsForced(),
                 IsOriginal = x.IsOriginal(),
+                IsDub = x.IsDub(),
                 LanguageCode = x.Properties.Language ?? string.Empty,
                 LanguageName = IsoLanguage.Find(x.Properties.Language).Name,
                 AudioChannels = x.Properties.AudioChannels,
@@ -180,7 +181,8 @@ public static class MediaFileExtensions
                                    || disposition.Descriptions == 1
                                    || TrackNameFlags.ContainsVisualImpaired(trackName),
                 IsCommentary = disposition.Comment == 1 || TrackNameFlags.ContainsCommentary(trackName),
-                IsOriginal = disposition.Original == 1
+                IsOriginal = disposition.Original == 1,
+                IsDub = TrackNameFlags.ContainsDub(trackName)
             };
 
             if (track.Type != MediaTrackType.Video
@@ -542,7 +544,8 @@ public static class MediaFileExtensions
                || preview.IsDefault != original.IsDefault
                || preview.IsForced != original.IsForced
                || preview.IsHearingImpaired != original.IsHearingImpaired
-               || preview.IsCommentary != original.IsCommentary;
+               || preview.IsCommentary != original.IsCommentary
+               || preview.IsDub != original.IsDub;
     }
 
     /// <summary>
@@ -658,6 +661,11 @@ public static class MediaFileExtensions
         {
             track.IsVisualImpaired = TrackNameFlags.ContainsVisualImpaired(track.TrackName);
         }
+
+        if (!track.IsDub)
+        {
+            track.IsDub = TrackNameFlags.ContainsDub(track.TrackName);
+        }
     }
 
     public static string? ApplyTrackNameTemplate(this IMediaTrack track, string template)
@@ -667,11 +675,12 @@ public static class MediaFileExtensions
             return null;
         }
 
-        var nativeName = IsoLanguage.Find(track.LanguageName).NativeName;
+        var iso = IsoLanguage.Find(track.LanguageName);
 
         var result = template
             .Replace("{language}", track.LanguageName, StringComparison.OrdinalIgnoreCase)
-            .Replace("{nativelanguage}", nativeName, StringComparison.OrdinalIgnoreCase)
+            .Replace("{lang}", track.LanguageCode, StringComparison.OrdinalIgnoreCase)
+            .Replace("{nativelanguage}", iso.NativeName, StringComparison.OrdinalIgnoreCase)
             .Replace("{codec}", track.Codec.FormatCodec(), StringComparison.OrdinalIgnoreCase)
             .Replace("{channels}", track.GetChannelLayout() ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{trackname}", track.TrackName ?? "", StringComparison.OrdinalIgnoreCase)
@@ -680,6 +689,7 @@ public static class MediaFileExtensions
             .Replace("{commentary}", track.IsCommentary ? "Commentary" : "", StringComparison.OrdinalIgnoreCase)
             .Replace("{visualimpaired}", track.IsVisualImpaired ? "AD" : "", StringComparison.OrdinalIgnoreCase)
             .Replace("{original}", track.IsOriginal ? "Original" : "", StringComparison.OrdinalIgnoreCase)
+            .Replace("{dub}", track.IsDub ? "Dub" : "", StringComparison.OrdinalIgnoreCase)
             .Replace("{flags}", track.GetFlagLabels(), StringComparison.OrdinalIgnoreCase);
 
         result = Regex.Replace(result, @"\s{2,}", " ").Trim();
@@ -695,6 +705,7 @@ public static class MediaFileExtensions
         if (track.IsCommentary) { labels.Add("Commentary"); }
         if (track.IsVisualImpaired) { labels.Add("AD"); }
         if (track.IsOriginal) { labels.Add("Original"); }
+        if (track.IsDub) { labels.Add("Dub"); }
         return string.Join(", ", labels);
     }
 
@@ -727,7 +738,8 @@ public static class MediaFileExtensions
             IsVisualImpaired = track.IsVisualImpaired,
             IsDefault = track.IsDefault,
             IsForced = track.IsForced,
-            IsOriginal = track.IsOriginal
+            IsOriginal = track.IsOriginal,
+            IsDub = track.IsDub
         };
     }
 
@@ -799,6 +811,7 @@ public static class MediaFileExtensions
                 output.IsForced = track.IsForced;
                 output.IsHearingImpaired = track.IsHearingImpaired;
                 output.IsCommentary = track.IsCommentary;
+                output.IsDub = track.IsDub;
             }
 
             trackOutputs.Add(output);
@@ -810,7 +823,7 @@ public static class MediaFileExtensions
     /// <summary>
     /// Assigns default track flags based on the configured strategy.
     /// DontChange: no-op, preserve original flags.
-    /// SpecCompliant: commentary/HI/VI = not default, everything else = default.
+    /// SpecCompliant: commentary/HI/VI/dub = not default, everything else = default.
     /// ForceFirstLanguage: only the first track matching the highest-priority language = default.
     /// </summary>
     private static void ReassignPreviewDefaultFlags(List<TrackSnapshot> previews, TrackSettings? settings,
@@ -851,7 +864,7 @@ public static class MediaFileExtensions
         {
             foreach (var track in tracksOfType)
             {
-                track.IsDefault = !track.IsCommentary && !track.IsHearingImpaired && !track.IsVisualImpaired;
+                track.IsDefault = !track.IsCommentary && !track.IsHearingImpaired && !track.IsVisualImpaired && !track.IsDub;
             }
         }
     }
@@ -865,7 +878,8 @@ public static class MediaFileExtensions
         if (original == null)
         {
             return output.Name != null || output.LanguageCode != null || output.IsDefault != null
-                || output.IsForced != null || output.IsHearingImpaired != null || output.IsCommentary != null;
+                || output.IsForced != null || output.IsHearingImpaired != null || output.IsCommentary != null
+                || output.IsDub != null;
         }
 
         return (output.Name != null && !string.Equals(output.Name ?? "", original.TrackName ?? "", StringComparison.Ordinal))
@@ -873,7 +887,8 @@ public static class MediaFileExtensions
             || (output.IsDefault != null && output.IsDefault != original.IsDefault)
             || (output.IsForced != null && output.IsForced != original.IsForced)
             || (output.IsHearingImpaired != null && output.IsHearingImpaired != original.IsHearingImpaired)
-            || (output.IsCommentary != null && output.IsCommentary != original.IsCommentary);
+            || (output.IsCommentary != null && output.IsCommentary != original.IsCommentary)
+            || (output.IsDub != null && output.IsDub != original.IsDub);
     }
 
     // Helpers

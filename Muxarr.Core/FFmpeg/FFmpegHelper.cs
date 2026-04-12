@@ -39,6 +39,10 @@ public static class FFmpegHelper
         {
             parts.Add(track.IsCommentary.Value ? "+comment" : "-comment");
         }
+        if (track.IsDub != null)
+        {
+            parts.Add(track.IsDub.Value ? "+dub" : "-dub");
+        }
 
         return parts.Count == 0 ? null : string.Join("", parts);
     }

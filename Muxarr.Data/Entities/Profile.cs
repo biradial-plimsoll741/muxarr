@@ -30,8 +30,8 @@ namespace Muxarr.Data.Entities
         DontChange,
 
         /// <summary>
-        /// Commentary and accessibility tracks are marked as non-default.
-        /// All other tracks remain eligible — the player picks based on its own language preferences.
+        /// Commentary, accessibility, and dub tracks are marked as non-default.
+        /// All other tracks remain eligible - the player picks based on its own language preferences.
         /// </summary>
         SpecCompliant,
 
@@ -55,7 +55,10 @@ namespace Muxarr.Data.Entities
         Commentary,
 
         [Display(Name = "AD")]
-        VisualImpaired
+        VisualImpaired,
+
+        [Display(Name = "Dub")]
+        Dub
     }
 
     public static class TrackFlagExtensions
@@ -68,6 +71,7 @@ namespace Muxarr.Data.Entities
             TrackFlag.Forced => track.IsForced,
             TrackFlag.Commentary => track.IsCommentary,
             TrackFlag.VisualImpaired => track.IsVisualImpaired,
+            TrackFlag.Dub => track.IsDub,
             _ => false
         };
     }

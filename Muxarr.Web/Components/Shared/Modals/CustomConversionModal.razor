@@ -126,6 +126,13 @@
                                     <i class="bi bi-chat-quote"></i>
                                 </button>
                             </ToolTip>
+                            <ToolTip Tip="Dub - Dubbed audio or subtitle track">
+                                <button type="button"
+                                        class="btn btn-sm @(track.IsDub ? "btn-primary" : "btn-outline-secondary")"
+                                        @onclick="() => track.IsDub = !track.IsDub">
+                                    <i class="bi bi-translate"></i>
+                                </button>
+                            </ToolTip>
                         </div>
                     }
                 </td>
