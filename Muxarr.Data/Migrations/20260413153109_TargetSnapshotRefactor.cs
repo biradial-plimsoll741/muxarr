@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Muxarr.Data.Migrations
 {
-    // TargetSnapshot JSON shape changed: MediaSnapshot/TrackSnapshot (observed,
-    // fully populated) -> TargetSnapshot/TargetTrack (desired, nullable fields
+    // ConversionPlan JSON shape changed: MediaSnapshot/TrackSnapshot (observed,
+    // fully populated) -> ConversionPlan/TrackPlan (desired, nullable fields
     // with inherit semantics). Historical rows keep their JSON (extra fields
     // drop on deserialize, bools cast to bool? cleanly) and remain viewable.
     // Non-terminal rows are dropped so in-flight conversions re-queue against

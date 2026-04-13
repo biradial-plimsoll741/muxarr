@@ -11,8 +11,7 @@ Unify the conversion pipeline around a single desired-state type, make converter
 ### New types (Muxarr.Core.Models)
 
 - `TargetTrack`: nullable-fielded desired state per track. `null` = inherit source, non-null = set, `""` on `Name` = explicit clear. `NameLocked` bit governs whether the planner can rewrite the title.
-- `TargetSnapshot`: container-level desired state. Holds `List<TargetTrack>` plus `HasChapters?`, `HasAttachments?`, `Faststart?`.
-- `ConversionPlan` record: `TargetSnapshot Delta, long SourceDurationMs`. Converter-facing payload.
+- `TargetSnapshot`: container-level desired state. Holds `List<TargetTrack>` plus `HasChapters?`, `HasAttachments?`, `Faststart?`. Also the converter-facing payload - no separate `ConversionPlan` wrapper.
 
 ### `TargetDiff` (Muxarr.Data.Extensions)
 
@@ -22,16 +21,16 @@ Unify the conversion pipeline around a single desired-state type, make converter
 
 ### `ConversionPlanner` (Muxarr.Web.Services)
 
-- `Plan(MediaFile, MediaSnapshot, TargetSnapshot) -> PlanResult(Strategy, ConversionPlan)`.
+- `Plan(MediaFile, MediaSnapshot, TargetSnapshot) -> PlanResult(Strategy, TargetSnapshot Delta)`.
 - `ResolveContainerQuirks` is the only place Matroska's lack of FlagDub is handled. Rewrites titles (if `!NameLocked`) and nulls `IsDub` for every track type. After this call, `IsDub` is always null on Matroska targets.
 - Strategy selection: structural change -> Remux. No changes -> Skip. Matroska + metadata only -> MetadataEdit. Anything else -> Remux.
 
 ### Unified converters
 
-All three take the same signature: `(string input, string output, ConversionPlan plan, Action<string,int>? onProgress, TimeSpan? timeout)`.
+Shared shape: `(string input, string output, TargetSnapshot delta, ...)`. FFmpeg adds one extra `long sourceDurationMs` for its progress parser - the only tool-specific quirk.
 
-- `MkvMerge.Remux` writes via `mkvmerge -o`. Reads `plan.Delta.HasChapters/HasAttachments` to emit `--no-chapters` / `--no-attachments`.
-- `FFmpeg.Remux` writes stream-copy via `ffmpeg -c copy`. Reads `plan.Delta.Faststart` for `+faststart` movflag, `plan.SourceDurationMs` for progress.
+- `MkvMerge.Remux` writes via `mkvmerge -o`. Reads `delta.HasChapters/HasAttachments` to emit `--no-chapters` / `--no-attachments`.
+- `FFmpeg.Remux` writes stream-copy via `ffmpeg -c copy`. Reads `delta.Faststart` for `+faststart` movflag; `sourceDurationMs` turns ffmpeg's `out_time_ms` into a 0-100 progress value.
 - `MkvPropEdit.Apply` edits in place via `mkvpropedit`. Does not handle `IsDub` (Matroska has no FlagDub; planner strips it). Has a guard: if no `--edit` args get emitted, returns success without invoking the tool.
 
 ### Builders (Muxarr.Data.Extensions.MediaFileExtensions)
@@ -40,7 +39,7 @@ All three take the same signature: `(string input, string output, ConversionPlan
 - `BuildTargetFromCustom(file, userEditedTracks)`: no profile mutations. Only ISO-normalizes language codes. Every track is `NameLocked=true`.
 - `ToTargetSnapshotFromSource(file)`: pass-through target when no profile applies.
 - `ToTargetTrack(TrackSnapshot, bool nameLocked)`: conversion helper.
-- Old `BuildTargetSnapshot(profile)` returning `MediaSnapshot` kept for UI preview.
+- `BuildTargetSnapshot`/`MergeForDisplay`/`ToDisplay` removed from production. UI now consumes `TargetSnapshot` + `MediaFile` directly.
 
 ### Dispatcher (`MediaConverterService.HandleConversion`)
 
@@ -82,44 +81,43 @@ The planner is now a pure function: inputs are read-only, delta is the sole
 output. The stored `TargetSnapshot` is correct from queue time, not
 post-hoc. Preview and pipeline both see the same resolved state.
 
-### 2. UI preview + pipeline type bridge (`MergeForDisplay` / `ToDisplay`)
+### ~~2. UI preview + pipeline type bridge~~ FIXED
 
-`BuildTargetSnapshot(profile)` still returns `MediaSnapshot` for the UI.
-Internally it calls `BuildTargetFromProfile` and then merges back via
-`TargetSnapshot.MergeForDisplay(file)`, which delegates per-track work to
-`TargetTrack.ToDisplay(source)`. The helper is now split by responsibility:
-the outer method is six lines, the per-track merge carries the ~15 field
-assignments that bridge the two snapshot shapes.
+`BuildTargetSnapshot` / `MergeForDisplay` / `ToDisplay` are gone from
+`MediaFileExtensions`. UI preview consumes `TargetSnapshot` + `MediaFile`
+directly: `MediaTrackDetailTable` takes `List<TargetTrack>?` for previews,
+`MediaTrackDetail` reads target deltas with null-means-inherit semantics
+and resolves language names via `IsoLanguage.Find`. `Details.razor`,
+`CustomConversionModal.ApplyProfileTemplate`, `MediaScannerService`, and
+`MediaFileExtensions.CheckHasNonStandardMetadata` all call
+`BuildTargetFromProfile`. `MediaSnapshot` lives on as
+`SnapshotBefore` / `SnapshotAfter` for observed history only.
 
-The remaining smell is structural: two snapshot types (`MediaSnapshot` with
-full-state fields and `TargetSnapshot` with nullable desired-state fields)
-need glue everywhere they meet. `ToDisplay` is one of those points. Another
-is `TrackSnapshot.ToTargetTrack` in the builders. Another is
-`TargetDiff.Delta`. None of them are individually large after the split,
-but the aggregate is real complexity.
+A test-only `DisplayMergeExtensions` in `Muxarr.Tests` keeps the old
+`BuildTargetSnapshot(profile).Tracks` assertion shape available for the
+~30 existing test call sites - production API stays clean.
 
-Clean resolution is picking one type:
-- kill `MediaSnapshot` and have the UI consume `TargetSnapshot + MediaFile` directly; or
-- kill the nullable semantics and collapse into one type.
+### ~~3. `MediaTrackType` namespace trick~~ FIXED
 
-Either removes `ToDisplay` entirely. Neither is small. Leave for a future
-pass unless the two-type split keeps causing friction.
+Namespace moved to `Muxarr.Core.Models` where the file actually lives. All
+callers updated: 22 `.cs` files got an explicit `using Muxarr.Core.Models;`;
+the 6 Razor components are covered by a single `@using Muxarr.Core.Models`
+added to `Muxarr.Web/Components/_Imports.razor`. No more namespace-shaped
+mismatch to slow readers down.
 
-### 3. `MediaTrackType` namespace trick
+### ~~4. `ConversionPlan.SourceDurationMs` is ffmpeg-only~~ FIXED
 
-The enum's file lives under `Muxarr.Core/Models/` but declares `namespace Muxarr.Data.Entities`. This lets Core reference it without introducing a circular project dependency. It works, but it is weird enough to slow down anyone reading the project tree. Clean fix is renaming the namespace across every caller.
+`ConversionPlan` deleted. `TargetSnapshot` is the converter-facing payload directly. `FFmpeg.Remux` takes `long sourceDurationMs` as an explicit extra parameter - the asymmetry is honest, lives at the only site that cares.
 
-### 4. `ConversionPlan.SourceDurationMs` is ffmpeg-only
+### ~~5. `NameIsFromOverride` duplicates `TrackSettings.ResolveTemplate`~~ FIXED
 
-Only `FFmpeg.Remux` reads it. Lives on the tool-agnostic record for signature uniformity. Small smell.
+Added `TrackSettings.TryGetMatchingOverride(track, out template)`. `ResolveTemplate` is now a one-liner on top of it. `NameIsFromOverride` is gone; the `BuildTargetFromProfile` call site inlines a two-line `StandardizeTrackNames` + `TryGetMatchingOverride` check.
 
-### 5. `NameIsFromOverride` duplicates `TrackSettings.ResolveTemplate`
+### ~~6. Dispatcher mutation in `RunFFmpegRemuxAsync`~~ FIXED
 
-Both iterate `TrackFlagExtensions.All` looking for the first matching override. ~5 lines of duplicated logic. Could add `TryGetMatchingOverride(track, out template)` on `TrackSettings` and share.
+Faststart inherit now resolves at the builder. `TargetResolver.ResolveForContainer` takes `sourceHasFaststart` and - on MP4 - sets `Faststart ??= sourceHasFaststart`; on non-MP4 it nulls the field so the stored target doesn't carry a meaningless opinion. The three builders (`BuildTargetFromProfile`, `BuildTargetFromCustom`, `ToTargetSnapshotFromSource`) all pass `file.HasFaststart`. Dispatcher no longer mutates the delta. Target is immutable from queue time onward.
 
-### 6. Dispatcher mutation in `RunFFmpegRemuxAsync`
-
-`plan.Delta.Faststart ??= mediaFile.HasFaststart` is another planner-external mutation of the plan. Same category smell as concern #1, smaller impact because FFmpeg.Remux runs later in the flow.
+Note: the stored faststart decision is a snapshot of the source's layout at queue time - the dispatcher re-plans against the stored `TargetSnapshot`, it does not re-run the builder. If the file's layout changes externally between queue and run, the stored decision is what ships. Acceptable for now (faststart is currently derived, not user-authored). When faststart becomes user-facing, `null` regains meaning as "inherit" and the resolver call can be gated on user intent.
 
 ### 7. Custom conversion modal has no Original toggle
 

@@ -11,7 +11,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_AllFlagsNull_ReturnsNull()
     {
-        var track = new TargetTrack { TrackNumber = 0, Type = MediaTrackType.Audio };
+        var track = new TrackPlan { TrackNumber = 0, Type = MediaTrackType.Audio };
 
         Assert.IsNull(FFmpegHelper.BuildDispositionValue(track));
     }
@@ -19,7 +19,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_SingleFlagTrue_EmitsPositive()
     {
-        var track = new TargetTrack
+        var track = new TrackPlan
         {
             TrackNumber = 1,
             Type = MediaTrackType.Audio,
@@ -32,7 +32,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_SingleFlagFalse_EmitsNegative()
     {
-        var track = new TargetTrack
+        var track = new TrackPlan
         {
             TrackNumber = 1,
             Type = MediaTrackType.Audio,
@@ -45,7 +45,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_MultipleFlags_ConcatenatesInCanonicalOrder()
     {
-        var track = new TargetTrack
+        var track = new TrackPlan
         {
             TrackNumber = 2,
             Type = MediaTrackType.Subtitles,
@@ -59,20 +59,20 @@ public class FFmpegHelperTests
     }
 
     [TestMethod]
-    [DataRow(nameof(TargetTrack.IsDefault), true, "+default")]
-    [DataRow(nameof(TargetTrack.IsDefault), false, "-default")]
-    [DataRow(nameof(TargetTrack.IsForced), true, "+forced")]
-    [DataRow(nameof(TargetTrack.IsHearingImpaired), true, "+hearing_impaired")]
-    [DataRow(nameof(TargetTrack.IsVisualImpaired), true, "+visual_impaired")]
-    [DataRow(nameof(TargetTrack.IsVisualImpaired), false, "-visual_impaired")]
-    [DataRow(nameof(TargetTrack.IsCommentary), true, "+comment")]
-    [DataRow(nameof(TargetTrack.IsOriginal), true, "+original")]
-    [DataRow(nameof(TargetTrack.IsOriginal), false, "-original")]
-    [DataRow(nameof(TargetTrack.IsDub), true, "+dub")]
+    [DataRow(nameof(TrackPlan.IsDefault), true, "+default")]
+    [DataRow(nameof(TrackPlan.IsDefault), false, "-default")]
+    [DataRow(nameof(TrackPlan.IsForced), true, "+forced")]
+    [DataRow(nameof(TrackPlan.IsHearingImpaired), true, "+hearing_impaired")]
+    [DataRow(nameof(TrackPlan.IsVisualImpaired), true, "+visual_impaired")]
+    [DataRow(nameof(TrackPlan.IsVisualImpaired), false, "-visual_impaired")]
+    [DataRow(nameof(TrackPlan.IsCommentary), true, "+comment")]
+    [DataRow(nameof(TrackPlan.IsOriginal), true, "+original")]
+    [DataRow(nameof(TrackPlan.IsOriginal), false, "-original")]
+    [DataRow(nameof(TrackPlan.IsDub), true, "+dub")]
     public void BuildDispositionValue_AllSupportedFlags(string fieldName, bool value, string expected)
     {
-        var track = new TargetTrack { TrackNumber = 1, Type = MediaTrackType.Audio };
-        typeof(TargetTrack).GetProperty(fieldName)!.SetValue(track, (bool?)value);
+        var track = new TrackPlan { TrackNumber = 1, Type = MediaTrackType.Audio };
+        typeof(TrackPlan).GetProperty(fieldName)!.SetValue(track, (bool?)value);
 
         Assert.AreEqual(expected, FFmpegHelper.BuildDispositionValue(track));
     }
@@ -80,7 +80,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_CommentaryMapsToFfmpegCommentFlag()
     {
-        var track = new TargetTrack
+        var track = new TrackPlan
         {
             TrackNumber = 3,
             Type = MediaTrackType.Audio,

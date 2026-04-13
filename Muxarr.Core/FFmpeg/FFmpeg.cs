@@ -6,7 +6,7 @@ using Muxarr.Core.Utilities;
 namespace Muxarr.Core.FFmpeg;
 
 // Stream-copy converter for non-Matroska containers. Reads a pre-resolved
-// TargetSnapshot; emits -map for selection/order and per-track -metadata /
+// ConversionPlan; emits -map for selection/order and per-track -metadata /
 // -disposition for target state. -c copy keeps every stream byte-identical.
 public static class FFmpeg
 {
@@ -44,7 +44,7 @@ public static class FFmpeg
         return json;
     }
 
-    public static async Task<ProcessResult> Remux(string input, string output, TargetSnapshot delta,
+    public static async Task<ProcessResult> Remux(string input, string output, ConversionPlan delta,
         long sourceDurationMs = 0, Action<string, int>? onProgress = null, TimeSpan? timeout = null)
     {
         if (string.IsNullOrEmpty(input))
@@ -149,7 +149,7 @@ public static class FFmpeg
         return false;
     }
 
-    public static string BuildRemuxArguments(string input, string output, TargetSnapshot delta,
+    public static string BuildRemuxArguments(string input, string output, ConversionPlan delta,
         string muxerFormat = "mp4")
     {
         var tracks = delta.Tracks;

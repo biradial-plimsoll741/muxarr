@@ -2,10 +2,10 @@ namespace Muxarr.Core.Models;
 
 // Desired output state, or delta of changes. Sibling of MediaSnapshot
 // (observed state), not a subclass - fields are nullable with inherit-semantics.
-// Serialized as JSON on MediaConversion.TargetSnapshot.
-public class TargetSnapshot
+// Serialized as JSON on MediaConversion.ConversionPlan.
+public class ConversionPlan
 {
-    public List<TargetTrack> Tracks { get; set; } = [];
+    public List<TrackPlan> Tracks { get; set; } = [];
 
     // null = inherit source. false = strip. true = preserve.
     public bool? HasChapters { get; set; }

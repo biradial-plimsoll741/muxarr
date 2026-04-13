@@ -6,7 +6,7 @@ using Muxarr.Data.Entities;
 namespace Muxarr.Data.Extensions;
 
 // Container-specific resolution of a desired target. Run by the builders so
-// the TargetSnapshot they hand off is already valid for the output container.
+// the ConversionPlan they hand off is already valid for the output container.
 // The planner, converters, and UI preview all read a resolved target; none
 // of them need to know about quirks.
 //
@@ -16,7 +16,7 @@ namespace Muxarr.Data.Extensions;
 // they can't express.
 public static class TargetResolver
 {
-    public static void ResolveForContainer(TargetSnapshot target, MediaSnapshot source, ContainerFamily family,
+    public static void ResolveForContainer(ConversionPlan target, MediaSnapshot source, ContainerFamily family,
         bool sourceHasFaststart = false)
     {
         // Faststart is an MP4-only concern. On Matroska it is meaningless - null it

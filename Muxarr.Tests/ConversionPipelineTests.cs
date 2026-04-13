@@ -1192,7 +1192,7 @@ public class ConversionPipelineTests
     [DataRow("test", true, DisplayName = "Name set")]
     public void HasChanges_BasicOutput(string? name, bool expected)
     {
-        var output = new TargetTrack { TrackNumber = 0, Type = MediaTrackType.Video, Name = name };
+        var output = new TrackPlan { TrackNumber = 0, Type = MediaTrackType.Video, Name = name };
         Assert.AreEqual(expected, TargetDiff.HasChanges(output));
     }
 
@@ -1725,13 +1725,13 @@ public class ConversionPipelineTests
 
     // --- Helpers ---
 
-    private static (List<TrackSnapshot> snapshots, List<TargetTrack> outputs) RunPipeline(MediaFile file,
+    private static (List<TrackSnapshot> snapshots, List<TrackPlan> outputs) RunPipeline(MediaFile file,
         Profile profile)
     {
         file.Profile = profile;
         // Preview snapshots (what the UI renders) and desired target (what the
         // pipeline feeds the planner). Both share the same profile mutations
-        // but carry different shapes: TrackSnapshot for display, TargetTrack
+        // but carry different shapes: TrackSnapshot for display, TrackPlan
         // for execution (fully populated here, reduced to a delta by the planner).
         var snapshots = file.BuildTargetSnapshot(profile).Tracks;
         var outputs = file.BuildTargetFromProfile(profile).Tracks;

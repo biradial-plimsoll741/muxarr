@@ -31,7 +31,7 @@ internal static class DisplayMergeExtensions
         };
     }
 
-    public static TrackSnapshot ToDisplay(this TargetTrack t, IMediaTrack? src)
+    public static TrackSnapshot ToDisplay(this TrackPlan t, IMediaTrack? src)
     {
         var snap = src?.ToSnapshot() ?? new TrackSnapshot { TrackNumber = t.TrackNumber, Type = t.Type };
 

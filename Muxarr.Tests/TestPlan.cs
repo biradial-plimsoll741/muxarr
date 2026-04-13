@@ -9,27 +9,27 @@ namespace Muxarr.Tests;
 // Test-only helpers for the planner/converter surface.
 internal static class TestPlan
 {
-    public static TargetSnapshot Of(params TargetTrack[] tracks)
+    public static ConversionPlan Of(params TrackPlan[] tracks)
     {
-        return new TargetSnapshot { Tracks = tracks.ToList() };
+        return new ConversionPlan { Tracks = tracks.ToList() };
     }
 
-    public static TargetSnapshot Of(List<TargetTrack> tracks)
+    public static ConversionPlan Of(List<TrackPlan> tracks)
     {
-        return new TargetSnapshot { Tracks = tracks };
+        return new ConversionPlan { Tracks = tracks };
     }
 
-    public static TargetSnapshot Of(List<TargetTrack> tracks, bool faststart)
+    public static ConversionPlan Of(List<TrackPlan> tracks, bool faststart)
     {
-        return new TargetSnapshot { Tracks = tracks, Faststart = faststart };
+        return new ConversionPlan { Tracks = tracks, Faststart = faststart };
     }
 
-    // Builds a desired TargetSnapshot from a MediaSnapshot - every field is
+    // Builds a desired ConversionPlan from a MediaSnapshot - every field is
     // treated as an explicit opinion. Mirrors what the profile builder
     // produces for kept tracks.
-    public static TargetSnapshot FromSnapshot(MediaSnapshot source, bool nameLocked = false)
+    public static ConversionPlan FromSnapshot(MediaSnapshot source, bool nameLocked = false)
     {
-        return new TargetSnapshot
+        return new ConversionPlan
         {
             Tracks = source.Tracks.Select(t => t.ToTargetTrack(nameLocked)).ToList()
         };
@@ -38,7 +38,7 @@ internal static class TestPlan
     // Replicates the old BuildTrackOutputs(before, target, family) shape for
     // legacy tests: runs the planner against a synthetic MediaFile with the
     // requested container family and returns the delta tracks.
-    public static List<TargetTrack> Diff(MediaSnapshot before, MediaSnapshot target, ContainerFamily family)
+    public static List<TrackPlan> Diff(MediaSnapshot before, MediaSnapshot target, ContainerFamily family)
     {
         var file = new MediaFile
         {

@@ -295,17 +295,17 @@ public class ConversionPlannerTests
         return (file, before, target);
     }
 
-    private static void SetFlag(TargetTrack track, string flagName, bool value)
+    private static void SetFlag(TrackPlan trackPlan, string flagName, bool value)
     {
         switch (flagName)
         {
-            case "IsDefault": track.IsDefault = value; break;
-            case "IsForced": track.IsForced = value; break;
-            case "IsHearingImpaired": track.IsHearingImpaired = value; break;
-            case "IsVisualImpaired": track.IsVisualImpaired = value; break;
-            case "IsCommentary": track.IsCommentary = value; break;
-            case "IsOriginal": track.IsOriginal = value; break;
-            case "IsDub": track.IsDub = value; break;
+            case "IsDefault": trackPlan.IsDefault = value; break;
+            case "IsForced": trackPlan.IsForced = value; break;
+            case "IsHearingImpaired": trackPlan.IsHearingImpaired = value; break;
+            case "IsVisualImpaired": trackPlan.IsVisualImpaired = value; break;
+            case "IsCommentary": trackPlan.IsCommentary = value; break;
+            case "IsOriginal": trackPlan.IsOriginal = value; break;
+            case "IsDub": trackPlan.IsDub = value; break;
             default: throw new ArgumentException($"Unknown flag: {flagName}");
         }
     }

@@ -3,7 +3,7 @@ using Muxarr.Data.Entities;
 
 namespace Muxarr.Data.Extensions;
 
-// Reduces a fully-populated desired TargetSnapshot to a delta by nulling out
+// Reduces a fully-populated desired ConversionPlan to a delta by nulling out
 // fields that already match the source. Converters apply non-null fields only.
 // Name semantics:
 //   null                = inherit source
@@ -11,15 +11,15 @@ namespace Muxarr.Data.Extensions;
 //   non-empty           = emitted if differs
 public static class TargetDiff
 {
-    public static TargetSnapshot Delta(MediaSnapshot source, TargetSnapshot desired)
+    public static ConversionPlan Delta(MediaSnapshot source, ConversionPlan desired)
     {
         var sourceByNumber = source.Tracks.ToDictionary(t => t.TrackNumber);
-        var result = new TargetSnapshot
+        var result = new ConversionPlan
         {
             HasChapters = DiffBool(source.HasChapters, desired.HasChapters),
             HasAttachments = DiffBool(source.HasAttachments, desired.HasAttachments),
             Faststart = desired.Faststart,
-            Tracks = new List<TargetTrack>(desired.Tracks.Count)
+            Tracks = new List<TrackPlan>(desired.Tracks.Count)
         };
 
         foreach (var track in desired.Tracks)
@@ -31,9 +31,9 @@ public static class TargetDiff
         return result;
     }
 
-    public static TargetTrack Delta(TrackSnapshot? source, TargetTrack desired)
+    public static TrackPlan Delta(TrackSnapshot? source, TrackPlan desired)
     {
-        return new TargetTrack
+        return new TrackPlan
         {
             TrackNumber = desired.TrackNumber,
             Type = desired.Type,
@@ -51,7 +51,7 @@ public static class TargetDiff
         };
     }
 
-    public static bool HasChanges(TargetTrack delta)
+    public static bool HasChanges(TrackPlan delta)
     {
         return delta.Name != null
                || delta.LanguageCode != null
@@ -64,7 +64,7 @@ public static class TargetDiff
                || delta.IsDub != null;
     }
 
-    public static bool HasChanges(TargetSnapshot delta)
+    public static bool HasChanges(ConversionPlan delta)
     {
         return delta.HasChapters != null
                || delta.HasAttachments != null

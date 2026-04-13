@@ -24,7 +24,7 @@ public class OutputValidatorTests
     {
         return new ConversionPlan
         {
-            Tracks = types.Select(t => new TargetTrack { Type = t }).ToList()
+            Tracks = types.Select(t => new TrackPlan { Type = t }).ToList()
         };
     }
 

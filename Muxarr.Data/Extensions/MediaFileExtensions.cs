@@ -543,7 +543,7 @@ public static class MediaFileExtensions
     // Metadata checking
 
     public static bool CheckHasNonStandardMetadata(this MediaFile file, Profile? profile,
-        TargetSnapshot? prebuiltTarget = null)
+        ConversionPlan? prebuiltTarget = null)
     {
         if (profile == null)
         {
@@ -575,7 +575,7 @@ public static class MediaFileExtensions
         return false;
     }
 
-    private static bool HasMetadataChanges(IMediaTrack original, TargetTrack target)
+    private static bool HasMetadataChanges(IMediaTrack original, TrackPlan target)
     {
         if (target.Name != null && !string.Equals(target.Name, original.TrackName ?? "", StringComparison.Ordinal))
         {
@@ -615,7 +615,7 @@ public static class MediaFileExtensions
         return false;
     }
 
-    private static bool IsReordered(List<TargetTrack> tracks)
+    private static bool IsReordered(List<TrackPlan> tracks)
     {
         for (var i = 1; i < tracks.Count; i++)
         {
@@ -844,8 +844,8 @@ public static class MediaFileExtensions
     // Profile-driven desired state. Runs profile mutations (flag correction
     // from title, und-resolution, name standardization, default flag
     // reassignment, IsOriginal auto-set) then resolves container quirks so
-    // the returned TargetSnapshot is ready for the planner and the UI.
-    public static TargetSnapshot BuildTargetFromProfile(this MediaFile file, Profile? profile)
+    // the returned ConversionPlan is ready for the planner and the UI.
+    public static ConversionPlan BuildTargetFromProfile(this MediaFile file, Profile? profile)
     {
         if (profile == null)
         {
@@ -858,7 +858,7 @@ public static class MediaFileExtensions
             file.Tracks.Count(t => t.Type == MediaTrackType.Subtitles),
             file.OriginalLanguage);
 
-        var target = new TargetSnapshot
+        var target = new ConversionPlan
         {
             Tracks = allowed.Select(t =>
             {
@@ -887,15 +887,15 @@ public static class MediaFileExtensions
     // ToggleDub syncs titles eagerly; the resolver pass here is a safety net
     // (NameLocked=true keeps it hands-off titles but still nulls IsDub on
     // Matroska so converters never see a flag they cannot express).
-    public static TargetSnapshot BuildTargetFromCustom(this MediaFile file, IEnumerable<TrackSnapshot> userEditedTracks)
+    public static ConversionPlan BuildTargetFromCustom(this MediaFile file, IEnumerable<TrackSnapshot> userEditedTracks)
     {
-        var tracks = new List<TargetTrack>();
+        var tracks = new List<TrackPlan>();
         foreach (var t in userEditedTracks)
         {
             var iso = IsoLanguage.Find(t.LanguageName);
             var code = iso != IsoLanguage.Unknown ? iso.ThreeLetterCode ?? t.LanguageCode : t.LanguageCode;
 
-            tracks.Add(new TargetTrack
+            tracks.Add(new TrackPlan
             {
                 TrackNumber = t.TrackNumber,
                 Type = t.Type,
@@ -912,7 +912,7 @@ public static class MediaFileExtensions
             });
         }
 
-        var target = new TargetSnapshot { Tracks = tracks };
+        var target = new ConversionPlan { Tracks = tracks };
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot(),
             file.ContainerType.ToContainerFamily(), file.HasFaststart);
         return target;
@@ -920,11 +920,11 @@ public static class MediaFileExtensions
 
     // Pass-through target when no profile applies: every track's current
     // state is the desired state. NameLocked so the resolver leaves titles alone.
-    public static TargetSnapshot ToTargetSnapshotFromSource(this MediaFile file)
+    public static ConversionPlan ToTargetSnapshotFromSource(this MediaFile file)
     {
-        var target = new TargetSnapshot
+        var target = new ConversionPlan
         {
-            Tracks = file.Tracks.Select(t => new TargetTrack
+            Tracks = file.Tracks.Select(t => new TrackPlan
             {
                 TrackNumber = t.TrackNumber,
                 Type = t.Type,
@@ -946,9 +946,9 @@ public static class MediaFileExtensions
         return target;
     }
 
-    public static TargetTrack ToTargetTrack(this TrackSnapshot t, bool nameLocked)
+    public static TrackPlan ToTargetTrack(this TrackSnapshot t, bool nameLocked)
     {
-        return new TargetTrack
+        return new TrackPlan
         {
             TrackNumber = t.TrackNumber,
             Type = t.Type,

@@ -12,43 +12,43 @@ public static class FFmpegHelper
 
     // Null fields = no opinion (ffmpeg preserves source).
     // Uses "comment"/"hearing_impaired" per ffmpeg convention, not "commentary"/"SDH".
-    public static string? BuildDispositionValue(TargetTrack track)
+    public static string? BuildDispositionValue(TrackPlan trackPlan)
     {
         var parts = new List<string>();
 
-        if (track.IsDefault != null)
+        if (trackPlan.IsDefault != null)
         {
-            parts.Add(track.IsDefault.Value ? "+default" : "-default");
+            parts.Add(trackPlan.IsDefault.Value ? "+default" : "-default");
         }
 
-        if (track.IsForced != null)
+        if (trackPlan.IsForced != null)
         {
-            parts.Add(track.IsForced.Value ? "+forced" : "-forced");
+            parts.Add(trackPlan.IsForced.Value ? "+forced" : "-forced");
         }
 
-        if (track.IsHearingImpaired != null)
+        if (trackPlan.IsHearingImpaired != null)
         {
-            parts.Add(track.IsHearingImpaired.Value ? "+hearing_impaired" : "-hearing_impaired");
+            parts.Add(trackPlan.IsHearingImpaired.Value ? "+hearing_impaired" : "-hearing_impaired");
         }
 
-        if (track.IsVisualImpaired != null)
+        if (trackPlan.IsVisualImpaired != null)
         {
-            parts.Add(track.IsVisualImpaired.Value ? "+visual_impaired" : "-visual_impaired");
+            parts.Add(trackPlan.IsVisualImpaired.Value ? "+visual_impaired" : "-visual_impaired");
         }
 
-        if (track.IsCommentary != null)
+        if (trackPlan.IsCommentary != null)
         {
-            parts.Add(track.IsCommentary.Value ? "+comment" : "-comment");
+            parts.Add(trackPlan.IsCommentary.Value ? "+comment" : "-comment");
         }
 
-        if (track.IsOriginal != null)
+        if (trackPlan.IsOriginal != null)
         {
-            parts.Add(track.IsOriginal.Value ? "+original" : "-original");
+            parts.Add(trackPlan.IsOriginal.Value ? "+original" : "-original");
         }
 
-        if (track.IsDub != null)
+        if (trackPlan.IsDub != null)
         {
-            parts.Add(track.IsDub.Value ? "+dub" : "-dub");
+            parts.Add(trackPlan.IsDub.Value ? "+dub" : "-dub");
         }
 
         return parts.Count == 0 ? null : string.Join("", parts);

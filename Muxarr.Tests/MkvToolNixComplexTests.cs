@@ -129,7 +129,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsDefault = false },
@@ -162,7 +162,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -195,7 +195,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         try
         {
             // IsDefault = null means "don't touch"
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -233,7 +233,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         try
         {
             // Simulate typical profile: keep original + allowed, remove commentary + HI
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -272,7 +272,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".reorder.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 3, Type = MediaTrackType.Audio, Name = "French First" },
@@ -307,7 +307,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_SetsDefaultFlag()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsDefault = false },
             new() { TrackNumber = 2, Type = MediaTrackType.Audio, IsDefault = true }
@@ -326,7 +326,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_SetsForcedFlag()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsForced = true },
             new() { TrackNumber = 5, Type = MediaTrackType.Subtitles, IsForced = false }
@@ -343,7 +343,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_CombinesNameLanguageAndFlags()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new()
             {
@@ -565,7 +565,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -599,7 +599,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsCommentary = true },
@@ -629,7 +629,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_SetsHearingImpairedAndCommentaryFlags()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsHearingImpaired = true },
             new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsCommentary = true }
@@ -653,7 +653,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", IsDefault = true },

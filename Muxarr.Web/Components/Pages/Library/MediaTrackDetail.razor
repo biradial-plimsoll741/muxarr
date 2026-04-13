@@ -71,7 +71,7 @@
 @code {
     [Parameter] [EditorRequired] public IMediaTrack Track { get; set; } = default!;
     [Parameter] [EditorRequired] public string? OriginalLanguage { get; set; }
-    [Parameter] public TargetTrack? Preview { get; set; }
+    [Parameter] public TrackPlan? Preview { get; set; }
     [Parameter] public int? MovedFromPosition { get; set; }
 
     private record FlagChange(string Label, bool NewValue);

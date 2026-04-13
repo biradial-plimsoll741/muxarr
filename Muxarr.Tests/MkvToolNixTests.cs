@@ -131,7 +131,7 @@ public class MkvToolNixTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -162,7 +162,7 @@ public class MkvToolNixTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio },
@@ -193,7 +193,7 @@ public class MkvToolNixTests : FixtureTestBase
         var output = _workingCopy + ".remux.mkv";
         try
         {
-            var tracks = new List<TargetTrack>
+            var tracks = new List<TrackPlan>
             {
                 new() { TrackNumber = 0, Type = MediaTrackType.Video },
                 new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
@@ -223,7 +223,7 @@ public class MkvToolNixTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_RenamesTracksInPlace()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" },
             new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
@@ -248,7 +248,7 @@ public class MkvToolNixTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_ChangesLanguage()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 2, Type = MediaTrackType.Audio, LanguageCode = "eng" }
         };
@@ -265,7 +265,7 @@ public class MkvToolNixTests : FixtureTestBase
     [TestMethod]
     public async Task PropEdit_ClearsTrackName()
     {
-        var tracks = new List<TargetTrack>
+        var tracks = new List<TrackPlan>
         {
             new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" }
         };
