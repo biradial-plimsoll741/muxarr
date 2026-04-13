@@ -1,22 +1,20 @@
-using Muxarr.Core.Models;
-
-namespace Muxarr.Data.Entities;
+namespace Muxarr.Core.Models;
 
 public interface IMediaTrack
 {
+    int Index { get; }
     MediaTrackType Type { get; }
-    string Codec { get; }
-    int AudioChannels { get; }
+    string? Name { get; }
     string LanguageCode { get; }
     string LanguageName { get; }
-    string? TrackName { get; }
-    int Index { get; }
+    string Codec { get; }
+    int AudioChannels { get; }
+    long DurationMs { get; }
+    bool IsDefault { get; }
+    bool IsForced { get; }
     bool IsCommentary { get; }
     bool IsHearingImpaired { get; }
     bool IsVisualImpaired { get; }
-    bool IsDefault { get; }
-    bool IsForced { get; }
     bool IsOriginal { get; }
     bool IsDub { get; }
-    long DurationMs { get; }
 }

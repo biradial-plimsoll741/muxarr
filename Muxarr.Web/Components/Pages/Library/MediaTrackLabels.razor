@@ -6,7 +6,7 @@ else
 {
     @foreach (var track in _expand ? Tracks : Tracks.Take(3))
     {
-        <ToolTip Tip="@track.TrackName">
+        <ToolTip Tip="@track.Name">
             <MediaTrackLabel Track="track"/>
         </ToolTip>
     }

@@ -17,7 +17,7 @@ public static class TestData
         {
             Type = MediaTrackType.Video,
             Index = trackNumber,
-            TrackName = trackName,
+            Name = trackName,
             LanguageCode = "und",
             LanguageName = "Undetermined",
             Codec = nameof(VideoCodec.Hevc)
@@ -43,7 +43,7 @@ public static class TestData
             IsDefault = isDefault,
             IsDub = dub,
             IsOriginal = isOriginal,
-            TrackName = trackName
+            Name = trackName
         };
     }
 
@@ -65,7 +65,7 @@ public static class TestData
             IsCommentary = commentary,
             IsDub = dub,
             IsOriginal = isOriginal,
-            TrackName = trackName
+            Name = trackName
         };
     }
 

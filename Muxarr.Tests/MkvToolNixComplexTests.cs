@@ -475,7 +475,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         // French + Spanish removed
         var subs = allowed.Where(t => t.Type == MediaTrackType.Subtitles).ToList();
         Assert.AreEqual(2, subs.Count,
-            $"Expected 2 subs, got: {string.Join(", ", subs.Select(s => $"{s.TrackName}"))}");
+            $"Expected 2 subs, got: {string.Join(", ", subs.Select(s => $"{s.Name}"))}");
         Assert.IsTrue(subs.Any(s => !s.IsHearingImpaired && !s.IsForced), "Regular English sub should be kept");
         Assert.IsTrue(subs.Any(s => s.IsForced), "Forced English sub should be kept");
         Assert.IsFalse(subs.Any(s => s.IsHearingImpaired), "SDH should be removed");
@@ -549,12 +549,12 @@ public class MkvToolNixComplexTests : FixtureTestBase
 
         // Audio: only English 5.1 kept (commentary removed), template applied
         Assert.AreEqual(1, audioPreview.Count);
-        Assert.AreEqual("English 2.0", audioPreview[0].TrackName); // AAC 2ch in fixture
+        Assert.AreEqual("English 2.0", audioPreview[0].Name); // AAC 2ch in fixture
 
         // Subtitles: regular + forced (SDH removed by RemoveImpaired), template applied
         Assert.AreEqual(2, subPreview.Count);
-        Assert.AreEqual("English", subPreview[0].TrackName, "Regular sub should not have SDH suffix");
-        Assert.AreEqual("English", subPreview[1].TrackName, "Forced sub is not HI so no SDH suffix");
+        Assert.AreEqual("English", subPreview[0].Name, "Regular sub should not have SDH suffix");
+        Assert.AreEqual("English", subPreview[1].Name, "Forced sub is not HI so no SDH suffix");
     }
 
     // --- RemuxFile: HI and commentary flags ---
@@ -788,19 +788,19 @@ public class MkvToolNixComplexTests : FixtureTestBase
             {
                 Type = MediaTrackType.Audio, Index = 1, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
-                IsDefault = true, IsCommentary = false, TrackName = "Main"
+                IsDefault = true, IsCommentary = false, Name = "Main"
             },
             new()
             {
                 Type = MediaTrackType.Audio, Index = 2, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
-                IsDefault = false, IsCommentary = true, TrackName = "Director Commentary"
+                IsDefault = false, IsCommentary = true, Name = "Director Commentary"
             },
             new()
             {
                 Type = MediaTrackType.Subtitles, Index = 4, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(SubtitleCodec.Srt),
-                IsHearingImpaired = true, IsForced = false, TrackName = "English SDH"
+                IsHearingImpaired = true, IsForced = false, Name = "English SDH"
             }
         };
 

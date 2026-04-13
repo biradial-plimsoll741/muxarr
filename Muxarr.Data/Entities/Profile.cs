@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Muxarr.Core.Extensions;
 using Muxarr.Core.Language;
+using Muxarr.Core.Models;
 using Muxarr.Data.Extensions;
 
 namespace Muxarr.Data.Entities;

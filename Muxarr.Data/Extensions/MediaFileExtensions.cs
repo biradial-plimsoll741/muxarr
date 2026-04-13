@@ -64,8 +64,8 @@ public static class MediaFileExtensions
         {
             file.Tracks.Clear();
             file.ContainerType = null;
-            file.ChapterCount = 0;
-            file.AttachmentCount = 0;
+            file.HasChapters = false;
+            file.HasAttachments = false;
             return;
         }
 
@@ -87,7 +87,7 @@ public static class MediaFileExtensions
                 LanguageName = IsoLanguage.Find(x.Properties.Language).Name,
                 AudioChannels = x.Properties.AudioChannels,
                 Codec = CodecExtensions.ParseCodec(x.Codec),
-                TrackName = x.Properties.TrackName,
+                Name = x.Properties.TrackName,
                 Index = x.Id
             };
 
@@ -107,8 +107,8 @@ public static class MediaFileExtensions
         }
 
         file.TrackCount = file.Tracks.Count;
-        file.ChapterCount = mkvInfo.Chapters.Sum(c => c.NumEntries);
-        file.AttachmentCount = mkvInfo.Attachments.Count;
+        file.HasChapters = mkvInfo.Chapters.Sum(c => c.NumEntries) > 0;
+        file.HasAttachments = mkvInfo.Attachments.Count > 0;
 
         var firstVideoTrack = mkvInfo.Tracks.FirstOrDefault(t => t.Type == "video");
         file.Resolution = firstVideoTrack?.Properties.PixelDimensions;
@@ -134,8 +134,8 @@ public static class MediaFileExtensions
         {
             file.Tracks.Clear();
             file.ContainerType = null;
-            file.ChapterCount = 0;
-            file.AttachmentCount = 0;
+            file.HasChapters = false;
+            file.HasAttachments = false;
             return probeResult;
         }
 
@@ -183,7 +183,7 @@ public static class MediaFileExtensions
                 Codec = CodecExtensions.ParseCodec(stream.CodecName ?? string.Empty, stream.Profile),
                 LanguageCode = language,
                 LanguageName = IsoLanguage.Find(language).Name,
-                TrackName = trackName,
+                Name = trackName,
                 AudioChannels = stream.Channels,
                 IsDefault = disposition.Default == 1,
                 IsForced = disposition.Forced == 1 || TrackNameFlags.ContainsForced(trackName),
@@ -217,8 +217,8 @@ public static class MediaFileExtensions
         }
 
         file.TrackCount = file.Tracks.Count;
-        file.ChapterCount = probe.Chapters.Count;
-        file.AttachmentCount = probe.Streams.Count(s => s.CodecType == "attachment");
+        file.HasChapters = probe.Chapters.Count > 0;
+        file.HasAttachments = probe.Streams.Any(s => s.CodecType == "attachment");
 
         var video = probe.Streams.FirstOrDefault(s => s.CodecType == "video");
         if (video is { Width: > 0, Height: > 0 })
@@ -583,7 +583,7 @@ public static class MediaFileExtensions
 
     private static bool HasMetadataChanges(IMediaTrack original, TrackPlan target)
     {
-        if (target.Name != null && !string.Equals(target.Name, original.TrackName ?? "", StringComparison.Ordinal))
+        if (target.Name != null && !string.Equals(target.Name, original.Name ?? "", StringComparison.Ordinal))
         {
             return true;
         }
@@ -643,7 +643,7 @@ public static class MediaFileExtensions
             {
                 if (profile.ClearVideoTrackNames)
                 {
-                    snapshot.TrackName = null;
+                    snapshot.Name = null;
                 }
 
                 continue;
@@ -690,35 +690,35 @@ public static class MediaFileExtensions
         if (standardizeNames && settings is { StandardizeTrackNames: true })
         {
             var template = settings.ResolveTemplate(track);
-            track.TrackName = track.ApplyTrackNameTemplate(template);
+            track.Name = track.ApplyTrackNameTemplate(template);
         }
     }
 
     public static void CorrectFlagsFromTrackName(this TrackSnapshot track)
     {
-        if (string.IsNullOrEmpty(track.TrackName))
+        if (string.IsNullOrEmpty(track.Name))
         {
             return;
         }
 
         if (!track.IsHearingImpaired)
         {
-            track.IsHearingImpaired = TrackNameFlags.ContainsHearingImpaired(track.TrackName);
+            track.IsHearingImpaired = TrackNameFlags.ContainsHearingImpaired(track.Name);
         }
 
         if (!track.IsForced)
         {
-            track.IsForced = TrackNameFlags.ContainsForced(track.TrackName);
+            track.IsForced = TrackNameFlags.ContainsForced(track.Name);
         }
 
         if (!track.IsVisualImpaired)
         {
-            track.IsVisualImpaired = TrackNameFlags.ContainsVisualImpaired(track.TrackName);
+            track.IsVisualImpaired = TrackNameFlags.ContainsVisualImpaired(track.Name);
         }
 
         if (!track.IsDub)
         {
-            track.IsDub = TrackNameFlags.ContainsDub(track.TrackName);
+            track.IsDub = TrackNameFlags.ContainsDub(track.Name);
         }
     }
 
@@ -737,7 +737,7 @@ public static class MediaFileExtensions
             .Replace("{nativelanguage}", iso.NativeName, StringComparison.OrdinalIgnoreCase)
             .Replace("{codec}", track.Codec.FormatCodec(), StringComparison.OrdinalIgnoreCase)
             .Replace("{channels}", track.GetChannelLayout() ?? "", StringComparison.OrdinalIgnoreCase)
-            .Replace("{trackname}", track.TrackName ?? "", StringComparison.OrdinalIgnoreCase)
+            .Replace("{trackname}", track.Name ?? "", StringComparison.OrdinalIgnoreCase)
             .Replace("{hi}", track.IsHearingImpaired ? "SDH" : "", StringComparison.OrdinalIgnoreCase)
             .Replace("{forced}", track.IsForced ? "Forced" : "", StringComparison.OrdinalIgnoreCase)
             .Replace("{commentary}", track.IsCommentary ? "Commentary" : "", StringComparison.OrdinalIgnoreCase)
@@ -809,7 +809,7 @@ public static class MediaFileExtensions
             AudioChannels = track.AudioChannels,
             LanguageCode = track.LanguageCode,
             LanguageName = track.LanguageName,
-            TrackName = track.TrackName,
+            Name = track.Name,
             Index = track.Index,
             DurationMs = track.DurationMs,
             IsCommentary = track.IsCommentary,
@@ -832,8 +832,8 @@ public static class MediaFileExtensions
         return new MediaSnapshot
         {
             Tracks = file.Tracks.ToSnapshots(),
-            HasChapters = file.ChapterCount > 0,
-            HasAttachments = file.AttachmentCount > 0
+            HasChapters = file.HasChapters,
+            HasAttachments = file.HasAttachments
         };
     }
 
@@ -842,8 +842,8 @@ public static class MediaFileExtensions
         return new MediaSnapshot
         {
             Tracks = tracks,
-            HasChapters = file.ChapterCount > 0,
-            HasAttachments = file.AttachmentCount > 0
+            HasChapters = file.HasChapters,
+            HasAttachments = file.HasAttachments
         };
     }
 
@@ -873,8 +873,8 @@ public static class MediaFileExtensions
                                  && settings.TryGetMatchingOverride(t, out _);
                 var tt = t.ToTargetTrack(nameLocked);
                 // ClearVideoTrackNames means "strip the title". ApplyProfileMutations
-                // sets TrackName=null which would map to Name=null ("no opinion").
-                // Switch to "" so the diff carries an explicit clear.
+                // sets Name=null on the snapshot which would map to plan Name=null
+                // ("no opinion"). Switch to "" so the diff carries an explicit clear.
                 if (t.Type == MediaTrackType.Video && profile.ClearVideoTrackNames)
                 {
                     tt.Name = "";
@@ -905,7 +905,7 @@ public static class MediaFileExtensions
             {
                 Index = t.Index,
                 Type = t.Type,
-                Name = t.TrackName,
+                Name = t.Name,
                 LanguageCode = code,
                 IsDefault = t.IsDefault,
                 IsForced = t.IsForced,
@@ -934,7 +934,7 @@ public static class MediaFileExtensions
             {
                 Index = t.Index,
                 Type = t.Type,
-                Name = t.TrackName,
+                Name = t.Name,
                 LanguageCode = t.LanguageCode,
                 IsDefault = t.IsDefault,
                 IsForced = t.IsForced,
@@ -958,7 +958,7 @@ public static class MediaFileExtensions
         {
             Index = t.Index,
             Type = t.Type,
-            Name = t.TrackName,
+            Name = t.Name,
             LanguageCode = t.ResolveLanguageCode(),
             IsDefault = t.IsDefault,
             IsForced = t.IsForced,

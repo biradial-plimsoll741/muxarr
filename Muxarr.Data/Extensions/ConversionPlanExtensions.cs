@@ -39,7 +39,7 @@ public static class ConversionPlanExtensions
             Type = desired.Type,
             NameLocked = desired.NameLocked,
 
-            Name = DiffString(source?.TrackName, desired.Name),
+            Name = DiffString(source?.Name, desired.Name),
             LanguageCode = DiffString(source?.LanguageCode, desired.LanguageCode),
             IsDefault = DiffBool(source?.IsDefault, desired.IsDefault),
             IsForced = DiffBool(source?.IsForced, desired.IsForced),

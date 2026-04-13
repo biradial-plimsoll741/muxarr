@@ -33,23 +33,23 @@
         @* Track name changes *@
         @if (HasTrackNameChange)
         {
-            @if (!string.IsNullOrEmpty(Track.TrackName))
+            @if (!string.IsNullOrEmpty(Track.Name))
             {
-                <span class="text-muted small text-decoration-line-through me-1">@Track.TrackName</span>
+                <span class="text-muted small text-decoration-line-through me-1">@Track.Name</span>
             }
 
             @if (!string.IsNullOrEmpty(Preview?.Name))
             {
                 <span class="small text-info">@Preview.Name</span>
             }
-            else if (!string.IsNullOrEmpty(Track.TrackName))
+            else if (!string.IsNullOrEmpty(Track.Name))
             {
                 <span class="small text-muted fst-italic">(cleared)</span>
             }
         }
-        else if (!string.IsNullOrEmpty(Track.TrackName))
+        else if (!string.IsNullOrEmpty(Track.Name))
         {
-            <span class="text-muted small">@Track.TrackName</span>
+            <span class="text-muted small">@Track.Name</span>
         }
 
         @* Flag changes - shown as small inline badges *@
@@ -95,7 +95,7 @@
     private string DisplayLanguage => ResolvedLanguage ?? Track.LanguageName;
 
     private bool HasTrackNameChange =>
-        Preview?.Name != null && !string.Equals(Track.TrackName ?? "", Preview.Name, StringComparison.Ordinal);
+        Preview?.Name != null && !string.Equals(Track.Name ?? "", Preview.Name, StringComparison.Ordinal);
 
     private List<FlagChange> FlagChanges
     {

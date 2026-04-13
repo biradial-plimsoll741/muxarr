@@ -214,7 +214,7 @@ public class ExtensionTests
             LanguageCode = IsoLanguage.Find(language).ThreeLetterCode ?? "",
             Codec = codec,
             AudioChannels = channels,
-            TrackName = trackName
+            Name = trackName
         };
 
         Assert.AreEqual(expected, track.ApplyTrackNameTemplate(template));
@@ -329,7 +329,7 @@ public class ExtensionTests
     [DataRow("Nederlands voor doven en slechthorenden")]
     public void CorrectFlagsFromTrackName_DetectsHearingImpaired(string trackName)
     {
-        var track = new TrackSnapshot { TrackName = trackName };
+        var track = new TrackSnapshot { Name = trackName };
         track.CorrectFlagsFromTrackName();
         Assert.IsTrue(track.IsHearingImpaired, $"'{trackName}' should be detected as hearing impaired");
     }
@@ -342,7 +342,7 @@ public class ExtensionTests
     [DataRow("Signs & Songs")]
     public void CorrectFlagsFromTrackName_DetectsForced(string trackName)
     {
-        var track = new TrackSnapshot { TrackName = trackName };
+        var track = new TrackSnapshot { Name = trackName };
         track.CorrectFlagsFromTrackName();
         Assert.IsTrue(track.IsForced, $"'{trackName}' should be detected as forced");
     }
@@ -355,7 +355,7 @@ public class ExtensionTests
     [DataRow("Audio Described")]
     public void CorrectFlagsFromTrackName_DetectsVisualImpaired(string trackName)
     {
-        var track = new TrackSnapshot { TrackName = trackName };
+        var track = new TrackSnapshot { Name = trackName };
         track.CorrectFlagsFromTrackName();
         Assert.IsTrue(track.IsVisualImpaired, $"'{trackName}' should be detected as visual impaired");
     }
@@ -369,7 +369,7 @@ public class ExtensionTests
     [DataRow("English DTSHD MA 5.1", DisplayName = "SDH inside DTSHD")]
     public void CorrectFlagsFromTrackName_NoFalsePositive(string trackName)
     {
-        var track = new TrackSnapshot { TrackName = trackName };
+        var track = new TrackSnapshot { Name = trackName };
         track.CorrectFlagsFromTrackName();
         Assert.IsFalse(track.IsHearingImpaired, $"'{trackName}' should not trigger hearing impaired");
         Assert.IsFalse(track.IsForced, $"'{trackName}' should not trigger forced");
@@ -381,7 +381,7 @@ public class ExtensionTests
     [TestMethod]
     public void CorrectFlagsFromTrackName_DoesNotOverrideExistingFlags()
     {
-        var track = new TrackSnapshot { TrackName = "Regular Track", IsHearingImpaired = true };
+        var track = new TrackSnapshot { Name = "Regular Track", IsHearingImpaired = true };
         track.CorrectFlagsFromTrackName();
         Assert.IsTrue(track.IsHearingImpaired, "Pre-existing flag should not be cleared");
     }
@@ -389,7 +389,7 @@ public class ExtensionTests
     [TestMethod]
     public void CorrectFlagsFromTrackName_NoFlagsForPlainName()
     {
-        var track = new TrackSnapshot { TrackName = "English" };
+        var track = new TrackSnapshot { Name = "English" };
         track.CorrectFlagsFromTrackName();
         Assert.IsFalse(track.IsHearingImpaired);
         Assert.IsFalse(track.IsForced);
@@ -399,7 +399,7 @@ public class ExtensionTests
     [TestMethod]
     public void CorrectFlagsFromTrackName_NullName_NoChange()
     {
-        var track = new TrackSnapshot { TrackName = null };
+        var track = new TrackSnapshot { Name = null };
         track.CorrectFlagsFromTrackName();
         Assert.IsFalse(track.IsHearingImpaired);
         Assert.IsFalse(track.IsForced);

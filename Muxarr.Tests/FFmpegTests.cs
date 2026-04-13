@@ -325,7 +325,7 @@ public class FFmpegTests
 
         Assert.AreEqual(ContainerFamily.Mp4, probed.ContainerType.ToContainerFamily());
         var audio = probed.Tracks.First(t => t.Index == 1);
-        Assert.AreEqual("Renamed English 2.0", audio.TrackName);
+        Assert.AreEqual("Renamed English 2.0", audio.Name);
     }
 
     [TestMethod]
@@ -575,7 +575,7 @@ public class FFmpegTests
 
             // The audio title change actually landed.
             var audio = probed.Tracks.First(t => t.Type == MediaTrackType.Audio);
-            Assert.AreEqual($"Renamed {extension}", audio.TrackName);
+            Assert.AreEqual($"Renamed {extension}", audio.Name);
         }
         finally
         {
@@ -610,7 +610,7 @@ public class FFmpegTests
         Assert.AreEqual(5, file.Tracks.Count);
 
         var audio = file.Tracks.First(t => t.Type == MediaTrackType.Audio && t.Index == 1);
-        Assert.IsFalse(string.IsNullOrEmpty(audio.TrackName));
+        Assert.IsFalse(string.IsNullOrEmpty(audio.Name));
         Assert.AreEqual("eng", audio.LanguageCode);
 
         // SDH subtitle should be picked up from ffprobe's hearing_impaired disposition.
@@ -720,6 +720,6 @@ public class FFmpegTests
         await file.SetFileDataFromFFprobe();
 
         var audio = file.Tracks.First(t => t.Index == 1);
-        Assert.AreEqual("Round Trip Title", audio.TrackName);
+        Assert.AreEqual("Round Trip Title", audio.Name);
     }
 }

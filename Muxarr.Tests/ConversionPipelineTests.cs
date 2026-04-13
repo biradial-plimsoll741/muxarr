@@ -502,17 +502,17 @@ public class ConversionPipelineTests
             new()
             {
                 Type = MediaTrackType.Audio, Index = 1, LanguageName = "English", LanguageCode = "eng",
-                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = true, TrackName = "Main Audio"
+                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = true, Name = "Main Audio"
             },
             new()
             {
                 Type = MediaTrackType.Audio, Index = 2, LanguageName = "French", LanguageCode = "fre",
-                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = false, TrackName = "French Dub"
+                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = false, Name = "French Dub"
             },
             new()
             {
                 Type = MediaTrackType.Subtitles, Index = 3, LanguageName = "English", LanguageCode = "eng",
-                Codec = nameof(SubtitleCodec.Srt), IsForced = true, TrackName = "Forced"
+                Codec = nameof(SubtitleCodec.Srt), IsForced = true, Name = "Forced"
             }
         };
 
@@ -552,7 +552,7 @@ public class ConversionPipelineTests
             new()
             {
                 Type = MediaTrackType.Audio, Index = 1, LanguageName = "French", LanguageCode = "fre",
-                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, TrackName = "Keep This"
+                Codec = nameof(AudioCodec.Aac), AudioChannels = 6, Name = "Keep This"
             }
         };
 
@@ -1202,7 +1202,7 @@ public class ConversionPipelineTests
         var track = new TrackSnapshot
         {
             Index = 1, Type = MediaTrackType.Audio,
-            TrackName = "English 5.1", LanguageCode = "eng",
+            Name = "English 5.1", LanguageCode = "eng",
             IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = false
         };
         var before = new MediaSnapshot { Tracks = [track] };
@@ -1213,7 +1213,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 1, Type = MediaTrackType.Audio,
-                    TrackName = "English 5.1", LanguageCode = "eng",
+                    Name = "English 5.1", LanguageCode = "eng",
                     IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = false
                 }
             ]
@@ -1233,7 +1233,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 1, Type = MediaTrackType.Audio,
-                    TrackName = "English", LanguageCode = "eng"
+                    Name = "English", LanguageCode = "eng"
                 }
             ]
         };
@@ -1244,7 +1244,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 1, Type = MediaTrackType.Audio,
-                    TrackName = "English 5.1", LanguageCode = "eng"
+                    Name = "English 5.1", LanguageCode = "eng"
                 }
             ]
         };
@@ -1260,9 +1260,9 @@ public class ConversionPipelineTests
     public void BuildTrackOutputs_ClearVideoName(string? originalName, string targetName, bool expected)
     {
         var before = new MediaSnapshot
-            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, TrackName = originalName }] };
+            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, Name = originalName }] };
         var target = new MediaSnapshot
-            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, TrackName = targetName }] };
+            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, Name = targetName }] };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
         Assert.AreEqual(expected, outputs.Any(ConversionPlanExtensions.HasChanges));
@@ -1278,7 +1278,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 2, Type = MediaTrackType.Subtitles,
-                    TrackName = "English", LanguageCode = "eng",
+                    Name = "English", LanguageCode = "eng",
                     IsDefault = false, IsForced = false, IsHearingImpaired = false, IsCommentary = false
                 }
             ]
@@ -1290,7 +1290,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 2, Type = MediaTrackType.Subtitles,
-                    TrackName = "English", LanguageCode = "eng",
+                    Name = "English", LanguageCode = "eng",
                     IsDefault = false, IsForced = true, IsHearingImpaired = false, IsCommentary = false
                 }
             ]
@@ -1307,7 +1307,7 @@ public class ConversionPipelineTests
         var track = new TrackSnapshot
         {
             Index = 0, Type = MediaTrackType.Video,
-            TrackName = "x264", LanguageCode = "eng",
+            Name = "x264", LanguageCode = "eng",
             IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = true
         };
         var before = new MediaSnapshot { Tracks = [track] };
@@ -1318,7 +1318,7 @@ public class ConversionPipelineTests
                 new TrackSnapshot
                 {
                     Index = 0, Type = MediaTrackType.Video,
-                    TrackName = "x264", LanguageCode = "eng",
+                    Name = "x264", LanguageCode = "eng",
                     IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = true
                 }
             ]
@@ -1479,7 +1479,7 @@ public class ConversionPipelineTests
 
         var result = file.BuildTargetSnapshot(profile).Tracks;
 
-        Assert.IsNull(result[0].TrackName, "Video track name should be cleared");
+        Assert.IsNull(result[0].Name, "Video track name should be cleared");
     }
 
     [TestMethod]
@@ -1531,7 +1531,7 @@ public class ConversionPipelineTests
 
         var result = file.BuildTargetSnapshot(profile).Tracks;
 
-        Assert.AreEqual("English 5.1", result[0].TrackName);
+        Assert.AreEqual("English 5.1", result[0].Name);
     }
 
     [TestMethod]
@@ -1549,7 +1549,7 @@ public class ConversionPipelineTests
 
         var result = file.BuildTargetSnapshot(profile).Tracks;
 
-        Assert.AreEqual("Custom Name", result[0].TrackName, "Name should not change when StandardizeTrackNames=false");
+        Assert.AreEqual("Custom Name", result[0].Name, "Name should not change when StandardizeTrackNames=false");
     }
 
     [TestMethod]
@@ -1702,7 +1702,7 @@ public class ConversionPipelineTests
 
             if (output.Name != null)
             {
-                Assert.AreEqual(preview.TrackName, output.Name, $"Track {i}: Name mismatch");
+                Assert.AreEqual(preview.Name, output.Name, $"Track {i}: Name mismatch");
             }
 
             if (output.IsDefault != null)

@@ -73,14 +73,14 @@ public static class TrackQualityScorer
 
     private static bool IsSpatialAudio(IMediaTrack track)
     {
-        if (string.IsNullOrEmpty(track.TrackName))
+        if (string.IsNullOrEmpty(track.Name))
         {
             return false;
         }
 
         foreach (var keyword in SpatialKeywords)
         {
-            if (track.TrackName.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            if (track.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

@@ -213,12 +213,12 @@ public class TrackFilterTests
                 new MediaTrack
                 {
                     Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", IsForced = true,
-                    Codec = nameof(SubtitleCodec.Srt), Index = 3, TrackName = "French Forced"
+                    Codec = nameof(SubtitleCodec.Srt), Index = 3, Name = "French Forced"
                 },
                 new MediaTrack
                 {
                     Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French",
-                    Codec = nameof(SubtitleCodec.Srt), Index = 4, TrackName = "French"
+                    Codec = nameof(SubtitleCodec.Srt), Index = 4, Name = "French"
                 }
             ]
         };

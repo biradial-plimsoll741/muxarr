@@ -4,7 +4,7 @@ using Muxarr.Core.Models;
 
 namespace Muxarr.Data.Entities;
 
-public class MediaFile : AuditableEntity
+public class MediaFile : AuditableEntity, IMedia<MediaTrack>
 {
     public int Id { get; set; }
     public int ProfileId { get; set; }
@@ -15,7 +15,7 @@ public class MediaFile : AuditableEntity
     public string? ProbeOutput { get; set; }
     public bool HasScanWarning { get; set; }
     public bool HasFaststart { get; set; }
-    public ICollection<MediaTrack> Tracks { get; set; } = new List<MediaTrack>();
+    public List<MediaTrack> Tracks { get; set; } = [];
     public int TrackCount { get; set; }
     public bool HasRedundantTracks { get; set; }
     public bool HasNonStandardMetadata { get; set; }
@@ -23,8 +23,8 @@ public class MediaFile : AuditableEntity
     public string? Resolution { get; set; }
     public long DurationMs { get; set; }
     public int VideoBitDepth { get; set; }
-    public int ChapterCount { get; set; }
-    public int AttachmentCount { get; set; }
+    public bool HasChapters { get; set; }
+    public bool HasAttachments { get; set; }
     public DateTime FileLastWriteTime { get; set; }
     public DateTime FileCreationTime { get; set; }
 
@@ -49,7 +49,7 @@ public class MediaTrack : IMediaTrack
     public int AudioChannels { get; set; }
     public string LanguageCode { get; set; } = string.Empty;
     public string LanguageName { get; set; } = string.Empty;
-    public string? TrackName { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
     public long DurationMs { get; set; }
 
     public MediaFile? MediaFile { get; set; }
@@ -102,10 +102,10 @@ public class MediaFileConfiguration : AuditEntityConfiguration<MediaFile>
         builder.Property(e => e.Resolution)
             .HasMaxLength(20);
 
-        builder.Property(e => e.ChapterCount)
+        builder.Property(e => e.HasChapters)
             .IsRequired();
 
-        builder.Property(e => e.AttachmentCount)
+        builder.Property(e => e.HasAttachments)
             .IsRequired();
 
         builder.HasIndex(e => e.ContainerType);
@@ -146,7 +146,7 @@ public class MediaTrackConfiguration : IEntityTypeConfiguration<MediaTrack>
         builder.Property(e => e.LanguageName)
             .HasMaxLength(100);
 
-        builder.Property(e => e.TrackName)
+        builder.Property(e => e.Name)
             .HasMaxLength(500);
 
         builder.HasIndex(e => new { e.MediaFileId, TrackNumber = e.Index }).IsUnique();

@@ -26,8 +26,8 @@ internal static class DisplayMergeExtensions
         return new MediaSnapshot
         {
             Tracks = target.Tracks.Select(t => t.ToDisplay(src.GetValueOrDefault(t.Index))).ToList(),
-            HasChapters = target.HasChapters ?? file.ChapterCount > 0,
-            HasAttachments = target.HasAttachments ?? file.AttachmentCount > 0
+            HasChapters = target.HasChapters ?? file.HasChapters,
+            HasAttachments = target.HasAttachments ?? file.HasAttachments
         };
     }
 
@@ -37,7 +37,7 @@ internal static class DisplayMergeExtensions
 
         if (t.Name != null)
         {
-            snap.TrackName = string.IsNullOrEmpty(t.Name) ? null : t.Name;
+            snap.Name = string.IsNullOrEmpty(t.Name) ? null : t.Name;
         }
 
         if (t.LanguageCode != null)
@@ -76,7 +76,7 @@ internal static class DisplayMergeExtensions
             snap.IsOriginal = t.IsOriginal.Value;
         }
 
-        snap.IsDub = t.IsDub ?? TrackNameFlags.ContainsDub(snap.TrackName);
+        snap.IsDub = t.IsDub ?? TrackNameFlags.ContainsDub(snap.Name);
 
         return snap;
     }
