@@ -9,7 +9,7 @@ namespace Muxarr.Data.Extensions;
 //   null                = inherit source
 //   ""                  = explicit clear (emitted if source not already empty)
 //   non-empty           = emitted if differs
-public static class TargetDiff
+public static class ConversionPlanExtensions
 {
     public static ConversionPlan Delta(MediaSnapshot source, ConversionPlan desired)
     {

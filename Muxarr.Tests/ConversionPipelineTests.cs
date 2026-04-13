@@ -1193,7 +1193,7 @@ public class ConversionPipelineTests
     public void HasChanges_BasicOutput(string? name, bool expected)
     {
         var output = new TrackPlan { TrackNumber = 0, Type = MediaTrackType.Video, Name = name };
-        Assert.AreEqual(expected, TargetDiff.HasChanges(output));
+        Assert.AreEqual(expected, ConversionPlanExtensions.HasChanges(output));
     }
 
     [TestMethod]
@@ -1220,7 +1220,7 @@ public class ConversionPipelineTests
         };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
-        Assert.IsFalse(outputs.Any(TargetDiff.HasChanges));
+        Assert.IsFalse(outputs.Any(ConversionPlanExtensions.HasChanges));
     }
 
     [TestMethod]
@@ -1250,7 +1250,7 @@ public class ConversionPipelineTests
         };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
-        Assert.IsTrue(outputs.Any(TargetDiff.HasChanges));
+        Assert.IsTrue(outputs.Any(ConversionPlanExtensions.HasChanges));
     }
 
     [TestMethod]
@@ -1265,7 +1265,7 @@ public class ConversionPipelineTests
             { Tracks = [new TrackSnapshot { TrackNumber = 0, Type = MediaTrackType.Video, TrackName = targetName }] };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
-        Assert.AreEqual(expected, outputs.Any(TargetDiff.HasChanges));
+        Assert.AreEqual(expected, outputs.Any(ConversionPlanExtensions.HasChanges));
     }
 
     [TestMethod]
@@ -1297,7 +1297,7 @@ public class ConversionPipelineTests
         };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
-        Assert.IsTrue(outputs.Any(TargetDiff.HasChanges));
+        Assert.IsTrue(outputs.Any(ConversionPlanExtensions.HasChanges));
     }
 
     [TestMethod]
@@ -1325,7 +1325,7 @@ public class ConversionPipelineTests
         };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
-        Assert.IsFalse(outputs.Any(TargetDiff.HasChanges));
+        Assert.IsFalse(outputs.Any(ConversionPlanExtensions.HasChanges));
     }
 
     [TestMethod]
@@ -1361,7 +1361,7 @@ public class ConversionPipelineTests
         var target = file.BuildTargetSnapshot(profile);
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
 
-        var hasMetadataChanges = outputs.Any(TargetDiff.HasChanges);
+        var hasMetadataChanges = outputs.Any(ConversionPlanExtensions.HasChanges);
 
         Assert.IsFalse(hasMetadataChanges,
             "File with null video name and ClearVideoTrackNames should be considered optimal");

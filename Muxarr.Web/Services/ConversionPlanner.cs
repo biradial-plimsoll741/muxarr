@@ -22,9 +22,9 @@ public static class ConversionPlanner
     public static PlanResult Plan(MediaFile file, MediaSnapshot source, ConversionPlan desired)
     {
         var family = file.ContainerType.ToContainerFamily();
-        var delta = TargetDiff.Delta(source, desired);
+        var delta = ConversionPlanExtensions.Delta(source, desired);
         var hasStructuralChanges = HasStructuralChanges(source, desired);
-        var hasFieldChanges = TargetDiff.HasChanges(delta);
+        var hasFieldChanges = ConversionPlanExtensions.HasChanges(delta);
 
         ConversionStrategy strategy;
         if (hasStructuralChanges)
