@@ -9,19 +9,19 @@ namespace Muxarr.Tests;
 // Test-only helpers for the planner/converter surface.
 internal static class TestPlan
 {
-    public static ConversionPlan Of(params TargetTrack[] tracks)
+    public static TargetSnapshot Of(params TargetTrack[] tracks)
     {
-        return new ConversionPlan(new TargetSnapshot { Tracks = tracks.ToList() }, 0);
+        return new TargetSnapshot { Tracks = tracks.ToList() };
     }
 
-    public static ConversionPlan Of(List<TargetTrack> tracks)
+    public static TargetSnapshot Of(List<TargetTrack> tracks)
     {
-        return new ConversionPlan(new TargetSnapshot { Tracks = tracks }, 0);
+        return new TargetSnapshot { Tracks = tracks };
     }
 
-    public static ConversionPlan Of(List<TargetTrack> tracks, bool faststart, long durationMs = 0)
+    public static TargetSnapshot Of(List<TargetTrack> tracks, bool faststart)
     {
-        return new ConversionPlan(new TargetSnapshot { Tracks = tracks, Faststart = faststart }, durationMs);
+        return new TargetSnapshot { Tracks = tracks, Faststart = faststart };
     }
 
     // Builds a desired TargetSnapshot from a MediaSnapshot - every field is
@@ -53,6 +53,6 @@ internal static class TestPlan
         };
         var desired = FromSnapshot(target);
         var result = ConversionPlanner.Plan(file, before, desired);
-        return result.Plan.Delta.Tracks;
+        return result.Delta.Tracks;
     }
 }

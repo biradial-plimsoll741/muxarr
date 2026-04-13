@@ -38,9 +38,9 @@
                 <span class="text-muted small text-decoration-line-through me-1">@Track.TrackName</span>
             }
 
-            @if (!string.IsNullOrEmpty(Preview?.TrackName))
+            @if (!string.IsNullOrEmpty(Preview?.Name))
             {
-                <span class="small text-info">@Preview.TrackName</span>
+                <span class="small text-info">@Preview.Name</span>
             }
             else if (!string.IsNullOrEmpty(Track.TrackName))
             {
@@ -71,20 +71,31 @@
 @code {
     [Parameter] [EditorRequired] public IMediaTrack Track { get; set; } = default!;
     [Parameter] [EditorRequired] public string? OriginalLanguage { get; set; }
-    [Parameter] public TrackSnapshot? Preview { get; set; }
+    [Parameter] public TargetTrack? Preview { get; set; }
     [Parameter] public int? MovedFromPosition { get; set; }
 
     private record FlagChange(string Label, bool NewValue);
 
     private bool IsReordered => MovedFromPosition.HasValue;
 
-    private string? ResolvedLanguage =>
-        Preview != null && Preview.LanguageName != Track.LanguageName ? Preview.LanguageName : null;
+    private string? ResolvedLanguage
+    {
+        get
+        {
+            if (Preview?.LanguageCode == null ||
+                string.Equals(Preview.LanguageCode, Track.LanguageCode, StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return IsoLanguage.Find(Preview.LanguageCode).Name;
+        }
+    }
 
     private string DisplayLanguage => ResolvedLanguage ?? Track.LanguageName;
 
     private bool HasTrackNameChange =>
-        Preview != null && !string.Equals(Track.TrackName ?? "", Preview.TrackName ?? "", StringComparison.Ordinal);
+        Preview?.Name != null && !string.Equals(Track.TrackName ?? "", Preview.Name, StringComparison.Ordinal);
 
     private List<FlagChange> FlagChanges
     {
@@ -96,34 +107,34 @@
             }
 
             var changes = new List<FlagChange>();
-            if (Preview.IsDefault != Track.IsDefault)
+            if (Preview.IsDefault is { } isDefault && isDefault != Track.IsDefault)
             {
-                changes.Add(new FlagChange("Default", Preview.IsDefault));
+                changes.Add(new FlagChange("Default", isDefault));
             }
 
-            if (Preview.IsForced != Track.IsForced)
+            if (Preview.IsForced is { } isForced && isForced != Track.IsForced)
             {
-                changes.Add(new FlagChange("Forced", Preview.IsForced));
+                changes.Add(new FlagChange("Forced", isForced));
             }
 
-            if (Preview.IsHearingImpaired != Track.IsHearingImpaired)
+            if (Preview.IsHearingImpaired is { } isHi && isHi != Track.IsHearingImpaired)
             {
-                changes.Add(new FlagChange("SDH", Preview.IsHearingImpaired));
+                changes.Add(new FlagChange("SDH", isHi));
             }
 
-            if (Preview.IsCommentary != Track.IsCommentary)
+            if (Preview.IsCommentary is { } isComm && isComm != Track.IsCommentary)
             {
-                changes.Add(new FlagChange("Commentary", Preview.IsCommentary));
+                changes.Add(new FlagChange("Commentary", isComm));
             }
 
-            if (Preview.IsVisualImpaired != Track.IsVisualImpaired)
+            if (Preview.IsVisualImpaired is { } isAd && isAd != Track.IsVisualImpaired)
             {
-                changes.Add(new FlagChange("AD", Preview.IsVisualImpaired));
+                changes.Add(new FlagChange("AD", isAd));
             }
 
-            if (Preview.IsDub != Track.IsDub)
+            if (Preview.IsDub is { } isDub && isDub != Track.IsDub)
             {
-                changes.Add(new FlagChange("Dub", Preview.IsDub));
+                changes.Add(new FlagChange("Dub", isDub));
             }
 
             return changes;

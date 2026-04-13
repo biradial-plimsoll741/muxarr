@@ -296,7 +296,7 @@ public class MediaConverterService(
         // against shifting snapshots risks strategy/output disagreement.
         var result = ConversionPlanner.Plan(
             conversion.MediaFile, conversion.SnapshotBefore, conversion.TargetSnapshot);
-        var plan = result.Plan;
+        var delta = result.Delta;
 
         if (result.Strategy == ConversionPlanner.ConversionStrategy.Skip)
         {
@@ -309,7 +309,7 @@ public class MediaConverterService(
         }
         else if (result.Strategy == ConversionPlanner.ConversionStrategy.MetadataEdit)
         {
-            await RunMkvPropEditInPlaceAsync(conversion, plan, context, token);
+            await RunMkvPropEditInPlaceAsync(conversion, delta, context, token);
         }
 
         if (conversion.State is ConversionState.Completed or ConversionState.Failed)
@@ -341,11 +341,11 @@ public class MediaConverterService(
 
             if (useFFmpeg)
             {
-                await RunFFmpegRemuxAsync(conversion, plan, tmp, context, conversionTimeout, token);
+                await RunFFmpegRemuxAsync(conversion, delta, tmp, context, conversionTimeout, token);
             }
             else
             {
-                await RunMkvMergeRemuxAsync(conversion, plan, tmp, context, conversionTimeout, token);
+                await RunMkvMergeRemuxAsync(conversion, delta, tmp, context, conversionTimeout, token);
             }
 
             await FinalizeTemporaryOutputAsync(conversion, tmp, context, scope, token);
@@ -394,7 +394,7 @@ public class MediaConverterService(
 
     // Matroska in-place metadata edit. Rescans after to verify the changes
     // stuck; falls through to a full remux otherwise.
-    private async Task RunMkvPropEditInPlaceAsync(MediaConversion conversion, ConversionPlan plan,
+    private async Task RunMkvPropEditInPlaceAsync(MediaConversion conversion, TargetSnapshot delta,
         AppDbContext context, CancellationToken token)
     {
         var mediaFile = conversion.MediaFile!;
@@ -404,7 +404,7 @@ public class MediaConverterService(
         await context.SaveChangesAsync(token);
         ConverterStateChanged?.Invoke(new ConverterProgressEvent(conversion));
 
-        var propResult = await MkvPropEdit.Apply(mediaFile.Path, mediaFile.Path, plan);
+        var propResult = await MkvPropEdit.Apply(mediaFile.Path, mediaFile.Path, delta);
         if (!propResult.Success)
         {
             var errorDetail = !string.IsNullOrWhiteSpace(propResult.Error) ? propResult.Error : propResult.Output;
@@ -430,7 +430,7 @@ public class MediaConverterService(
         conversion.State = ConversionState.Completed;
     }
 
-    private async Task RunMkvMergeRemuxAsync(MediaConversion conversion, ConversionPlan plan, string tmp,
+    private async Task RunMkvMergeRemuxAsync(MediaConversion conversion, TargetSnapshot delta, string tmp,
         AppDbContext context, TimeSpan? timeout, CancellationToken token)
     {
         var mediaFile = conversion.MediaFile!;
@@ -438,7 +438,7 @@ public class MediaConverterService(
         await context.SaveChangesAsync(token);
 
         var reportProgress = BuildProgressReporter(conversion);
-        var result = await MkvMerge.Remux(mediaFile.Path, tmp, plan,
+        var result = await MkvMerge.Remux(mediaFile.Path, tmp, delta,
             (line, progress) =>
             {
                 if (!line.StartsWith("Progress"))
@@ -472,19 +472,15 @@ public class MediaConverterService(
         await context.SaveChangesAsync(token);
     }
 
-    private async Task RunFFmpegRemuxAsync(MediaConversion conversion, ConversionPlan plan,
+    private async Task RunFFmpegRemuxAsync(MediaConversion conversion, TargetSnapshot delta,
         string tmp, AppDbContext context, TimeSpan? timeout, CancellationToken token)
     {
         var mediaFile = conversion.MediaFile!;
         conversion.Log($"Starting ffmpeg stream copy for {mediaFile.GetName()}..", logger);
         await context.SaveChangesAsync(token);
 
-        // Preserve source's faststart layout unless the target explicitly
-        // opted in/out.
-        plan.Delta.Faststart ??= mediaFile.HasFaststart;
-
         var reportProgress = BuildProgressReporter(conversion);
-        var result = await FFmpeg.Remux(mediaFile.Path, tmp, plan,
+        var result = await FFmpeg.Remux(mediaFile.Path, tmp, delta, mediaFile.DurationMs,
             (line, progress) =>
             {
                 // ffmpeg -progress pipe:1 lines start with key=value; everything

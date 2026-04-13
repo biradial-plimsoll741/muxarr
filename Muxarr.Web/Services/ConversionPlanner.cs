@@ -17,7 +17,7 @@ public static class ConversionPlanner
         Remux
     }
 
-    public sealed record PlanResult(ConversionStrategy Strategy, ConversionPlan Plan);
+    public sealed record PlanResult(ConversionStrategy Strategy, TargetSnapshot Delta);
 
     public static PlanResult Plan(MediaFile file, MediaSnapshot source, TargetSnapshot desired)
     {
@@ -42,7 +42,7 @@ public static class ConversionPlanner
                 : ConversionStrategy.Remux;
         }
 
-        return new PlanResult(strategy, new ConversionPlan(delta, file.DurationMs));
+        return new PlanResult(strategy, delta);
     }
 
     private static bool HasStructuralChanges(MediaSnapshot source, TargetSnapshot desired)

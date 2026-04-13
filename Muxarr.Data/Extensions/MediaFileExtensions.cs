@@ -543,14 +543,14 @@ public static class MediaFileExtensions
     // Metadata checking
 
     public static bool CheckHasNonStandardMetadata(this MediaFile file, Profile? profile,
-        MediaSnapshot? prebuiltTarget = null)
+        TargetSnapshot? prebuiltTarget = null)
     {
         if (profile == null)
         {
             return false;
         }
 
-        var target = prebuiltTarget ?? file.BuildTargetSnapshot(profile);
+        var target = prebuiltTarget ?? file.BuildTargetFromProfile(profile);
         var originals = file.Tracks.ToDictionary(t => t.TrackNumber);
 
         foreach (var preview in target.Tracks)
@@ -575,18 +575,47 @@ public static class MediaFileExtensions
         return false;
     }
 
-    private static bool HasMetadataChanges(IMediaTrack original, IMediaTrack target)
+    private static bool HasMetadataChanges(IMediaTrack original, TargetTrack target)
     {
-        return !string.Equals(target.TrackName ?? "", original.TrackName ?? "", StringComparison.Ordinal)
-               || !string.Equals(target.LanguageName, original.LanguageName, StringComparison.Ordinal)
-               || target.IsDefault != original.IsDefault
-               || target.IsForced != original.IsForced
-               || target.IsHearingImpaired != original.IsHearingImpaired
-               || target.IsCommentary != original.IsCommentary
-               || target.IsDub != original.IsDub;
+        if (target.Name != null && !string.Equals(target.Name, original.TrackName ?? "", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (target.LanguageCode != null && !string.Equals(target.LanguageCode, original.LanguageCode, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (target.IsDefault is { } isDefault && isDefault != original.IsDefault)
+        {
+            return true;
+        }
+
+        if (target.IsForced is { } isForced && isForced != original.IsForced)
+        {
+            return true;
+        }
+
+        if (target.IsHearingImpaired is { } isHi && isHi != original.IsHearingImpaired)
+        {
+            return true;
+        }
+
+        if (target.IsCommentary is { } isComm && isComm != original.IsCommentary)
+        {
+            return true;
+        }
+
+        if (target.IsDub is { } isDub && isDub != original.IsDub)
+        {
+            return true;
+        }
+
+        return false;
     }
 
-    private static bool IsReordered<T>(List<T> tracks) where T : IMediaTrack
+    private static bool IsReordered(List<TargetTrack> tracks)
     {
         for (var i = 1; i < tracks.Count; i++)
         {
@@ -597,86 +626,6 @@ public static class MediaFileExtensions
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// UI-facing preview of the desired output. Delegates to BuildTargetFromProfile
-    /// (which resolves container quirks) then merges nullable target fields
-    /// back with source so display fields (codec, channels, language name)
-    /// are populated and IsDub reflects the final on-disk state.
-    /// </summary>
-    public static MediaSnapshot BuildTargetSnapshot(this MediaFile file, Profile? profile)
-    {
-        var target = file.BuildTargetFromProfile(profile);
-        return target.MergeForDisplay(file);
-    }
-
-    // Resolved TargetSnapshot -> display MediaSnapshot. Per-track merge
-    // lives on TargetTrack.ToDisplay; this is just the container shell.
-    public static MediaSnapshot MergeForDisplay(this TargetSnapshot target, MediaFile file)
-    {
-        var src = file.Tracks.ToDictionary(t => t.TrackNumber);
-        return new MediaSnapshot
-        {
-            Tracks = target.Tracks.Select(t => t.ToDisplay(src.GetValueOrDefault(t.TrackNumber))).ToList(),
-            HasChapters = target.HasChapters ?? file.ChapterCount > 0,
-            HasAttachments = target.HasAttachments ?? file.AttachmentCount > 0
-        };
-    }
-
-    // Per-track display: start from the observed source snapshot, overlay
-    // only the fields the target has an opinion on. Source fields (codec,
-    // channels, duration, etc.) pass through untouched.
-    public static TrackSnapshot ToDisplay(this TargetTrack t, IMediaTrack? src)
-    {
-        var snap = src?.ToSnapshot() ?? new TrackSnapshot { TrackNumber = t.TrackNumber, Type = t.Type };
-
-        if (t.Name != null)
-        {
-            snap.TrackName = string.IsNullOrEmpty(t.Name) ? null : t.Name;
-        }
-
-        if (t.LanguageCode != null)
-        {
-            snap.LanguageCode = t.LanguageCode;
-            snap.LanguageName = IsoLanguage.Find(t.LanguageCode).Name;
-        }
-
-        if (t.IsDefault != null)
-        {
-            snap.IsDefault = t.IsDefault.Value;
-        }
-
-        if (t.IsForced != null)
-        {
-            snap.IsForced = t.IsForced.Value;
-        }
-
-        if (t.IsHearingImpaired != null)
-        {
-            snap.IsHearingImpaired = t.IsHearingImpaired.Value;
-        }
-
-        if (t.IsVisualImpaired != null)
-        {
-            snap.IsVisualImpaired = t.IsVisualImpaired.Value;
-        }
-
-        if (t.IsCommentary != null)
-        {
-            snap.IsCommentary = t.IsCommentary.Value;
-        }
-
-        if (t.IsOriginal != null)
-        {
-            snap.IsOriginal = t.IsOriginal.Value;
-        }
-
-        // Matroska's IsDub is nulled during resolution and encoded in the
-        // title; read it back from whichever title now applies.
-        snap.IsDub = t.IsDub ?? TrackNameFlags.ContainsDub(snap.TrackName);
-
-        return snap;
     }
 
     private static void ApplyProfileMutations(List<TrackSnapshot> snapshots, Profile profile,
@@ -913,7 +862,10 @@ public static class MediaFileExtensions
         {
             Tracks = allowed.Select(t =>
             {
-                var tt = t.ToTargetTrack(NameIsFromOverride(t, SettingsFor(t.Type, profile)));
+                var settings = SettingsFor(t.Type, profile);
+                var nameLocked = settings is { StandardizeTrackNames: true }
+                                 && settings.TryGetMatchingOverride(t, out _);
+                var tt = t.ToTargetTrack(nameLocked);
                 // ClearVideoTrackNames means "strip the title". ApplyProfileMutations
                 // sets TrackName=null which would map to Name=null ("no opinion").
                 // Switch to "" so the diff carries an explicit clear.
@@ -927,7 +879,7 @@ public static class MediaFileExtensions
         };
 
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot(),
-            file.ContainerType.ToContainerFamily());
+            file.ContainerType.ToContainerFamily(), file.HasFaststart);
         return target;
     }
 
@@ -962,7 +914,7 @@ public static class MediaFileExtensions
 
         var target = new TargetSnapshot { Tracks = tracks };
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot(),
-            file.ContainerType.ToContainerFamily());
+            file.ContainerType.ToContainerFamily(), file.HasFaststart);
         return target;
     }
 
@@ -990,7 +942,7 @@ public static class MediaFileExtensions
         };
 
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot(),
-            file.ContainerType.ToContainerFamily());
+            file.ContainerType.ToContainerFamily(), file.HasFaststart);
         return target;
     }
 
@@ -1021,26 +973,6 @@ public static class MediaFileExtensions
             MediaTrackType.Subtitles => profile.SubtitleSettings,
             _ => null
         };
-    }
-
-    private static bool NameIsFromOverride(TrackSnapshot track, TrackSettings? settings)
-    {
-        if (settings is not { StandardizeTrackNames: true } || settings.TrackNameOverrides.Count == 0)
-        {
-            return false;
-        }
-
-        foreach (var flag in TrackFlagExtensions.All)
-        {
-            if (flag.Matches(track)
-                && settings.TrackNameOverrides.TryGetValue(flag, out var overrideTemplate)
-                && !string.IsNullOrEmpty(overrideTemplate))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     // Conversion output building

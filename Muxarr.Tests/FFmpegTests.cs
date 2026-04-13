@@ -565,7 +565,7 @@ public class FFmpegTests
             }).ToList();
 
             var result = await FFmpeg.Remux(fixture, output,
-                TestPlan.Of(tracks, false, source.DurationMs));
+                TestPlan.Of(tracks, false), source.DurationMs);
             Assert.IsTrue(FFmpeg.IsSuccess(result), $"{extension}: Remux failed: {result.Error}");
 
             var probed = new MediaFile { Path = output };

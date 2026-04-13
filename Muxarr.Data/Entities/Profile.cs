@@ -117,10 +117,11 @@ public class TrackSettings
     public List<SubtitleCodec> ExcludedCodecs { get; set; } = [];
 
     /// <summary>
-    /// Returns the first matching flag-specific override, or the default template.
+    /// Finds the first flag-specific override that applies to the track.
     /// Flags are checked in enum order (SDH > Forced > Commentary > AD).
+    /// Empty-string entries count as "no override" (user cleared the box).
     /// </summary>
-    public string ResolveTemplate(IMediaTrack track)
+    public bool TryGetMatchingOverride(IMediaTrack track, out string template)
     {
         foreach (var flag in TrackFlagExtensions.All)
         {
@@ -128,11 +129,21 @@ public class TrackSettings
                 && TrackNameOverrides.TryGetValue(flag, out var overrideTemplate)
                 && !string.IsNullOrEmpty(overrideTemplate))
             {
-                return overrideTemplate;
+                template = overrideTemplate;
+                return true;
             }
         }
 
-        return TrackNameTemplate;
+        template = string.Empty;
+        return false;
+    }
+
+    /// <summary>
+    /// Returns the first matching flag-specific override, or the default template.
+    /// </summary>
+    public string ResolveTemplate(IMediaTrack track)
+    {
+        return TryGetMatchingOverride(track, out var overrideTemplate) ? overrideTemplate : TrackNameTemplate;
     }
 }
 

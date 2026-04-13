@@ -41,13 +41,13 @@ public static class MkvMerge
         return json;
     }
 
-    public static async Task<ProcessResult> Remux(string input, string output, ConversionPlan plan,
+    public static async Task<ProcessResult> Remux(string input, string output, TargetSnapshot delta,
         Action<string, int>? onProgress = null, TimeSpan? timeout = null)
     {
-        var tracks = plan.Delta.Tracks;
+        var tracks = delta.Tracks;
         if (tracks.Count == 0)
         {
-            throw new ArgumentException("At least one track is required.", nameof(plan));
+            throw new ArgumentException("At least one track is required.", nameof(delta));
         }
 
         var audioTracks = tracks.Where(t => t.Type == MediaTrackType.Audio).ToList();
@@ -63,12 +63,12 @@ public static class MkvMerge
             ? $" --subtitle-tracks {string.Join(",", subtitleTracks.Select(t => t.TrackNumber))}"
             : " --no-subtitles";
 
-        if (plan.Delta.HasChapters == false)
+        if (delta.HasChapters == false)
         {
             command += " --no-chapters";
         }
 
-        if (plan.Delta.HasAttachments == false)
+        if (delta.HasAttachments == false)
         {
             command += " --no-attachments";
         }

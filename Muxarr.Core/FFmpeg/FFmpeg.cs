@@ -6,7 +6,7 @@ using Muxarr.Core.Utilities;
 namespace Muxarr.Core.FFmpeg;
 
 // Stream-copy converter for non-Matroska containers. Reads a pre-resolved
-// ConversionPlan; emits -map for selection/order and per-track -metadata /
+// TargetSnapshot; emits -map for selection/order and per-track -metadata /
 // -disposition for target state. -c copy keeps every stream byte-identical.
 public static class FFmpeg
 {
@@ -44,8 +44,8 @@ public static class FFmpeg
         return json;
     }
 
-    public static async Task<ProcessResult> Remux(string input, string output, ConversionPlan plan,
-        Action<string, int>? onProgress = null, TimeSpan? timeout = null)
+    public static async Task<ProcessResult> Remux(string input, string output, TargetSnapshot delta,
+        long sourceDurationMs = 0, Action<string, int>? onProgress = null, TimeSpan? timeout = null)
     {
         if (string.IsNullOrEmpty(input))
         {
@@ -62,13 +62,13 @@ public static class FFmpeg
             throw new ArgumentException("Output path must differ from input path.", nameof(output));
         }
 
-        if (plan.Delta.Tracks.Count == 0)
+        if (delta.Tracks.Count == 0)
         {
-            throw new ArgumentException("At least one track is required.", nameof(plan));
+            throw new ArgumentException("At least one track is required.", nameof(delta));
         }
 
-        var args = BuildRemuxArguments(input, output, plan, GetMp4MuxerFormat(input));
-        return await ExecuteAsync(args, plan.SourceDurationMs, onProgress, timeout);
+        var args = BuildRemuxArguments(input, output, delta, GetMp4MuxerFormat(input));
+        return await ExecuteAsync(args, sourceDurationMs, onProgress, timeout);
     }
 
     internal static string GetMp4MuxerFormat(string path)
@@ -149,11 +149,11 @@ public static class FFmpeg
         return false;
     }
 
-    public static string BuildRemuxArguments(string input, string output, ConversionPlan plan,
+    public static string BuildRemuxArguments(string input, string output, TargetSnapshot delta,
         string muxerFormat = "mp4")
     {
-        var tracks = plan.Delta.Tracks;
-        var faststart = plan.Delta.Faststart ?? false;
+        var tracks = delta.Tracks;
+        var faststart = delta.Faststart ?? false;
 
         var sb = new StringBuilder();
         sb.Append("-hide_banner -nostdin -nostats -loglevel info -y");
@@ -165,7 +165,7 @@ public static class FFmpeg
             sb.Append($" -map 0:{track.TrackNumber}");
         }
 
-        if (plan.Delta.HasChapters == false)
+        if (delta.HasChapters == false)
         {
             sb.Append(" -map_chapters -1");
         }

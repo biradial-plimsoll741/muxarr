@@ -16,8 +16,22 @@ namespace Muxarr.Data.Extensions;
 // they can't express.
 public static class TargetResolver
 {
-    public static void ResolveForContainer(TargetSnapshot target, MediaSnapshot source, ContainerFamily family)
+    public static void ResolveForContainer(TargetSnapshot target, MediaSnapshot source, ContainerFamily family,
+        bool sourceHasFaststart = false)
     {
+        // Faststart is an MP4-only concern. On Matroska it is meaningless - null it
+        // out so the stored target doesn't carry a stale opinion. On MP4 resolve
+        // "inherit" (null) against the source's current layout so the target leaves
+        // the builder with a concrete decision.
+        if (family == ContainerFamily.Mp4)
+        {
+            target.Faststart ??= sourceHasFaststart;
+        }
+        else
+        {
+            target.Faststart = null;
+        }
+
         if (family != ContainerFamily.Matroska)
         {
             return;

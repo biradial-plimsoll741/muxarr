@@ -31,10 +31,10 @@
 
 @code {
     [Parameter] [EditorRequired] public IEnumerable<IMediaTrack> Tracks { get; set; } = default!;
-    [Parameter] public List<TrackSnapshot>? PreviewTracks { get; set; }
+    [Parameter] public List<TargetTrack>? PreviewTracks { get; set; }
     [Parameter] [EditorRequired] public string? OriginalLanguage { get; set; }
 
-    private record TrackWithPreview(IMediaTrack Original, TrackSnapshot? Preview, int? MovedFromPosition);
+    private record TrackWithPreview(IMediaTrack Original, TargetTrack? Preview, int? MovedFromPosition);
 
     private List<TrackWithPreview> KeptTracks { get; set; } = [];
     private List<IMediaTrack> RemovedTracks { get; set; } = [];

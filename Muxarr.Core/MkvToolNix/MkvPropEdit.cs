@@ -16,7 +16,7 @@ public static class MkvPropEdit
         return result.ExitCode == 0;
     }
 
-    public static async Task<ProcessResult> Apply(string input, string output, ConversionPlan plan,
+    public static async Task<ProcessResult> Apply(string input, string output, TargetSnapshot delta,
         Action<string, int>? onProgress = null, TimeSpan? timeout = null)
     {
         _ = output;
@@ -24,7 +24,7 @@ public static class MkvPropEdit
         var command = $"\"{input}\"";
         var editCount = 0;
 
-        foreach (var track in plan.Delta.Tracks)
+        foreach (var track in delta.Tracks)
         {
             // mkvpropedit uses 1-based track numbers; mkvmerge/our model are 0-based.
             var selector = $"--edit track:{track.TrackNumber + 1}";

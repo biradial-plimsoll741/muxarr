@@ -116,7 +116,7 @@ public class ConversionPlannerTests
         TargetResolver.ResolveForContainer(target, before, ContainerFamily.Matroska);
 
         var result = ConversionPlanner.Plan(file, before, target);
-        var audioDelta = result.Plan.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
+        var audioDelta = result.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
 
         Assert.AreEqual(ConversionPlanner.ConversionStrategy.MetadataEdit, result.Strategy);
         Assert.AreEqual("English Dub", audioDelta.Name);
@@ -138,7 +138,7 @@ public class ConversionPlannerTests
         TargetResolver.ResolveForContainer(target, before, ContainerFamily.Matroska);
 
         var result = ConversionPlanner.Plan(file, before, target);
-        var audioDelta = result.Plan.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
+        var audioDelta = result.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
 
         Assert.IsNull(audioDelta.Name, "NameLocked=true blocks the resolver from rewriting the title");
         Assert.IsNull(audioDelta.IsDub);
@@ -156,7 +156,7 @@ public class ConversionPlannerTests
         target.Tracks.First(t => t.Type == MediaTrackType.Audio).IsDub = true;
 
         var result = ConversionPlanner.Plan(file, before, target);
-        var audioDelta = result.Plan.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
+        var audioDelta = result.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
 
         Assert.AreEqual(ConversionPlanner.ConversionStrategy.Remux, result.Strategy);
         Assert.IsTrue(audioDelta.IsDub);
@@ -172,7 +172,7 @@ public class ConversionPlannerTests
         var target = TargetFromSnapshot(before);
 
         var result = ConversionPlanner.Plan(file, before, target);
-        var audioDelta = result.Plan.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
+        var audioDelta = result.Delta.Tracks.First(t => t.Type == MediaTrackType.Audio);
 
         Assert.AreEqual(ConversionPlanner.ConversionStrategy.Skip, result.Strategy);
         Assert.IsNull(audioDelta.Name, "name already encodes dub state");
@@ -210,7 +210,7 @@ public class ConversionPlannerTests
         video.Name = "";
 
         var result = ConversionPlanner.Plan(file, before, target);
-        var videoDelta = result.Plan.Delta.Tracks.First(t => t.Type == MediaTrackType.Video);
+        var videoDelta = result.Delta.Tracks.First(t => t.Type == MediaTrackType.Video);
 
         Assert.AreEqual("", videoDelta.Name);
     }

@@ -194,7 +194,7 @@
     [Parameter] public int Id { get; set; }
 
     protected MediaFile? File { get; set; }
-    protected MediaSnapshot? Preview { get; set; }
+    protected TargetSnapshot? Preview { get; set; }
     private List<Profile> _profiles = new();
     private bool _showPreview = true;
     private int _selectedProfileId;
@@ -230,7 +230,7 @@
         _profiles = await context.Profiles.OrderBy(p => p.Name).ToListAsync();
         _selectedProfileId = File.ProfileId;
         _selectedProfile = _profiles.FirstOrDefault(p => p.Id == _selectedProfileId);
-        Preview = File.BuildTargetSnapshot(_selectedProfile);
+        Preview = File.BuildTargetFromProfile(_selectedProfile);
     }
 
     private void OnConverterStateChanged(ConverterProgressEvent e)
@@ -319,7 +319,7 @@
         {
             _selectedProfileId = id;
             _selectedProfile = _profiles.FirstOrDefault(p => p.Id == id);
-            Preview = File!.BuildTargetSnapshot(_selectedProfile);
+            Preview = File!.BuildTargetFromProfile(_selectedProfile);
         }
     }
 
