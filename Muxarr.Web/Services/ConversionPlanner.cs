@@ -54,7 +54,7 @@ public static class ConversionPlanner
 
         for (var i = 0; i < source.Tracks.Count; i++)
         {
-            if (source.Tracks[i].TrackNumber != desired.Tracks[i].TrackNumber)
+            if (source.Tracks[i].Index != desired.Tracks[i].Index)
             {
                 return true;
             }

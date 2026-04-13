@@ -260,10 +260,10 @@ public class MediaConverterService(
             // mutations applied here (flag-from-title correction,
             // und-resolution, name standardization). Only rejects targets
             // whose tracks no longer exist on the rescanned source.
-            var availableTrackNumbers = conversion.MediaFile.Tracks.Select(t => t.TrackNumber).ToHashSet();
+            var availableTrackNumbers = conversion.MediaFile.Tracks.Select(t => t.Index).ToHashSet();
             var missingTracks = conversion.ConversionPlan.Tracks
-                .Where(t => !availableTrackNumbers.Contains(t.TrackNumber))
-                .Select(t => t.TrackNumber)
+                .Where(t => !availableTrackNumbers.Contains(t.Index))
+                .Select(t => t.Index)
                 .ToList();
 
             if (missingTracks.Count > 0)

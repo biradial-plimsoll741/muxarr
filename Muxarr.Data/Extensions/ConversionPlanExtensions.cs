@@ -13,7 +13,7 @@ public static class ConversionPlanExtensions
 {
     public static ConversionPlan Delta(MediaSnapshot source, ConversionPlan desired)
     {
-        var sourceByNumber = source.Tracks.ToDictionary(t => t.TrackNumber);
+        var sourceByNumber = source.Tracks.ToDictionary(t => t.Index);
         var result = new ConversionPlan
         {
             HasChapters = DiffBool(source.HasChapters, desired.HasChapters),
@@ -24,7 +24,7 @@ public static class ConversionPlanExtensions
 
         foreach (var track in desired.Tracks)
         {
-            sourceByNumber.TryGetValue(track.TrackNumber, out var original);
+            sourceByNumber.TryGetValue(track.Index, out var original);
             result.Tracks.Add(Delta(original, track));
         }
 
@@ -35,7 +35,7 @@ public static class ConversionPlanExtensions
     {
         return new TrackPlan
         {
-            TrackNumber = desired.TrackNumber,
+            Index = desired.Index,
             Type = desired.Type,
             NameLocked = desired.NameLocked,
 

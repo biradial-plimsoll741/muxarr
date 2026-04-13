@@ -133,9 +133,9 @@ public class MkvToolNixTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 2, Type = MediaTrackType.Audio }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
+                new() { Index = 2, Type = MediaTrackType.Audio }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -164,10 +164,10 @@ public class MkvToolNixTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 3, Type = MediaTrackType.Subtitles },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
+                new() { Index = 3, Type = MediaTrackType.Subtitles },
+                new() { Index = 4, Type = MediaTrackType.Subtitles }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -195,9 +195,9 @@ public class MkvToolNixTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
-                new() { TrackNumber = 3, Type = MediaTrackType.Subtitles, Name = "English", LanguageCode = "eng" }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
+                new() { Index = 3, Type = MediaTrackType.Subtitles, Name = "English", LanguageCode = "eng" }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -225,9 +225,9 @@ public class MkvToolNixTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" },
-            new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
-            new() { TrackNumber = 3, Type = MediaTrackType.Subtitles, Name = "English", LanguageCode = "eng" }
+            new() { Index = 0, Type = MediaTrackType.Video, Name = "" },
+            new() { Index = 1, Type = MediaTrackType.Audio, Name = "English 2.0", LanguageCode = "eng" },
+            new() { Index = 3, Type = MediaTrackType.Subtitles, Name = "English", LanguageCode = "eng" }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));
@@ -250,7 +250,7 @@ public class MkvToolNixTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 2, Type = MediaTrackType.Audio, LanguageCode = "eng" }
+            new() { Index = 2, Type = MediaTrackType.Audio, LanguageCode = "eng" }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));
@@ -267,7 +267,7 @@ public class MkvToolNixTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" }
+            new() { Index = 0, Type = MediaTrackType.Video, Name = "" }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));

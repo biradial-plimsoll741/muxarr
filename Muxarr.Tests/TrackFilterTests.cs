@@ -198,27 +198,27 @@ public class TrackFilterTests
                 new MediaTrack
                 {
                     Type = MediaTrackType.Video, LanguageCode = "und", LanguageName = "Undetermined",
-                    Codec = nameof(VideoCodec.Avc), TrackNumber = 0
+                    Codec = nameof(VideoCodec.Avc), Index = 0
                 },
                 new MediaTrack
                 {
                     Type = MediaTrackType.Audio, LanguageCode = "fre", LanguageName = "French",
-                    Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, TrackNumber = 1
+                    Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, Index = 1
                 },
                 new MediaTrack
                 {
                     Type = MediaTrackType.Audio, LanguageCode = "eng", LanguageName = "English",
-                    Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, TrackNumber = 2
+                    Codec = nameof(AudioCodec.Eac3), AudioChannels = 6, Index = 2
                 },
                 new MediaTrack
                 {
                     Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French", IsForced = true,
-                    Codec = nameof(SubtitleCodec.Srt), TrackNumber = 3, TrackName = "French Forced"
+                    Codec = nameof(SubtitleCodec.Srt), Index = 3, TrackName = "French Forced"
                 },
                 new MediaTrack
                 {
                     Type = MediaTrackType.Subtitles, LanguageCode = "fre", LanguageName = "French",
-                    Codec = nameof(SubtitleCodec.Srt), TrackNumber = 4, TrackName = "French"
+                    Codec = nameof(SubtitleCodec.Srt), Index = 4, TrackName = "French"
                 }
             ]
         };
@@ -326,7 +326,7 @@ public class TrackFilterTests
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
 
         Assert.AreEqual(1, result.Count, "Should keep only the regular track");
-        Assert.AreEqual(1, result[0].TrackNumber, "Should keep track 1 (regular)");
+        Assert.AreEqual(1, result[0].Index, "Should keep track 1 (regular)");
     }
 
     [TestMethod]
@@ -415,7 +415,7 @@ public class TrackFilterTests
         var result = tracks.GetAllowedTracks(EnglishDutchAudio, "English");
 
         Assert.AreEqual(1, result.Count);
-        Assert.AreEqual(3, result[0].TrackNumber, "Fallback should prefer non-commentary, non-HI track");
+        Assert.AreEqual(3, result[0].Index, "Fallback should prefer non-commentary, non-HI track");
     }
 
     // --- Undetermined language handling ---

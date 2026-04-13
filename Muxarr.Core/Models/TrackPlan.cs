@@ -7,7 +7,7 @@ namespace Muxarr.Core.Models;
 // NameLocked = planner must not rewrite (user-authored or profile override)
 public class TrackPlan
 {
-    public int TrackNumber { get; set; }
+    public int Index { get; set; }
     public MediaTrackType Type { get; set; }
 
     public string? Name { get; set; }

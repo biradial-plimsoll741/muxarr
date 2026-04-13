@@ -88,7 +88,7 @@ public static class MediaFileExtensions
                 AudioChannels = x.Properties.AudioChannels,
                 Codec = CodecExtensions.ParseCodec(x.Codec),
                 TrackName = x.Properties.TrackName,
-                TrackNumber = x.Id
+                Index = x.Id
             };
 
             if (track.Type != MediaTrackType.Video
@@ -179,7 +179,7 @@ public static class MediaFileExtensions
             var track = new MediaTrack
             {
                 Type = type,
-                TrackNumber = stream.Index,
+                Index = stream.Index,
                 Codec = CodecExtensions.ParseCodec(stream.CodecName ?? string.Empty, stream.Profile),
                 LanguageCode = language,
                 LanguageName = IsoLanguage.Find(language).Name,
@@ -428,7 +428,7 @@ public static class MediaFileExtensions
                         t.LanguageName == originalLanguage)
                     .ThenByDescending(t => !t.IsCommentary)
                     .ThenByDescending(t => !t.IsHearingImpaired)
-                    .ThenByDescending(x => x.TrackNumber);
+                    .ThenByDescending(x => x.Index);
 
                 allowedTracks.Add(bestTracks.First());
             }
@@ -494,7 +494,7 @@ public static class MediaFileExtensions
 
     public static bool IsAllowed(this IMediaTrack track, IEnumerable<IMediaTrack> allowedTracks)
     {
-        return allowedTracks.Any(t => t.TrackNumber == track.TrackNumber);
+        return allowedTracks.Any(t => t.Index == track.Index);
     }
 
     /// <summary>
@@ -551,11 +551,11 @@ public static class MediaFileExtensions
         }
 
         var target = prebuiltTarget ?? file.BuildTargetFromProfile(profile);
-        var originals = file.Tracks.ToDictionary(t => t.TrackNumber);
+        var originals = file.Tracks.ToDictionary(t => t.Index);
 
         foreach (var preview in target.Tracks)
         {
-            if (originals.TryGetValue(preview.TrackNumber, out var original) &&
+            if (originals.TryGetValue(preview.Index, out var original) &&
                 HasMetadataChanges(original, preview))
             {
                 return true;
@@ -619,7 +619,7 @@ public static class MediaFileExtensions
     {
         for (var i = 1; i < tracks.Count; i++)
         {
-            if (tracks[i].TrackNumber < tracks[i - 1].TrackNumber)
+            if (tracks[i].Index < tracks[i - 1].Index)
             {
                 return true;
             }
@@ -804,7 +804,7 @@ public static class MediaFileExtensions
             LanguageCode = track.LanguageCode,
             LanguageName = track.LanguageName,
             TrackName = track.TrackName,
-            TrackNumber = track.TrackNumber,
+            Index = track.Index,
             DurationMs = track.DurationMs,
             IsCommentary = track.IsCommentary,
             IsHearingImpaired = track.IsHearingImpaired,
@@ -897,7 +897,7 @@ public static class MediaFileExtensions
 
             tracks.Add(new TrackPlan
             {
-                TrackNumber = t.TrackNumber,
+                Index = t.Index,
                 Type = t.Type,
                 Name = t.TrackName,
                 LanguageCode = code,
@@ -926,7 +926,7 @@ public static class MediaFileExtensions
         {
             Tracks = file.Tracks.Select(t => new TrackPlan
             {
-                TrackNumber = t.TrackNumber,
+                Index = t.Index,
                 Type = t.Type,
                 Name = t.TrackName,
                 LanguageCode = t.LanguageCode,
@@ -950,7 +950,7 @@ public static class MediaFileExtensions
     {
         return new TrackPlan
         {
-            TrackNumber = t.TrackNumber,
+            Index = t.Index,
             Type = t.Type,
             Name = t.TrackName,
             LanguageCode = t.ResolveLanguageCode(),

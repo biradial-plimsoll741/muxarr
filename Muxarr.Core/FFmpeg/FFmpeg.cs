@@ -162,7 +162,7 @@ public static class FFmpeg
 
         foreach (var track in tracks)
         {
-            sb.Append($" -map 0:{track.TrackNumber}");
+            sb.Append($" -map 0:{track.Index}");
         }
 
         if (delta.HasChapters == false)

@@ -10,7 +10,7 @@ public interface IMediaTrack
     string LanguageCode { get; }
     string LanguageName { get; }
     string? TrackName { get; }
-    int TrackNumber { get; }
+    int Index { get; }
     bool IsCommentary { get; }
     bool IsHearingImpaired { get; }
     bool IsVisualImpaired { get; }

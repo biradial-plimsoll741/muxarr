@@ -89,8 +89,8 @@ public class ConversionPlannerTests
         var reordered = new List<TrackSnapshot>
         {
             file.Tracks.First(t => t.Type == MediaTrackType.Video).ToSnapshot(),
-            file.Tracks.First(t => t.TrackNumber == 2).ToSnapshot(),
-            file.Tracks.First(t => t.TrackNumber == 1).ToSnapshot()
+            file.Tracks.First(t => t.Index == 2).ToSnapshot(),
+            file.Tracks.First(t => t.Index == 1).ToSnapshot()
         };
         var target = TargetFromSnapshot(file.ToMediaSnapshot(reordered));
 

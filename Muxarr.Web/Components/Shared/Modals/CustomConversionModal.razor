@@ -38,7 +38,7 @@
             }
 
             var isVideo = track.Type == MediaTrackType.Video;
-            var isChecked = _selectedTrackIds.Contains(track.TrackNumber);
+            var isChecked = _selectedTrackIds.Contains(track.Index);
             <tr class="@(!isChecked && !isVideo ? "opacity-50" : "")">
                 <td class="text-center pe-0">
                     @if (!isVideo)
@@ -203,7 +203,7 @@
         // User can click "Apply Profile" to filter and mutate based on a profile.
         foreach (var track in _editableTracks)
         {
-            _selectedTrackIds.Add(track.TrackNumber);
+            _selectedTrackIds.Add(track.Index);
         }
 
         _selectedProfileId = Profile?.Id ?? Profiles.FirstOrDefault()?.Id ?? 0;
@@ -228,13 +228,13 @@
         var target = File.BuildTargetFromProfile(profile);
 
         // Apply track selection from profile.
-        var allowedIds = target.Tracks.Select(t => t.TrackNumber).ToHashSet();
+        var allowedIds = target.Tracks.Select(t => t.Index).ToHashSet();
         _selectedTrackIds.Clear();
         foreach (var track in _editableTracks)
         {
-            if (allowedIds.Contains(track.TrackNumber))
+            if (allowedIds.Contains(track.Index))
             {
-                _selectedTrackIds.Add(track.TrackNumber);
+                _selectedTrackIds.Add(track.Index);
             }
         }
 
@@ -242,7 +242,7 @@
         // and leave the editable track untouched; "" on Name is an explicit clear.
         foreach (var resolved in target.Tracks)
         {
-            var editable = _editableTracks.FirstOrDefault(t => t.TrackNumber == resolved.TrackNumber);
+            var editable = _editableTracks.FirstOrDefault(t => t.Index == resolved.Index);
             if (editable == null)
             {
                 continue;
@@ -327,9 +327,9 @@
             return;
         }
 
-        if (!_selectedTrackIds.Add(track.TrackNumber))
+        if (!_selectedTrackIds.Add(track.Index))
         {
-            _selectedTrackIds.Remove(track.TrackNumber);
+            _selectedTrackIds.Remove(track.Index);
         }
 
         _validationError = false;
@@ -367,7 +367,7 @@
 
     private async Task Confirm()
     {
-        var hasAudio = _editableTracks.Any(t => t.Type == MediaTrackType.Audio && _selectedTrackIds.Contains(t.TrackNumber));
+        var hasAudio = _editableTracks.Any(t => t.Type == MediaTrackType.Audio && _selectedTrackIds.Contains(t.Index));
         if (!hasAudio)
         {
             _validationError = true;
@@ -376,7 +376,7 @@
 
         var videoTracks = _editableTracks.Where(t => t.Type == MediaTrackType.Video);
         var selectedNonVideo = _editableTracks
-            .Where(t => t.Type != MediaTrackType.Video && _selectedTrackIds.Contains(t.TrackNumber));
+            .Where(t => t.Type != MediaTrackType.Video && _selectedTrackIds.Contains(t.Index));
         var selectedTracks = videoTracks.Concat(selectedNonVideo).ToList();
         var target = File.BuildTargetFromCustom(selectedTracks);
         await BlazoredModal.CloseAsync(ModalResult.Ok(target));

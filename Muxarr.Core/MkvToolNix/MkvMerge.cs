@@ -56,11 +56,11 @@ public static class MkvMerge
         var command = $"-o \"{output}\"";
 
         command += audioTracks.Count > 0
-            ? $" --audio-tracks {string.Join(",", audioTracks.Select(t => t.TrackNumber))}"
+            ? $" --audio-tracks {string.Join(",", audioTracks.Select(t => t.Index))}"
             : " --no-audio";
 
         command += subtitleTracks.Count > 0
-            ? $" --subtitle-tracks {string.Join(",", subtitleTracks.Select(t => t.TrackNumber))}"
+            ? $" --subtitle-tracks {string.Join(",", subtitleTracks.Select(t => t.Index))}"
             : " --no-subtitles";
 
         if (delta.HasChapters == false)
@@ -77,48 +77,48 @@ public static class MkvMerge
         {
             if (track.Name != null)
             {
-                command += $" --track-name {track.TrackNumber}:{MkvToolNixHelper.EscapeValue(track.Name)}";
+                command += $" --track-name {track.Index}:{MkvToolNixHelper.EscapeValue(track.Name)}";
             }
 
             if (track.LanguageCode != null)
             {
-                command += $" --language {track.TrackNumber}:{track.LanguageCode}";
+                command += $" --language {track.Index}:{track.LanguageCode}";
             }
 
             if (track.IsDefault != null)
             {
-                command += $" --default-track-flag {track.TrackNumber}:{(track.IsDefault.Value ? "1" : "0")}";
+                command += $" --default-track-flag {track.Index}:{(track.IsDefault.Value ? "1" : "0")}";
             }
 
             if (track.IsForced != null)
             {
-                command += $" --forced-display-flag {track.TrackNumber}:{(track.IsForced.Value ? "1" : "0")}";
+                command += $" --forced-display-flag {track.Index}:{(track.IsForced.Value ? "1" : "0")}";
             }
 
             if (track.IsHearingImpaired != null)
             {
                 command +=
-                    $" --hearing-impaired-flag {track.TrackNumber}:{(track.IsHearingImpaired.Value ? "1" : "0")}";
+                    $" --hearing-impaired-flag {track.Index}:{(track.IsHearingImpaired.Value ? "1" : "0")}";
             }
 
             if (track.IsVisualImpaired != null)
             {
-                command += $" --visual-impaired-flag {track.TrackNumber}:{(track.IsVisualImpaired.Value ? "1" : "0")}";
+                command += $" --visual-impaired-flag {track.Index}:{(track.IsVisualImpaired.Value ? "1" : "0")}";
             }
 
             if (track.IsCommentary != null)
             {
-                command += $" --commentary-flag {track.TrackNumber}:{(track.IsCommentary.Value ? "1" : "0")}";
+                command += $" --commentary-flag {track.Index}:{(track.IsCommentary.Value ? "1" : "0")}";
             }
 
             if (track.IsOriginal != null)
             {
-                command += $" --original-flag {track.TrackNumber}:{(track.IsOriginal.Value ? "1" : "0")}";
+                command += $" --original-flag {track.Index}:{(track.IsOriginal.Value ? "1" : "0")}";
             }
         }
 
         command += $" \"{input}\"";
-        command += $" --track-order {string.Join(",", tracks.Select(t => $"0:{t.TrackNumber}"))}";
+        command += $" --track-order {string.Join(",", tracks.Select(t => $"0:{t.Index}"))}";
 
         var lastProgress = 0;
         return await ProcessExecutor.ExecuteProcessAsync(MkvMergeExecutable, command, timeout,

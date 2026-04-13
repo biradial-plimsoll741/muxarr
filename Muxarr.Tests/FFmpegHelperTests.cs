@@ -11,7 +11,7 @@ public class FFmpegHelperTests
     [TestMethod]
     public void BuildDispositionValue_AllFlagsNull_ReturnsNull()
     {
-        var track = new TrackPlan { TrackNumber = 0, Type = MediaTrackType.Audio };
+        var track = new TrackPlan { Index = 0, Type = MediaTrackType.Audio };
 
         Assert.IsNull(FFmpegHelper.BuildDispositionValue(track));
     }
@@ -21,7 +21,7 @@ public class FFmpegHelperTests
     {
         var track = new TrackPlan
         {
-            TrackNumber = 1,
+            Index = 1,
             Type = MediaTrackType.Audio,
             IsDefault = true
         };
@@ -34,7 +34,7 @@ public class FFmpegHelperTests
     {
         var track = new TrackPlan
         {
-            TrackNumber = 1,
+            Index = 1,
             Type = MediaTrackType.Audio,
             IsDefault = false
         };
@@ -47,7 +47,7 @@ public class FFmpegHelperTests
     {
         var track = new TrackPlan
         {
-            TrackNumber = 2,
+            Index = 2,
             Type = MediaTrackType.Subtitles,
             IsDefault = true,
             IsForced = true,
@@ -71,7 +71,7 @@ public class FFmpegHelperTests
     [DataRow(nameof(TrackPlan.IsDub), true, "+dub")]
     public void BuildDispositionValue_AllSupportedFlags(string fieldName, bool value, string expected)
     {
-        var track = new TrackPlan { TrackNumber = 1, Type = MediaTrackType.Audio };
+        var track = new TrackPlan { Index = 1, Type = MediaTrackType.Audio };
         typeof(TrackPlan).GetProperty(fieldName)!.SetValue(track, (bool?)value);
 
         Assert.AreEqual(expected, FFmpegHelper.BuildDispositionValue(track));
@@ -82,7 +82,7 @@ public class FFmpegHelperTests
     {
         var track = new TrackPlan
         {
-            TrackNumber = 3,
+            Index = 3,
             Type = MediaTrackType.Audio,
             IsCommentary = true
         };

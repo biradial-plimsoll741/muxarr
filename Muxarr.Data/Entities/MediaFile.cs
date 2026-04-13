@@ -36,7 +36,7 @@ public class MediaTrack : IMediaTrack
 {
     public int Id { get; set; }
     public int MediaFileId { get; set; }
-    public int TrackNumber { get; set; }
+    public int Index { get; set; }
     public MediaTrackType Type { get; set; }
     public bool IsCommentary { get; set; }
     public bool IsHearingImpaired { get; set; }
@@ -149,7 +149,7 @@ public class MediaTrackConfiguration : IEntityTypeConfiguration<MediaTrack>
         builder.Property(e => e.TrackName)
             .HasMaxLength(500);
 
-        builder.HasIndex(e => new { e.MediaFileId, e.TrackNumber }).IsUnique();
+        builder.HasIndex(e => new { e.MediaFileId, TrackNumber = e.Index }).IsUnique();
         builder.HasIndex(e => new { e.MediaFileId, e.Type, e.Codec });
         builder.HasIndex(e => new { e.MediaFileId, e.Type, e.LanguageName });
         builder.HasIndex(e => new { e.MediaFileId, e.Type, e.AudioChannels });

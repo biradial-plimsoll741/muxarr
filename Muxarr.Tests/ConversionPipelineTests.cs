@@ -498,29 +498,29 @@ public class ConversionPipelineTests
 
         var customAllowed = new List<TrackSnapshot>
         {
-            new() { Type = MediaTrackType.Video, TrackNumber = 0 },
+            new() { Type = MediaTrackType.Video, Index = 0 },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng",
+                Type = MediaTrackType.Audio, Index = 1, LanguageName = "English", LanguageCode = "eng",
                 Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = true, TrackName = "Main Audio"
             },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre",
+                Type = MediaTrackType.Audio, Index = 2, LanguageName = "French", LanguageCode = "fre",
                 Codec = nameof(AudioCodec.Aac), AudioChannels = 6, IsDefault = false, TrackName = "French Dub"
             },
             new()
             {
-                Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng",
+                Type = MediaTrackType.Subtitles, Index = 3, LanguageName = "English", LanguageCode = "eng",
                 Codec = nameof(SubtitleCodec.Srt), IsForced = true, TrackName = "Forced"
             }
         };
 
         var target = file.BuildTargetFromCustom(customAllowed);
 
-        var audio1 = target.Tracks.First(t => t.TrackNumber == 1);
-        var audio2 = target.Tracks.First(t => t.TrackNumber == 2);
-        var sub = target.Tracks.First(t => t.TrackNumber == 3);
+        var audio1 = target.Tracks.First(t => t.Index == 1);
+        var audio2 = target.Tracks.First(t => t.Index == 2);
+        var sub = target.Tracks.First(t => t.Index == 3);
 
         Assert.AreEqual(true, audio1.IsDefault, "Custom default flag should pass through");
         Assert.AreEqual(false, audio2.IsDefault, "Custom non-default should pass through");
@@ -548,10 +548,10 @@ public class ConversionPipelineTests
         // Custom conversion explicitly keeps French
         var customAllowed = new List<TrackSnapshot>
         {
-            new() { Type = MediaTrackType.Video, TrackNumber = 0 },
+            new() { Type = MediaTrackType.Video, Index = 0 },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "French", LanguageCode = "fre",
+                Type = MediaTrackType.Audio, Index = 1, LanguageName = "French", LanguageCode = "fre",
                 Codec = nameof(AudioCodec.Aac), AudioChannels = 6, TrackName = "Keep This"
             }
         };
@@ -580,25 +580,25 @@ public class ConversionPipelineTests
         // User reordered: French audio before English, French sub before English
         var customAllowed = new List<TrackSnapshot>
         {
-            new() { Type = MediaTrackType.Video, TrackNumber = 0 },
+            new() { Type = MediaTrackType.Video, Index = 0 },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "French", LanguageCode = "fre",
+                Type = MediaTrackType.Audio, Index = 2, LanguageName = "French", LanguageCode = "fre",
                 Codec = nameof(AudioCodec.Aac), AudioChannels = 6
             },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English", LanguageCode = "eng",
+                Type = MediaTrackType.Audio, Index = 1, LanguageName = "English", LanguageCode = "eng",
                 Codec = nameof(AudioCodec.Aac), AudioChannels = 6
             },
             new()
             {
-                Type = MediaTrackType.Subtitles, TrackNumber = 4, LanguageName = "French", LanguageCode = "fre",
+                Type = MediaTrackType.Subtitles, Index = 4, LanguageName = "French", LanguageCode = "fre",
                 Codec = nameof(SubtitleCodec.Srt)
             },
             new()
             {
-                Type = MediaTrackType.Subtitles, TrackNumber = 3, LanguageName = "English", LanguageCode = "eng",
+                Type = MediaTrackType.Subtitles, Index = 3, LanguageName = "English", LanguageCode = "eng",
                 Codec = nameof(SubtitleCodec.Srt)
             }
         };
@@ -608,11 +608,11 @@ public class ConversionPipelineTests
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
 
         // Output order must match the input order, not the original track numbers
-        Assert.AreEqual(0, outputs[0].TrackNumber, "Video first");
-        Assert.AreEqual(2, outputs[1].TrackNumber, "French audio second (reordered)");
-        Assert.AreEqual(1, outputs[2].TrackNumber, "English audio third (reordered)");
-        Assert.AreEqual(4, outputs[3].TrackNumber, "French sub fourth (reordered)");
-        Assert.AreEqual(3, outputs[4].TrackNumber, "English sub fifth (reordered)");
+        Assert.AreEqual(0, outputs[0].Index, "Video first");
+        Assert.AreEqual(2, outputs[1].Index, "French audio second (reordered)");
+        Assert.AreEqual(1, outputs[2].Index, "English audio third (reordered)");
+        Assert.AreEqual(4, outputs[3].Index, "French sub fourth (reordered)");
+        Assert.AreEqual(3, outputs[4].Index, "English sub fifth (reordered)");
     }
 
     // --- Flag correction from track names ---
@@ -675,7 +675,7 @@ public class ConversionPipelineTests
         Assert.IsNotNull(forcedSub, "Forced flag must be explicitly set on output");
         Assert.AreEqual("English Forced", forcedSub.Name);
 
-        var regularSub = outputs.First(o => o.Type == MediaTrackType.Subtitles && o.TrackNumber == 3);
+        var regularSub = outputs.First(o => o.Type == MediaTrackType.Subtitles && o.Index == 3);
         Assert.AreEqual(false, regularSub.IsForced, "Non-forced sub should have IsForced=false");
     }
 
@@ -707,10 +707,10 @@ public class ConversionPipelineTests
         var audio = outputs.First(o => o.Type == MediaTrackType.Audio);
         Assert.AreEqual(true, audio.IsCommentary, "Commentary flag must be explicit on output");
 
-        var hiSub = outputs.First(o => o.TrackNumber == 2);
+        var hiSub = outputs.First(o => o.Index == 2);
         Assert.AreEqual(true, hiSub.IsHearingImpaired, "HI flag must be explicit on output");
 
-        var forcedSub = outputs.First(o => o.TrackNumber == 3);
+        var forcedSub = outputs.First(o => o.Index == 3);
         Assert.AreEqual(true, forcedSub.IsForced, "Forced flag must be explicit on output");
     }
 
@@ -825,7 +825,7 @@ public class ConversionPipelineTests
             Sub(3, "English", trackName: "English PGS"));
 
         // Override the codec on track 3 since the Sub helper defaults to SRT
-        file.Tracks.First(t => t.TrackNumber == 3).Codec = nameof(SubtitleCodec.Pgs);
+        file.Tracks.First(t => t.Index == 3).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -851,7 +851,7 @@ public class ConversionPipelineTests
             Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"));
 
-        file.Tracks.First(t => t.TrackNumber == 2).Codec = nameof(SubtitleCodec.Pgs);
+        file.Tracks.First(t => t.Index == 2).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -876,7 +876,7 @@ public class ConversionPipelineTests
             Audio(1, "English", nameof(AudioCodec.Aac), 6),
             Sub(2, "English"));
 
-        file.Tracks.First(t => t.TrackNumber == 2).Codec = nameof(SubtitleCodec.Pgs);
+        file.Tracks.First(t => t.Index == 2).Codec = nameof(SubtitleCodec.Pgs);
 
         var profile = MakeProfile(
             subtitle: new TrackSettings
@@ -1192,7 +1192,7 @@ public class ConversionPipelineTests
     [DataRow("test", true, DisplayName = "Name set")]
     public void HasChanges_BasicOutput(string? name, bool expected)
     {
-        var output = new TrackPlan { TrackNumber = 0, Type = MediaTrackType.Video, Name = name };
+        var output = new TrackPlan { Index = 0, Type = MediaTrackType.Video, Name = name };
         Assert.AreEqual(expected, ConversionPlanExtensions.HasChanges(output));
     }
 
@@ -1201,7 +1201,7 @@ public class ConversionPipelineTests
     {
         var track = new TrackSnapshot
         {
-            TrackNumber = 1, Type = MediaTrackType.Audio,
+            Index = 1, Type = MediaTrackType.Audio,
             TrackName = "English 5.1", LanguageCode = "eng",
             IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = false
         };
@@ -1212,7 +1212,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 1, Type = MediaTrackType.Audio,
+                    Index = 1, Type = MediaTrackType.Audio,
                     TrackName = "English 5.1", LanguageCode = "eng",
                     IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = false
                 }
@@ -1232,7 +1232,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 1, Type = MediaTrackType.Audio,
+                    Index = 1, Type = MediaTrackType.Audio,
                     TrackName = "English", LanguageCode = "eng"
                 }
             ]
@@ -1243,7 +1243,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 1, Type = MediaTrackType.Audio,
+                    Index = 1, Type = MediaTrackType.Audio,
                     TrackName = "English 5.1", LanguageCode = "eng"
                 }
             ]
@@ -1260,9 +1260,9 @@ public class ConversionPipelineTests
     public void BuildTrackOutputs_ClearVideoName(string? originalName, string targetName, bool expected)
     {
         var before = new MediaSnapshot
-            { Tracks = [new TrackSnapshot { TrackNumber = 0, Type = MediaTrackType.Video, TrackName = originalName }] };
+            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, TrackName = originalName }] };
         var target = new MediaSnapshot
-            { Tracks = [new TrackSnapshot { TrackNumber = 0, Type = MediaTrackType.Video, TrackName = targetName }] };
+            { Tracks = [new TrackSnapshot { Index = 0, Type = MediaTrackType.Video, TrackName = targetName }] };
 
         var outputs = TestPlan.Diff(before, target, ContainerFamily.Matroska);
         Assert.AreEqual(expected, outputs.Any(ConversionPlanExtensions.HasChanges));
@@ -1277,7 +1277,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 2, Type = MediaTrackType.Subtitles,
+                    Index = 2, Type = MediaTrackType.Subtitles,
                     TrackName = "English", LanguageCode = "eng",
                     IsDefault = false, IsForced = false, IsHearingImpaired = false, IsCommentary = false
                 }
@@ -1289,7 +1289,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 2, Type = MediaTrackType.Subtitles,
+                    Index = 2, Type = MediaTrackType.Subtitles,
                     TrackName = "English", LanguageCode = "eng",
                     IsDefault = false, IsForced = true, IsHearingImpaired = false, IsCommentary = false
                 }
@@ -1306,7 +1306,7 @@ public class ConversionPipelineTests
         // When before and target are identical, BuildTrackOutputs should produce no changes.
         var track = new TrackSnapshot
         {
-            TrackNumber = 0, Type = MediaTrackType.Video,
+            Index = 0, Type = MediaTrackType.Video,
             TrackName = "x264", LanguageCode = "eng",
             IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = true
         };
@@ -1317,7 +1317,7 @@ public class ConversionPipelineTests
             [
                 new TrackSnapshot
                 {
-                    TrackNumber = 0, Type = MediaTrackType.Video,
+                    Index = 0, Type = MediaTrackType.Video,
                     TrackName = "x264", LanguageCode = "eng",
                     IsDefault = true, IsForced = false, IsHearingImpaired = false, IsCommentary = true
                 }
@@ -1693,7 +1693,7 @@ public class ConversionPipelineTests
             var preview = previews[i];
             var output = outputs[i];
 
-            Assert.AreEqual(preview.TrackNumber, output.TrackNumber, $"Track {i}: TrackNumber mismatch");
+            Assert.AreEqual(preview.Index, output.Index, $"Track {i}: Index mismatch");
 
             if (preview.Type == MediaTrackType.Video)
             {

@@ -48,8 +48,8 @@ public class MediaConverterEndToEndTests : IntegrationTestBase
         var newDefault = file.Tracks.First(t => t.Type == MediaTrackType.Audio && !t.IsDefault);
 
         var targetTracks = file.Tracks.ToSnapshots();
-        targetTracks.First(t => t.TrackNumber == currentDefault.TrackNumber).IsDefault = false;
-        targetTracks.First(t => t.TrackNumber == newDefault.TrackNumber).IsDefault = true;
+        targetTracks.First(t => t.Index == currentDefault.Index).IsDefault = false;
+        targetTracks.First(t => t.Index == newDefault.Index).IsDefault = true;
         var target = file.BuildTargetFromCustom(targetTracks);
 
         var conversion = await Fixture.SeedConversion(file, target, true);
@@ -60,10 +60,10 @@ public class MediaConverterEndToEndTests : IntegrationTestBase
 
         // Re-probe the real file; the flags must actually have changed.
         var probed = await FileAssertions.ProbeAsync(path);
-        var promoted = probed.Tracks.First(t => t.TrackNumber == newDefault.TrackNumber);
-        var demoted = probed.Tracks.First(t => t.TrackNumber == currentDefault.TrackNumber);
-        Assert.IsTrue(promoted.IsDefault, $"track #{newDefault.TrackNumber} should be default after mkvpropedit");
-        Assert.IsFalse(demoted.IsDefault, $"track #{currentDefault.TrackNumber} should no longer be default");
+        var promoted = probed.Tracks.First(t => t.Index == newDefault.Index);
+        var demoted = probed.Tracks.First(t => t.Index == currentDefault.Index);
+        Assert.IsTrue(promoted.IsDefault, $"track #{newDefault.Index} should be default after mkvpropedit");
+        Assert.IsFalse(demoted.IsDefault, $"track #{currentDefault.Index} should no longer be default");
         Assert.AreEqual(9, probed.Tracks.Count, "metadata edit must not change track count");
         FileAssertions.AssertNoStrayArtifacts(TempDir, Path.GetFileName(path));
     }
@@ -80,7 +80,7 @@ public class MediaConverterEndToEndTests : IntegrationTestBase
         var droppedSub = file.Tracks.First(t => t.Type == MediaTrackType.Subtitles);
 
         var keptTracks = file.Tracks
-            .Where(t => t.TrackNumber != droppedSub.TrackNumber)
+            .Where(t => t.Index != droppedSub.Index)
             .ToSnapshots();
         var target = file.BuildTargetFromCustom(keptTracks);
 
@@ -116,7 +116,7 @@ public class MediaConverterEndToEndTests : IntegrationTestBase
 
         var droppedAudio = file.Tracks.Last(t => t.Type == MediaTrackType.Audio);
         var keptTracks = file.Tracks
-            .Where(t => t.TrackNumber != droppedAudio.TrackNumber)
+            .Where(t => t.Index != droppedAudio.Index)
             .ToSnapshots();
         var target = file.BuildTargetFromCustom(keptTracks);
 
@@ -185,7 +185,7 @@ public class MediaConverterEndToEndTests : IntegrationTestBase
         tracks.Add(new TrackSnapshot
         {
             Type = MediaTrackType.Audio,
-            TrackNumber = 99,
+            Index = 99,
             LanguageCode = "eng",
             LanguageName = "English",
             Codec = "Aac"

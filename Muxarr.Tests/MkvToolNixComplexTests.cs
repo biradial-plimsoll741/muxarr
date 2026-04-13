@@ -131,10 +131,10 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsDefault = false },
-                new() { TrackNumber = 3, Type = MediaTrackType.Audio, IsDefault = true },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio, IsDefault = false },
+                new() { Index = 3, Type = MediaTrackType.Audio, IsDefault = true },
+                new() { Index = 4, Type = MediaTrackType.Subtitles }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -164,10 +164,10 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsForced = true },
-                new() { TrackNumber = 5, Type = MediaTrackType.Subtitles, IsForced = false }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
+                new() { Index = 4, Type = MediaTrackType.Subtitles, IsForced = true },
+                new() { Index = 5, Type = MediaTrackType.Subtitles, IsForced = false }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -197,11 +197,11 @@ public class MkvToolNixComplexTests : FixtureTestBase
             // IsDefault = null means "don't touch"
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 2, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles },
-                new() { TrackNumber = 5, Type = MediaTrackType.Subtitles }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
+                new() { Index = 2, Type = MediaTrackType.Audio },
+                new() { Index = 4, Type = MediaTrackType.Subtitles },
+                new() { Index = 5, Type = MediaTrackType.Subtitles }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -235,12 +235,12 @@ public class MkvToolNixComplexTests : FixtureTestBase
             // Simulate typical profile: keep original + allowed, remove commentary + HI
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
                 // Track 2 (commentary) removed
                 // Track 3 (French) removed
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles },
-                new() { TrackNumber = 5, Type = MediaTrackType.Subtitles }
+                new() { Index = 4, Type = MediaTrackType.Subtitles },
+                new() { Index = 5, Type = MediaTrackType.Subtitles }
                 // Track 6 (SDH) removed
                 // Track 7 (French) removed
                 // Track 8 (Spanish) removed
@@ -274,11 +274,11 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 3, Type = MediaTrackType.Audio, Name = "French First" },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English Second" },
-                new() { TrackNumber = 5, Type = MediaTrackType.Subtitles, Name = "Forced First" },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, Name = "Regular Second" }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 3, Type = MediaTrackType.Audio, Name = "French First" },
+                new() { Index = 1, Type = MediaTrackType.Audio, Name = "English Second" },
+                new() { Index = 5, Type = MediaTrackType.Subtitles, Name = "Forced First" },
+                new() { Index = 4, Type = MediaTrackType.Subtitles, Name = "Regular Second" }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -309,8 +309,8 @@ public class MkvToolNixComplexTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsDefault = false },
-            new() { TrackNumber = 2, Type = MediaTrackType.Audio, IsDefault = true }
+            new() { Index = 1, Type = MediaTrackType.Audio, IsDefault = false },
+            new() { Index = 2, Type = MediaTrackType.Audio, IsDefault = true }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));
@@ -328,8 +328,8 @@ public class MkvToolNixComplexTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsForced = true },
-            new() { TrackNumber = 5, Type = MediaTrackType.Subtitles, IsForced = false }
+            new() { Index = 4, Type = MediaTrackType.Subtitles, IsForced = true },
+            new() { Index = 5, Type = MediaTrackType.Subtitles, IsForced = false }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));
@@ -347,7 +347,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             new()
             {
-                TrackNumber = 3, Type = MediaTrackType.Audio,
+                Index = 3, Type = MediaTrackType.Audio,
                 Name = "English Dub", LanguageCode = "eng",
                 IsDefault = true
             }
@@ -373,7 +373,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         file.SetFileData(info.Result);
 
         Assert.AreEqual(9, file.Tracks.Count);
-        var tracks = file.Tracks.OrderBy(t => t.TrackNumber).ToList();
+        var tracks = file.Tracks.OrderBy(t => t.Index).ToList();
 
         // Video
         Assert.AreEqual(MediaTrackType.Video, tracks[0].Type);
@@ -567,10 +567,10 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio },
-                new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsHearingImpaired = true },
-                new() { TrackNumber = 6, Type = MediaTrackType.Subtitles, IsHearingImpaired = false }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio },
+                new() { Index = 4, Type = MediaTrackType.Subtitles, IsHearingImpaired = true },
+                new() { Index = 6, Type = MediaTrackType.Subtitles, IsHearingImpaired = false }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -601,9 +601,9 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsCommentary = true },
-                new() { TrackNumber = 2, Type = MediaTrackType.Audio, IsCommentary = false }
+                new() { Index = 0, Type = MediaTrackType.Video },
+                new() { Index = 1, Type = MediaTrackType.Audio, IsCommentary = true },
+                new() { Index = 2, Type = MediaTrackType.Audio, IsCommentary = false }
             };
 
             var result = await MkvMerge.Remux(_workingCopy, output, TestPlan.Of(tracks));
@@ -631,8 +631,8 @@ public class MkvToolNixComplexTests : FixtureTestBase
     {
         var tracks = new List<TrackPlan>
         {
-            new() { TrackNumber = 4, Type = MediaTrackType.Subtitles, IsHearingImpaired = true },
-            new() { TrackNumber = 1, Type = MediaTrackType.Audio, IsCommentary = true }
+            new() { Index = 4, Type = MediaTrackType.Subtitles, IsHearingImpaired = true },
+            new() { Index = 1, Type = MediaTrackType.Audio, IsCommentary = true }
         };
 
         var result = await MkvPropEdit.Apply(_workingCopy, _workingCopy, TestPlan.Of(tracks));
@@ -655,17 +655,17 @@ public class MkvToolNixComplexTests : FixtureTestBase
         {
             var tracks = new List<TrackPlan>
             {
-                new() { TrackNumber = 0, Type = MediaTrackType.Video, Name = "" },
-                new() { TrackNumber = 1, Type = MediaTrackType.Audio, Name = "English 2.0", IsDefault = true },
-                new() { TrackNumber = 3, Type = MediaTrackType.Audio, Name = "French 2.0", IsDefault = false },
+                new() { Index = 0, Type = MediaTrackType.Video, Name = "" },
+                new() { Index = 1, Type = MediaTrackType.Audio, Name = "English 2.0", IsDefault = true },
+                new() { Index = 3, Type = MediaTrackType.Audio, Name = "French 2.0", IsDefault = false },
                 new()
                 {
-                    TrackNumber = 4, Type = MediaTrackType.Subtitles, Name = "English", IsDefault = true,
+                    Index = 4, Type = MediaTrackType.Subtitles, Name = "English", IsDefault = true,
                     IsForced = false
                 },
                 new()
                 {
-                    TrackNumber = 5, Type = MediaTrackType.Subtitles, Name = "English Forced", IsDefault = false,
+                    Index = 5, Type = MediaTrackType.Subtitles, Name = "English Forced", IsDefault = false,
                     IsForced = true
                 }
             };
@@ -783,22 +783,22 @@ public class MkvToolNixComplexTests : FixtureTestBase
         // Custom conversion: user keeps 2 audio tracks, toggles flags
         var customAllowed = new List<TrackSnapshot>
         {
-            new() { Type = MediaTrackType.Video, TrackNumber = 0 },
+            new() { Type = MediaTrackType.Video, Index = 0 },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 1, LanguageName = "English",
+                Type = MediaTrackType.Audio, Index = 1, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
                 IsDefault = true, IsCommentary = false, TrackName = "Main"
             },
             new()
             {
-                Type = MediaTrackType.Audio, TrackNumber = 2, LanguageName = "English",
+                Type = MediaTrackType.Audio, Index = 2, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(AudioCodec.Aac), AudioChannels = 2,
                 IsDefault = false, IsCommentary = true, TrackName = "Director Commentary"
             },
             new()
             {
-                Type = MediaTrackType.Subtitles, TrackNumber = 4, LanguageName = "English",
+                Type = MediaTrackType.Subtitles, Index = 4, LanguageName = "English",
                 LanguageCode = "eng", Codec = nameof(SubtitleCodec.Srt),
                 IsHearingImpaired = true, IsForced = false, TrackName = "English SDH"
             }

@@ -23,7 +23,7 @@ public class MediaScannerIntegrationTests : IntegrationTestBase
         Assert.AreEqual(9, file.Tracks.Count);
         Assert.AreEqual(9, file.TrackCount);
 
-        var tracks = file.Tracks.OrderBy(t => t.TrackNumber).ToList();
+        var tracks = file.Tracks.OrderBy(t => t.Index).ToList();
         Assert.AreEqual(MediaTrackType.Video, tracks[0].Type);
         Assert.AreEqual(3, tracks.Count(t => t.Type == MediaTrackType.Audio));
         Assert.AreEqual(5, tracks.Count(t => t.Type == MediaTrackType.Subtitles));

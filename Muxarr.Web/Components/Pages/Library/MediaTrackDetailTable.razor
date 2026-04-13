@@ -18,7 +18,7 @@
     @foreach (var track in RemovedTracks)
     {
         <tr class="opacity-50">
-            <td>@track.TrackNumber</td>
+            <td>@track.Index</td>
             <td>
                 <MediaTrackLabel Track="track" ShowAllFlags="true"/>
             </td>
@@ -48,22 +48,22 @@
             return;
         }
 
-        var previewByNumber = PreviewTracks.ToDictionary(p => p.TrackNumber);
-        var originalPositions = Tracks.Select((t, i) => (t.TrackNumber, Index: i))
+        var previewByNumber = PreviewTracks.ToDictionary(p => p.Index);
+        var originalPositions = Tracks.Select((t, i) => (TrackNumber: t.Index, Index: i))
             .ToDictionary(x => x.TrackNumber, x => x.Index);
 
         KeptTracks = [];
         for (var i = 0; i < PreviewTracks.Count; i++)
         {
             var preview = PreviewTracks[i];
-            var original = Tracks.FirstOrDefault(t => t.TrackNumber == preview.TrackNumber);
+            var original = Tracks.FirstOrDefault(t => t.Index == preview.Index);
             if (original == null)
             {
                 continue;
             }
 
             int? movedFrom = null;
-            if (originalPositions.TryGetValue(preview.TrackNumber, out var origIdx) && origIdx != i)
+            if (originalPositions.TryGetValue(preview.Index, out var origIdx) && origIdx != i)
             {
                 movedFrom = origIdx + 1;
             }
@@ -71,7 +71,7 @@
             KeptTracks.Add(new TrackWithPreview(original, preview, movedFrom));
         }
 
-        RemovedTracks = Tracks.Where(t => !previewByNumber.ContainsKey(t.TrackNumber)).ToList();
+        RemovedTracks = Tracks.Where(t => !previewByNumber.ContainsKey(t.Index)).ToList();
     }
 
 }

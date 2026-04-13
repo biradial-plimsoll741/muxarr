@@ -148,7 +148,7 @@ public class ComplexConversionTests : IntegrationTestBase
 
         TrackSnapshot SnapshotFor(MediaTrack t)
         {
-            return snapshots.First(s => s.TrackNumber == t.TrackNumber);
+            return snapshots.First(s => s.Index == t.Index);
         }
 
         var target = file.BuildTargetFromCustom(snapshots);
@@ -167,27 +167,27 @@ public class ComplexConversionTests : IntegrationTestBase
 
         // Flag-by-flag read-back. All through ffprobe so it matches what
         // the scanner would see on the next pass.
-        var probeEnglish = probed.Tracks.First(t => t.TrackNumber == english51.TrackNumber);
+        var probeEnglish = probed.Tracks.First(t => t.Index == english51.Index);
         Assert.IsTrue(probeEnglish.IsForced, "IsForced flip should have landed");
         Assert.IsTrue(probeEnglish.IsOriginal, "IsOriginal flip should have landed");
         Assert.IsTrue(probeEnglish.IsVisualImpaired, "IsVisualImpaired flip should have landed");
 
-        var probeCommentary = probed.Tracks.First(t => t.TrackNumber == commentary.TrackNumber);
+        var probeCommentary = probed.Tracks.First(t => t.Index == commentary.Index);
         Assert.IsFalse(probeCommentary.IsCommentary, "Commentary flag must clear when user sets false");
         Assert.IsTrue(probeCommentary.IsDefault, "Default flag must be set even on an ex-commentary track");
 
-        var probeFrench = probed.Tracks.First(t => t.TrackNumber == frenchDub.TrackNumber);
+        var probeFrench = probed.Tracks.First(t => t.Index == frenchDub.Index);
         Assert.IsFalse(probeFrench.IsDub, "IsDub=false -> title must no longer encode dub");
         Assert.IsFalse(TrackNameFlagsContainsDub(probeFrench.TrackName),
             $"French audio title should no longer contain 'Dub', got '{probeFrench.TrackName}'");
 
-        var probeEnglishSub = probed.Tracks.First(t => t.TrackNumber == englishSub.TrackNumber);
+        var probeEnglishSub = probed.Tracks.First(t => t.Index == englishSub.Index);
         Assert.IsTrue(probeEnglishSub.IsHearingImpaired, "HI flag must flip to true on the normal sub");
 
-        var probeForced = probed.Tracks.First(t => t.TrackNumber == forcedSub.TrackNumber);
+        var probeForced = probed.Tracks.First(t => t.Index == forcedSub.Index);
         Assert.IsFalse(probeForced.IsForced, "Forced flag must clear on the ex-forced sub");
 
-        var probeSdh = probed.Tracks.First(t => t.TrackNumber == sdhSub.TrackNumber);
+        var probeSdh = probed.Tracks.First(t => t.Index == sdhSub.Index);
         Assert.IsFalse(probeSdh.IsHearingImpaired, "HI flag must clear on the ex-SDH sub");
 
         FileAssertions.AssertNoStrayArtifacts(TempDir, Path.GetFileName(path));
@@ -209,7 +209,7 @@ public class ComplexConversionTests : IntegrationTestBase
         Assert.IsFalse(english.IsDub, "fixture precondition: English audio should not already be dub");
 
         var snapshots = file.Tracks.ToSnapshots();
-        var englishSnap = snapshots.First(s => s.TrackNumber == english.TrackNumber);
+        var englishSnap = snapshots.First(s => s.Index == english.Index);
         englishSnap.IsDub = true;
         englishSnap.TrackName = Core.MkvToolNix.TrackNameFlags.EncodeDubInName(englishSnap.TrackName, true);
 
@@ -220,7 +220,7 @@ public class ComplexConversionTests : IntegrationTestBase
         await Fixture.AssertStateAsync(conversion.Id, ConversionState.Completed);
 
         var probed = await FileAssertions.ProbeAsync(path);
-        var probeEnglish = probed.Tracks.First(t => t.TrackNumber == english.TrackNumber);
+        var probeEnglish = probed.Tracks.First(t => t.Index == english.Index);
         Assert.IsTrue(probeEnglish.IsDub, "title-level dub encoding must round-trip via the scanner");
         StringAssert.Contains(probeEnglish.TrackName ?? "", "Dub");
     }
@@ -240,11 +240,11 @@ public class ComplexConversionTests : IntegrationTestBase
         var anySub = file.Tracks.First(t => t.Type == MediaTrackType.Subtitles && !t.IsHearingImpaired && !t.IsForced);
 
         var snapshots = file.Tracks.ToSnapshots();
-        var engSnap = snapshots.First(s => s.TrackNumber == english.TrackNumber);
+        var engSnap = snapshots.First(s => s.Index == english.Index);
         engSnap.IsDub = true;
         engSnap.IsVisualImpaired = true;
 
-        var subSnap = snapshots.First(s => s.TrackNumber == anySub.TrackNumber);
+        var subSnap = snapshots.First(s => s.Index == anySub.Index);
         subSnap.IsForced = true;
         subSnap.IsHearingImpaired = true;
 
@@ -261,11 +261,11 @@ public class ComplexConversionTests : IntegrationTestBase
         // forced / comment but drops +original on stream-copy (checked with
         // ffmpeg 6/7 - the atom isn't in the QT spec). Assert only flags
         // that actually round-trip.
-        var probeEng = probed.Tracks.First(t => t.TrackNumber == english.TrackNumber);
+        var probeEng = probed.Tracks.First(t => t.Index == english.Index);
         Assert.IsTrue(probeEng.IsDub, "MP4 must carry IsDub natively");
         Assert.IsTrue(probeEng.IsVisualImpaired, "MP4 must carry IsVisualImpaired natively");
 
-        var probeSub = probed.Tracks.First(t => t.TrackNumber == anySub.TrackNumber);
+        var probeSub = probed.Tracks.First(t => t.Index == anySub.Index);
         Assert.IsTrue(probeSub.IsForced);
         Assert.IsTrue(probeSub.IsHearingImpaired);
 
@@ -287,7 +287,7 @@ public class ComplexConversionTests : IntegrationTestBase
         Assert.IsTrue(frenchDub.IsDub, "fixture precondition: French audio title should already encode Dub");
 
         var snapshots = file.Tracks.ToSnapshots();
-        var french = snapshots.First(s => s.TrackNumber == frenchDub.TrackNumber);
+        var french = snapshots.First(s => s.Index == frenchDub.Index);
         french.IsDub = false;
         french.TrackName = Core.MkvToolNix.TrackNameFlags.EncodeDubInName(french.TrackName, false) ?? "";
 
@@ -302,7 +302,7 @@ public class ComplexConversionTests : IntegrationTestBase
             $"mkvpropedit must not fail with 'Nothing to do'. Log: {result.Log}");
 
         var probed = await FileAssertions.ProbeAsync(path);
-        var probeFrench = probed.Tracks.First(t => t.TrackNumber == frenchDub.TrackNumber);
+        var probeFrench = probed.Tracks.First(t => t.Index == frenchDub.Index);
         Assert.IsFalse(probeFrench.IsDub, "French audio should no longer be flagged as dub");
         Assert.IsFalse(Core.MkvToolNix.TrackNameFlags.ContainsDub(probeFrench.TrackName),
             $"French audio title should no longer contain dub; got '{probeFrench.TrackName}'");
@@ -324,16 +324,16 @@ public class ComplexConversionTests : IntegrationTestBase
         var frenchDub = file.Tracks.First(t => t.Type == MediaTrackType.Audio && t.LanguageCode == "fre");
         await Core.Utilities.ProcessExecutor.ExecuteProcessAsync(
             "mkvpropedit",
-            $"\"{path}\" --edit track:{frenchDub.TrackNumber + 1} --set name=\"Dub\"",
+            $"\"{path}\" --edit track:{frenchDub.Index + 1} --set name=\"Dub\"",
             TimeSpan.FromSeconds(10));
         file = await Fixture.ScanAndPersist(path, profile);
 
-        frenchDub = file.Tracks.First(t => t.TrackNumber == frenchDub.TrackNumber);
+        frenchDub = file.Tracks.First(t => t.Index == frenchDub.Index);
         Assert.AreEqual("Dub", frenchDub.TrackName);
         Assert.IsTrue(frenchDub.IsDub);
 
         var snapshots = file.Tracks.ToSnapshots();
-        var french = snapshots.First(s => s.TrackNumber == frenchDub.TrackNumber);
+        var french = snapshots.First(s => s.Index == frenchDub.Index);
         french.IsDub = false;
         french.TrackName = Core.MkvToolNix.TrackNameFlags.EncodeDubInName(french.TrackName, false) ?? "";
         Assert.AreEqual("", french.TrackName, "precondition: UI should normalize strip-to-empty as ''");
@@ -347,7 +347,7 @@ public class ComplexConversionTests : IntegrationTestBase
             $"mkvpropedit must not fail with 'Nothing to do'. Log: {result.Log}");
 
         var probed = await FileAssertions.ProbeAsync(path);
-        var probeFrench = probed.Tracks.First(t => t.TrackNumber == frenchDub.TrackNumber);
+        var probeFrench = probed.Tracks.First(t => t.Index == frenchDub.Index);
         Assert.IsTrue(string.IsNullOrEmpty(probeFrench.TrackName),
             $"Title should be cleared; got '{probeFrench.TrackName}'");
     }
@@ -370,7 +370,7 @@ public class ComplexConversionTests : IntegrationTestBase
             t.Type == MediaTrackType.Subtitles && t.LanguageCode == "eng" && !t.IsHearingImpaired && !t.IsForced);
 
         var snapshots = file.Tracks.ToSnapshots();
-        var sub = snapshots.First(s => s.TrackNumber == englishSub.TrackNumber);
+        var sub = snapshots.First(s => s.Index == englishSub.Index);
         sub.IsDub = true;
         sub.TrackName = Core.MkvToolNix.TrackNameFlags.EncodeDubInName(sub.TrackName, true) ?? "";
 
@@ -383,7 +383,7 @@ public class ComplexConversionTests : IntegrationTestBase
             $"mkvpropedit must not fail with 'Nothing to do'. Log: {result.Log}");
 
         var probed = await FileAssertions.ProbeAsync(path);
-        var probeSub = probed.Tracks.First(t => t.TrackNumber == englishSub.TrackNumber);
+        var probeSub = probed.Tracks.First(t => t.Index == englishSub.Index);
         Assert.IsTrue(probeSub.IsDub, "subtitle should now be flagged as dub (via title encoding)");
     }
 
@@ -405,11 +405,11 @@ public class ComplexConversionTests : IntegrationTestBase
 
         await Core.Utilities.ProcessExecutor.ExecuteProcessAsync(
             "mkvpropedit",
-            $"\"{path}\" --edit track:{sub.TrackNumber + 1} --set flag-original=0",
+            $"\"{path}\" --edit track:{sub.Index + 1} --set flag-original=0",
             TimeSpan.FromSeconds(10));
 
         var scanned = await FileAssertions.ProbeAsync(path);
-        var scannedSub = scanned.Tracks.First(t => t.TrackNumber == sub.TrackNumber);
+        var scannedSub = scanned.Tracks.First(t => t.Index == sub.Index);
         Assert.IsFalse(scannedSub.IsDub,
             $"Matroska scanner must not infer IsDub from FlagOriginal=0; got title '{scannedSub.TrackName}'");
     }

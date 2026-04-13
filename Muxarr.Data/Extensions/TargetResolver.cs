@@ -37,7 +37,7 @@ public static class TargetResolver
             return;
         }
 
-        var sourceByNumber = source.Tracks.ToDictionary(t => t.TrackNumber);
+        var sourceByNumber = source.Tracks.ToDictionary(t => t.Index);
 
         foreach (var track in target.Tracks)
         {
@@ -48,7 +48,7 @@ public static class TargetResolver
 
             if (!track.NameLocked)
             {
-                sourceByNumber.TryGetValue(track.TrackNumber, out var original);
+                sourceByNumber.TryGetValue(track.Index, out var original);
                 var effectiveName = track.Name ?? original?.TrackName;
                 var encoded = TrackNameFlags.EncodeDubInName(effectiveName, track.IsDub.Value);
                 if (!string.Equals(encoded ?? "", effectiveName ?? "", StringComparison.Ordinal))

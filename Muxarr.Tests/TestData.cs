@@ -16,7 +16,7 @@ public static class TestData
         return new MediaTrack
         {
             Type = MediaTrackType.Video,
-            TrackNumber = trackNumber,
+            Index = trackNumber,
             TrackName = trackName,
             LanguageCode = "und",
             LanguageName = "Undetermined",
@@ -33,7 +33,7 @@ public static class TestData
         return new MediaTrack
         {
             Type = MediaTrackType.Audio,
-            TrackNumber = trackNumber,
+            Index = trackNumber,
             LanguageCode = languageCode ?? iso.ThreeLetterCode ?? "",
             LanguageName = iso.Name,
             Codec = codec,
@@ -56,7 +56,7 @@ public static class TestData
         return new MediaTrack
         {
             Type = MediaTrackType.Subtitles,
-            TrackNumber = trackNumber,
+            Index = trackNumber,
             LanguageCode = languageCode ?? iso.ThreeLetterCode ?? "",
             LanguageName = iso.Name,
             Codec = codec,

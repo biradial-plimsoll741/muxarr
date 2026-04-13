@@ -444,7 +444,7 @@ public class ExtensionTests
         var track = new MediaTrack
         {
             Type = MediaTrackType.Audio, LanguageName = "English", LanguageCode = "eng",
-            Codec = nameof(AudioCodec.Aac), TrackNumber = 1,
+            Codec = nameof(AudioCodec.Aac), Index = 1,
             IsDefault = true, IsForced = true, IsCommentary = true,
             IsHearingImpaired = true, IsVisualImpaired = true, IsOriginal = true
         };

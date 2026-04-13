@@ -22,10 +22,10 @@ internal static class DisplayMergeExtensions
 
     public static MediaSnapshot MergeForDisplay(this ConversionPlan target, MediaFile file)
     {
-        var src = file.Tracks.ToDictionary(t => t.TrackNumber);
+        var src = file.Tracks.ToDictionary(t => t.Index);
         return new MediaSnapshot
         {
-            Tracks = target.Tracks.Select(t => t.ToDisplay(src.GetValueOrDefault(t.TrackNumber))).ToList(),
+            Tracks = target.Tracks.Select(t => t.ToDisplay(src.GetValueOrDefault(t.Index))).ToList(),
             HasChapters = target.HasChapters ?? file.ChapterCount > 0,
             HasAttachments = target.HasAttachments ?? file.AttachmentCount > 0
         };
@@ -33,7 +33,7 @@ internal static class DisplayMergeExtensions
 
     public static TrackSnapshot ToDisplay(this TrackPlan t, IMediaTrack? src)
     {
-        var snap = src?.ToSnapshot() ?? new TrackSnapshot { TrackNumber = t.TrackNumber, Type = t.Type };
+        var snap = src?.ToSnapshot() ?? new TrackSnapshot { Index = t.Index, Type = t.Type };
 
         if (t.Name != null)
         {

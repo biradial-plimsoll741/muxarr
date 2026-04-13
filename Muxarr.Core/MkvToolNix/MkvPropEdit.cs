@@ -27,7 +27,7 @@ public static class MkvPropEdit
         foreach (var track in delta.Tracks)
         {
             // mkvpropedit uses 1-based track numbers; mkvmerge/our model are 0-based.
-            var selector = $"--edit track:{track.TrackNumber + 1}";
+            var selector = $"--edit track:{track.Index + 1}";
             var props = "";
 
             if (track.Name != null)

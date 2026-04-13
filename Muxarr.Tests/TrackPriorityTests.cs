@@ -239,9 +239,9 @@ public class TrackPriorityTests
 
         Assert.AreEqual(3, result.Count);
         // Source order preserved within English
-        Assert.AreEqual(1, result[0].TrackNumber);
-        Assert.AreEqual(2, result[1].TrackNumber);
-        Assert.AreEqual(3, result[2].TrackNumber);
+        Assert.AreEqual(1, result[0].Index);
+        Assert.AreEqual(2, result[1].Index);
+        Assert.AreEqual(3, result[2].Index);
     }
 
     [TestMethod]
@@ -660,9 +660,9 @@ public class TrackPriorityTests
         var outputs = file.BuildTargetFromProfile(profile).Tracks;
 
         var audioOutputs = outputs.Where(o => o.Type == MediaTrackType.Audio).ToList();
-        Assert.IsTrue(audioOutputs.First(o => o.TrackNumber == 2).IsDefault == true,
+        Assert.IsTrue(audioOutputs.First(o => o.Index == 2).IsDefault == true,
             "Japanese (original language at priority 0) should become default");
-        Assert.IsTrue(audioOutputs.First(o => o.TrackNumber == 1).IsDefault == false,
+        Assert.IsTrue(audioOutputs.First(o => o.Index == 1).IsDefault == false,
             "English (priority 1) should not be default");
     }
 
@@ -690,9 +690,9 @@ public class TrackPriorityTests
         var audioPreviews = previews.Where(p => p.Type == MediaTrackType.Audio).ToList();
 
         Assert.AreEqual(2, audioPreviews.Count, "No tracks should be removed when Enabled=false");
-        Assert.IsTrue(audioPreviews.First(p => p.TrackNumber == 2).IsDefault,
+        Assert.IsTrue(audioPreviews.First(p => p.Index == 2).IsDefault,
             "Japanese (priority 0) should become default");
-        Assert.IsFalse(audioPreviews.First(p => p.TrackNumber == 1).IsDefault,
+        Assert.IsFalse(audioPreviews.First(p => p.Index == 1).IsDefault,
             "English (priority 1) should lose default");
     }
 

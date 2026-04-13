@@ -5,7 +5,7 @@ namespace Muxarr.Data.Entities;
 
 /// <summary>
 /// Immutable snapshot of track data for conversion history (stored as JSON on MediaConversion).
-/// Uses [JsonPropertyName("Id")] on TrackNumber for backward compatibility with existing JSON.
+/// Uses [JsonPropertyName("Id")] on Index for backward compatibility with existing JSON.
 /// </summary>
 public class TrackSnapshot : IMediaTrack
 {
@@ -25,6 +25,5 @@ public class TrackSnapshot : IMediaTrack
 
     public long DurationMs { get; set; }
 
-    [JsonPropertyName("Id")]
-    public int TrackNumber { get; set; }
+    public int Index { get; set; }
 }

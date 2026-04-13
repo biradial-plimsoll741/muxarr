@@ -31,7 +31,7 @@ public class FFprobeComplexTests : FixtureTestBase
         await file.SetFileDataFromFFprobe();
 
         Assert.AreEqual(9, file.Tracks.Count);
-        var tracks = file.Tracks.OrderBy(t => t.TrackNumber).ToList();
+        var tracks = file.Tracks.OrderBy(t => t.Index).ToList();
 
         // Video
         Assert.AreEqual(MediaTrackType.Video, tracks[0].Type);
@@ -87,7 +87,7 @@ public class FFprobeComplexTests : FixtureTestBase
         var file = new MediaFile { Path = _workingCopy };
         await file.SetFileDataFromFFprobe();
 
-        var tracks = file.Tracks.OrderBy(t => t.TrackNumber).ToList();
+        var tracks = file.Tracks.OrderBy(t => t.Index).ToList();
 
         Assert.AreEqual(nameof(VideoCodec.Avc), tracks[0].Codec);
         Assert.AreEqual(nameof(AudioCodec.Aac), tracks[1].Codec);
