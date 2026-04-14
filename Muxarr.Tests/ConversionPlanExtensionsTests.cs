@@ -14,13 +14,13 @@ public class ConversionPlanExtensionsTests
     [TestMethod]
     public void Delta_EveryNullableField_PropagatesChange()
     {
-        var source = Audio(1, "English", codec: "Aac", channels: 2,
+        var source = Audio(1, "English", "Aac", 2,
             trackName: "English", languageCode: "eng");
         var snapshot = MakeFile(null, source).Snapshot;
 
         foreach (var field in DiffableFields)
         {
-            var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(nameLocked: false)] };
+            var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(false)] };
             field.SetValue(plan.Tracks[0], Distinct(field.PropertyType, field.GetValue(plan.Tracks[0])));
 
             var delta = ConversionPlanExtensions.Delta(snapshot, plan).Tracks[0];
@@ -35,7 +35,7 @@ public class ConversionPlanExtensionsTests
     {
         var source = Audio(1, "English", trackName: "English", languageCode: "eng");
         var snapshot = MakeFile(null, source).Snapshot;
-        var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(nameLocked: false)] };
+        var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(false)] };
 
         var delta = ConversionPlanExtensions.Delta(snapshot, plan).Tracks[0];
 
@@ -57,7 +57,7 @@ public class ConversionPlanExtensionsTests
 
         foreach (var field in DiffableFields)
         {
-            var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(nameLocked: false)] };
+            var plan = new ConversionPlan { Tracks = [source.ToTargetTrack(false)] };
             field.SetValue(plan.Tracks[0], Distinct(field.PropertyType, field.GetValue(plan.Tracks[0])));
 
             Assert.IsTrue(file.CheckHasNonStandardMetadata(profile, plan),
@@ -73,8 +73,16 @@ public class ConversionPlanExtensionsTests
     private static object Distinct(Type type, object? current)
     {
         var u = Nullable.GetUnderlyingType(type) ?? type;
-        if (u == typeof(bool)) return !(bool?)(current ?? false)!;
-        if (u == typeof(string)) return (string?)current == "__x" ? "__y" : "__x";
+        if (u == typeof(bool))
+        {
+            return !(bool?)(current ?? false)!;
+        }
+
+        if (u == typeof(string))
+        {
+            return (string?)current == "__x" ? "__y" : "__x";
+        }
+
         throw new NotSupportedException(u.Name);
     }
 }

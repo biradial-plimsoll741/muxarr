@@ -824,7 +824,10 @@ public static class MediaFileExtensions
 
     // Snapshot conversion
 
-    public static TrackSnapshot ToSnapshot(this IMediaTrack track) => EntityCompare.CopyTo<TrackSnapshot>(track);
+    public static TrackSnapshot ToSnapshot(this IMediaTrack track)
+    {
+        return EntityCompare.CopyTo<TrackSnapshot>(track);
+    }
 
     public static List<TrackSnapshot> ToSnapshots(this IEnumerable<IMediaTrack> tracks)
     {
@@ -899,13 +902,14 @@ public static class MediaFileExtensions
         {
             Tracks = userEditedTracks.Select(t =>
             {
-                var plan = t.ToTargetTrack(nameLocked: true);
+                var plan = t.ToTargetTrack(true);
                 // UI may have edited LanguageName without syncing LanguageCode; re-resolve.
                 var iso = IsoLanguage.Find(t.LanguageName);
                 if (iso != IsoLanguage.Unknown && iso.ThreeLetterCode is { } code)
                 {
                     plan.LanguageCode = code;
                 }
+
                 return plan;
             }).ToList()
         };
@@ -920,7 +924,7 @@ public static class MediaFileExtensions
     {
         var target = new ConversionPlan
         {
-            Tracks = file.Snapshot.Tracks.Select(t => t.ToTargetTrack(nameLocked: true)).ToList()
+            Tracks = file.Snapshot.Tracks.Select(t => t.ToTargetTrack(true)).ToList()
         };
 
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot());

@@ -21,8 +21,10 @@ public class EntityCompareTests
     {
         var a = Audio(1);
         var b = Audio(1);
-        a.Id = 1; b.Id = 999;
-        a.SnapshotId = 5; b.SnapshotId = 7;
+        a.Id = 1;
+        b.Id = 999;
+        a.SnapshotId = 5;
+        b.SnapshotId = 7;
         Assert.IsTrue(EntityCompare.Equal(a, b));
     }
 
@@ -39,11 +41,14 @@ public class EntityCompareTests
     // this fails with the property name attached.
     [TestMethod]
     public void Equal_EveryComparedScalar_BreaksEquality_Track()
-        => AssertEveryScalarAffectsEquality(() => Audio(1, "English", trackName: "English"));
+    {
+        AssertEveryScalarAffectsEquality(() => Audio(1, "English", trackName: "English"));
+    }
 
     [TestMethod]
     public void Equal_EveryComparedScalar_BreaksEquality_Snapshot()
-        => AssertEveryScalarAffectsEquality(() =>
+    {
+        AssertEveryScalarAffectsEquality(() =>
         {
             var s = MakeFile(null, Video(), Audio(1, "English")).Snapshot;
             s.ContainerType = "Matroska";
@@ -53,13 +58,14 @@ public class EntityCompareTests
             s.HasChapters = true;
             return s;
         });
+    }
 
     [TestMethod]
     public void ToSnapshot_PreservesAllComparedFields()
     {
-        var source = Audio(42, "French", codec: "Eac3", channels: 8,
-            commentary: true, hi: true, isDefault: true, dub: true,
-            isOriginal: true, trackName: "French Dub", languageCode: "fre");
+        var source = Audio(42, "French", "Eac3", 8,
+            true, true, true, true,
+            true, "French Dub", "fre");
         Assert.IsTrue(EntityCompare.Equal(source, ((IMediaTrack)source).ToSnapshot()));
     }
 
@@ -89,10 +95,26 @@ public class EntityCompareTests
     private static object? Distinct(Type type, object? current)
     {
         var u = Nullable.GetUnderlyingType(type) ?? type;
-        if (u == typeof(bool)) return !(bool)(current ?? false);
-        if (u == typeof(string)) return (string?)current == "__x" ? "__y" : "__x";
-        if (u.IsEnum) return Enum.GetValues(u).Cast<object>().First(v => !Equals(v, current));
-        if (u.IsPrimitive) return Convert.ChangeType(Convert.ToInt64(current ?? 0) == 0 ? 1 : 0, u);
+        if (u == typeof(bool))
+        {
+            return !(bool)(current ?? false);
+        }
+
+        if (u == typeof(string))
+        {
+            return (string?)current == "__x" ? "__y" : "__x";
+        }
+
+        if (u.IsEnum)
+        {
+            return Enum.GetValues(u).Cast<object>().First(v => !Equals(v, current));
+        }
+
+        if (u.IsPrimitive)
+        {
+            return Convert.ChangeType(Convert.ToInt64(current ?? 0) == 0 ? 1 : 0, u);
+        }
+
         throw new NotSupportedException(u.Name);
     }
 }

@@ -134,10 +134,12 @@ public static class EntityCompare
 
         private static readonly ConcurrentDictionary<Type, Dictionary<string, PropertyInfo>> SourceProps = new();
 
-        private static Dictionary<string, PropertyInfo> BuildSourceProps(Type t) =>
-            t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+        private static Dictionary<string, PropertyInfo> BuildSourceProps(Type t)
+        {
+            return t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanRead)
                 .ToDictionary(p => p.Name);
+        }
 
         private static bool ListEqual(IList? a, IList? b, Type elementType)
         {
@@ -163,8 +165,10 @@ public static class EntityCompare
             return true;
         }
 
-        private static Func<object?, object?, bool> ElementEqualFor(Type type) =>
-            ElementComparers.GetOrAdd(type, BuildElementComparer);
+        private static Func<object?, object?, bool> ElementEqualFor(Type type)
+        {
+            return ElementComparers.GetOrAdd(type, BuildElementComparer);
+        }
 
         private static readonly ConcurrentDictionary<Type, Func<object?, object?, bool>> ElementComparers = new();
 
