@@ -783,7 +783,7 @@ public class MkvToolNixComplexTests : FixtureTestBase
         // Custom conversion: user keeps 2 audio tracks, toggles flags
         var customAllowed = new List<TrackSnapshot>
         {
-            new() { Type = MediaTrackType.Video, Index = 0 },
+            new() { Type = MediaTrackType.Video, Index = 0, LanguageCode = "und" },
             new()
             {
                 Type = MediaTrackType.Audio, Index = 1, LanguageName = "English",

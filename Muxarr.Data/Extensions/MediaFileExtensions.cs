@@ -76,7 +76,7 @@ public static class MediaFileExtensions
                 IsForced = x.IsForced(),
                 IsOriginal = x.IsOriginal(),
                 IsDub = x.IsDub(),
-                LanguageCode = x.Properties.Language ?? string.Empty,
+                LanguageCode = string.IsNullOrEmpty(x.Properties.Language) ? "und" : x.Properties.Language,
                 LanguageName = IsoLanguage.Find(x.Properties.Language).Name,
                 AudioChannels = x.Properties.AudioChannels,
                 Codec = CodecExtensions.ParseCodec(x.Codec),
@@ -122,57 +122,12 @@ public static class MediaFileExtensions
     // unchanged re-scans don't grow the table and MediaConversion FKs stay stable.
     public static void AttachSnapshot(this MediaFile file, MediaSnapshot snapshot)
     {
-        if (file.Snapshot is not null && SnapshotsEquivalent(file.Snapshot, snapshot))
+        if (file.Snapshot is not null && EntityCompare.Equal(file.Snapshot, snapshot))
         {
             return;
         }
 
         file.Snapshot = snapshot;
-    }
-
-    private static bool SnapshotsEquivalent(MediaSnapshot a, MediaSnapshot b)
-    {
-        if (a.ContainerType != b.ContainerType
-            || a.Resolution != b.Resolution
-            || a.DurationMs != b.DurationMs
-            || a.VideoBitDepth != b.VideoBitDepth
-            || a.TrackCount != b.TrackCount
-            || a.HasChapters != b.HasChapters
-            || a.HasAttachments != b.HasAttachments
-            || a.HasFaststart != b.HasFaststart
-            || a.Tracks.Count != b.Tracks.Count)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < a.Tracks.Count; i++)
-        {
-            if (!TracksEquivalent(a.Tracks[i], b.Tracks[i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static bool TracksEquivalent(TrackSnapshot a, TrackSnapshot b)
-    {
-        return a.Index == b.Index
-               && a.Type == b.Type
-               && a.Codec == b.Codec
-               && a.AudioChannels == b.AudioChannels
-               && a.LanguageCode == b.LanguageCode
-               && a.LanguageName == b.LanguageName
-               && a.Name == b.Name
-               && a.DurationMs == b.DurationMs
-               && a.IsDefault == b.IsDefault
-               && a.IsForced == b.IsForced
-               && a.IsCommentary == b.IsCommentary
-               && a.IsHearingImpaired == b.IsHearingImpaired
-               && a.IsVisualImpaired == b.IsVisualImpaired
-               && a.IsOriginal == b.IsOriginal
-               && a.IsDub == b.IsDub;
     }
 
     /// <summary>
@@ -230,7 +185,7 @@ public static class MediaFileExtensions
 
             var tags = stream.Tags;
             var trackName = PickTrackName(tags);
-            var language = tags != null && tags.TryGetValue("language", out var l) ? l : "und";
+            var language = tags != null && tags.TryGetValue("language", out var l) && !string.IsNullOrEmpty(l) ? l : "und";
 
             var track = new TrackSnapshot
             {
@@ -678,7 +633,17 @@ public static class MediaFileExtensions
             return true;
         }
 
+        if (target.IsVisualImpaired is { } isVi && isVi != original.IsVisualImpaired)
+        {
+            return true;
+        }
+
         if (target.IsCommentary is { } isComm && isComm != original.IsCommentary)
+        {
+            return true;
+        }
+
+        if (target.IsOriginal is { } isOrig && isOrig != original.IsOriginal)
         {
             return true;
         }
@@ -857,40 +822,9 @@ public static class MediaFileExtensions
         return string.Join(", ", labels);
     }
 
-    public static string? ResolveLanguageCode(this IMediaTrack track)
-    {
-        if (!string.IsNullOrEmpty(track.LanguageCode))
-        {
-            return track.LanguageCode;
-        }
-
-        var iso = IsoLanguage.Find(track.LanguageName);
-        return iso != IsoLanguage.Unknown ? iso.ThreeLetterCode : null;
-    }
-
     // Snapshot conversion
 
-    public static TrackSnapshot ToSnapshot(this IMediaTrack track)
-    {
-        return new TrackSnapshot
-        {
-            Type = track.Type,
-            Codec = track.Codec,
-            AudioChannels = track.AudioChannels,
-            LanguageCode = track.LanguageCode,
-            LanguageName = track.LanguageName,
-            Name = track.Name,
-            Index = track.Index,
-            DurationMs = track.DurationMs,
-            IsCommentary = track.IsCommentary,
-            IsHearingImpaired = track.IsHearingImpaired,
-            IsVisualImpaired = track.IsVisualImpaired,
-            IsDefault = track.IsDefault,
-            IsForced = track.IsForced,
-            IsOriginal = track.IsOriginal,
-            IsDub = track.IsDub
-        };
-    }
+    public static TrackSnapshot ToSnapshot(this IMediaTrack track) => EntityCompare.CopyTo<TrackSnapshot>(track);
 
     public static List<TrackSnapshot> ToSnapshots(this IEnumerable<IMediaTrack> tracks)
     {
@@ -961,30 +895,21 @@ public static class MediaFileExtensions
     // Matroska so converters never see a flag they cannot express).
     public static ConversionPlan BuildTargetFromCustom(this MediaFile file, IEnumerable<TrackSnapshot> userEditedTracks)
     {
-        var tracks = new List<TrackPlan>();
-        foreach (var t in userEditedTracks)
+        var target = new ConversionPlan
         {
-            var iso = IsoLanguage.Find(t.LanguageName);
-            var code = iso != IsoLanguage.Unknown ? iso.ThreeLetterCode ?? t.LanguageCode : t.LanguageCode;
-
-            tracks.Add(new TrackPlan
+            Tracks = userEditedTracks.Select(t =>
             {
-                Index = t.Index,
-                Type = t.Type,
-                Name = t.Name,
-                LanguageCode = code,
-                IsDefault = t.IsDefault,
-                IsForced = t.IsForced,
-                IsHearingImpaired = t.IsHearingImpaired,
-                IsVisualImpaired = t.IsVisualImpaired,
-                IsCommentary = t.IsCommentary,
-                IsOriginal = t.IsOriginal,
-                IsDub = t.IsDub,
-                NameLocked = true
-            });
-        }
+                var plan = t.ToTargetTrack(nameLocked: true);
+                // UI may have edited LanguageName without syncing LanguageCode; re-resolve.
+                var iso = IsoLanguage.Find(t.LanguageName);
+                if (iso != IsoLanguage.Unknown && iso.ThreeLetterCode is { } code)
+                {
+                    plan.LanguageCode = code;
+                }
+                return plan;
+            }).ToList()
+        };
 
-        var target = new ConversionPlan { Tracks = tracks };
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot());
         return target;
     }
@@ -993,47 +918,13 @@ public static class MediaFileExtensions
     // state is the desired state. NameLocked so the resolver leaves titles alone.
     public static ConversionPlan ToTargetSnapshotFromSource(this MediaFile file)
     {
-        var sourceTracks = file.Snapshot.Tracks;
         var target = new ConversionPlan
         {
-            Tracks = sourceTracks.Select(t => new TrackPlan
-            {
-                Index = t.Index,
-                Type = t.Type,
-                Name = t.Name,
-                LanguageCode = t.LanguageCode,
-                IsDefault = t.IsDefault,
-                IsForced = t.IsForced,
-                IsHearingImpaired = t.IsHearingImpaired,
-                IsVisualImpaired = t.IsVisualImpaired,
-                IsCommentary = t.IsCommentary,
-                IsOriginal = t.IsOriginal,
-                IsDub = t.IsDub,
-                NameLocked = true
-            }).ToList()
+            Tracks = file.Snapshot.Tracks.Select(t => t.ToTargetTrack(nameLocked: true)).ToList()
         };
 
         TargetResolver.ResolveForContainer(target, file.ToMediaSnapshot());
         return target;
-    }
-
-    public static TrackPlan ToTargetTrack(this TrackSnapshot t, bool nameLocked)
-    {
-        return new TrackPlan
-        {
-            Index = t.Index,
-            Type = t.Type,
-            Name = t.Name,
-            LanguageCode = t.ResolveLanguageCode(),
-            IsDefault = t.IsDefault,
-            IsForced = t.IsForced,
-            IsHearingImpaired = t.IsHearingImpaired,
-            IsVisualImpaired = t.IsVisualImpaired,
-            IsCommentary = t.IsCommentary,
-            IsOriginal = t.IsOriginal,
-            IsDub = t.IsDub,
-            NameLocked = nameLocked
-        };
     }
 
     private static TrackSettings? SettingsFor(MediaTrackType type, Profile profile)

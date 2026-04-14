@@ -1,3 +1,4 @@
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Models;
 using Muxarr.Data.Entities;
 
@@ -31,7 +32,7 @@ public static class ConversionPlanExtensions
         return result;
     }
 
-    public static TrackPlan Delta(TrackSnapshot? source, TrackPlan desired)
+    private static TrackPlan Delta(TrackSnapshot? source, TrackPlan desired)
     {
         return new TrackPlan
         {
@@ -49,6 +50,13 @@ public static class ConversionPlanExtensions
             IsOriginal = DiffBool(source?.IsOriginal, desired.IsOriginal),
             IsDub = DiffBool(source?.IsDub, desired.IsDub)
         };
+    }
+
+    public static TrackPlan ToTargetTrack(this TrackSnapshot t, bool nameLocked)
+    {
+        var plan = EntityCompare.CopyTo<TrackPlan>(t);
+        plan.NameLocked = nameLocked;
+        return plan;
     }
 
     public static bool HasChanges(TrackPlan delta)

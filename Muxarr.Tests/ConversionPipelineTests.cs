@@ -1420,7 +1420,7 @@ public class ConversionPipelineTests
     [TestMethod]
     public void HasNonStandardMetadata_IgnoresUnd_WhenMultipleAudioTracks()
     {
-        var file = MakeFile("English", Video(0), Audio(1, "Undetermined"), Audio(2, "English"));
+        var file = MakeFile("English", Video(0), Audio(1, "Undetermined"), Audio(2, "English", isOriginal: true));
 
         var profile = MakeProfile(new TrackSettings
         {
@@ -1453,7 +1453,7 @@ public class ConversionPipelineTests
         // Simulate post-conversion state: language was resolved from und to eng
         var file = MakeFile("English",
             Video(0),
-            Audio(1, "English", trackName: "English 5.1"));
+            Audio(1, "English", trackName: "English 5.1", isOriginal: true));
 
         var profile = MakeProfile(new TrackSettings
         {

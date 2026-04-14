@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Muxarr.Core.Extensions;
 using Muxarr.Core.Models;
 
 namespace Muxarr.Data.Entities;
@@ -9,8 +10,8 @@ namespace Muxarr.Data.Entities;
 // No owner cascade; orphans need manual cleanup.
 public class MediaSnapshot : IMedia<TrackSnapshot>
 {
-    public int Id { get; set; }
-    public DateTime CapturedAt { get; set; }
+    [CompareIgnore] public int Id { get; set; }
+    [CompareIgnore] public DateTime CapturedAt { get; set; }
     public string? ContainerType { get; set; }
     public string? Resolution { get; set; }
     public long DurationMs { get; set; }
@@ -24,8 +25,8 @@ public class MediaSnapshot : IMedia<TrackSnapshot>
 
 public class TrackSnapshot : IMediaTrack
 {
-    public int Id { get; set; }
-    public int SnapshotId { get; set; }
+    [CompareIgnore] public int Id { get; set; }
+    [CompareIgnore] public int SnapshotId { get; set; }
     public int Index { get; set; }
     public MediaTrackType Type { get; set; }
     public bool IsCommentary { get; set; }
@@ -42,7 +43,7 @@ public class TrackSnapshot : IMediaTrack
     public string? Name { get; set; } = string.Empty;
     public long DurationMs { get; set; }
 
-    public MediaSnapshot? Snapshot { get; set; }
+    [CompareIgnore] public MediaSnapshot? Snapshot { get; set; }
 }
 
 public class MediaSnapshotConfiguration : IEntityTypeConfiguration<MediaSnapshot>
