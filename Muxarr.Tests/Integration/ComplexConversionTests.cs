@@ -401,7 +401,7 @@ public class ComplexConversionTests : IntegrationTestBase
         // track that has no "Dub" in its title.
         var prep = await FileAssertions.ProbeAsync(path);
         var sub = prep.Snapshot.Tracks.First(t => t.Type == MediaTrackType.Subtitles
-                                         && !Core.MkvToolNix.TrackNameFlags.ContainsDub(t.Name));
+                                                  && !Core.MkvToolNix.TrackNameFlags.ContainsDub(t.Name));
 
         await Core.Utilities.ProcessExecutor.ExecuteProcessAsync(
             "mkvpropedit",

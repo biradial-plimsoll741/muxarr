@@ -191,7 +191,8 @@
                             <TimeAgo DateTime="@file.FileCreationTime"/>
                         </td>
                         <td>
-                            <MediaTrackLabels Tracks="file.Snapshot.Tracks.Where(x => x.Type != MediaTrackType.Video).ToList()"/>
+                            <MediaTrackLabels
+                                Tracks="file.Snapshot.Tracks.Where(x => x.Type != MediaTrackType.Video).ToList()"/>
                         </td>
                     </tr>
                 }
@@ -488,31 +489,31 @@
         if (!string.IsNullOrEmpty(_videoCodecFilter))
         {
             query = query.Where(f => f.Snapshot.Tracks.Any(t => t.Type == MediaTrackType.Video &&
-                                                       t.Codec == _videoCodecFilter));
+                                                                t.Codec == _videoCodecFilter));
         }
 
         if (!string.IsNullOrEmpty(_audioCodecFilter))
         {
             query = query.Where(f => f.Snapshot.Tracks.Any(t => t.Type == MediaTrackType.Audio &&
-                                                       t.Codec == _audioCodecFilter));
+                                                                t.Codec == _audioCodecFilter));
         }
 
         if (!string.IsNullOrEmpty(_subtitleCodecFilter))
         {
             query = query.Where(f => f.Snapshot.Tracks.Any(t => t.Type == MediaTrackType.Subtitles &&
-                                                       t.Codec == _subtitleCodecFilter));
+                                                                t.Codec == _subtitleCodecFilter));
         }
 
         if (!string.IsNullOrEmpty(_audioLanguageFilter))
         {
             query = query.Where(f => f.Snapshot.Tracks.Any(t => t.Type == MediaTrackType.Audio &&
-                                                       t.LanguageName == _audioLanguageFilter));
+                                                                t.LanguageName == _audioLanguageFilter));
         }
 
         if (!string.IsNullOrEmpty(_subtitleLanguageFilter))
         {
             query = query.Where(f => f.Snapshot.Tracks.Any(t => t.Type == MediaTrackType.Subtitles &&
-                                                       t.LanguageName == _subtitleLanguageFilter));
+                                                                t.LanguageName == _subtitleLanguageFilter));
         }
 
         if (!string.IsNullOrEmpty(_channelLayoutFilter))

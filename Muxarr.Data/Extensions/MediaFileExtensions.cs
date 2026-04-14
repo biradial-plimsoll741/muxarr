@@ -627,7 +627,7 @@ public static class MediaFileExtensions
         }
 
         var target = prebuiltTarget ?? file.BuildTargetFromProfile(profile);
-        var originals = (file.Snapshot.Tracks).ToDictionary(t => t.Index);
+        var originals = file.Snapshot.Tracks.ToDictionary(t => t.Index);
 
         foreach (var preview in target.Tracks)
         {
@@ -897,7 +897,10 @@ public static class MediaFileExtensions
         return tracks.Select(t => t.ToSnapshot()).ToList();
     }
 
-    public static MediaSnapshot ToMediaSnapshot(this MediaFile file) => file.Snapshot;
+    public static MediaSnapshot ToMediaSnapshot(this MediaFile file)
+    {
+        return file.Snapshot;
+    }
 
     public static MediaSnapshot ToMediaSnapshot(this MediaFile file, List<TrackSnapshot> tracks)
     {
