@@ -33,8 +33,7 @@ public enum ConversionState
     Processing,
     Completed,
     Failed,
-    Cancelled,
-    Paused
+    Cancelled
 }
 
 public class MediaConversionConfiguration : AuditEntityConfiguration<MediaConversion>
