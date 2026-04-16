@@ -76,6 +76,7 @@ public class MediaScannerService(
             }
 
             await PurgeDeleted(linked);
+            await PurgeOrphanedSnapshots(linked);
             await ComputeStats();
 
             logger.LogInformation("Scan completed");
@@ -292,6 +293,24 @@ public class MediaScannerService(
                 .Where(f => idsToRemove.Contains(f.Id))
                 .ExecuteDeleteAsync(token);
             logger.LogInformation("Purged {Count} deleted/orphaned file(s) from library", idsToRemove.Count);
+        }
+    }
+
+    private async Task PurgeOrphanedSnapshots(CancellationToken token)
+    {
+        using var scope = ServiceScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var deleted = await context.MediaSnapshots
+            .Where(s =>
+                !context.MediaFiles.Any(f => f.SnapshotId == s.Id) &&
+                !context.MediaConversions.Any(c => c.BeforeSnapshotId == s.Id) &&
+                !context.MediaConversions.Any(c => c.AfterSnapshotId == s.Id))
+            .ExecuteDeleteAsync(token);
+
+        if (deleted > 0)
+        {
+            logger.LogInformation("Purged {Count} orphaned snapshot(s)", deleted);
         }
     }
 
